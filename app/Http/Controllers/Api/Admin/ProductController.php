@@ -29,6 +29,7 @@ class ProductController extends Controller
                 'message' => $request->filled('keyword')
                     ? 'Không tìm thấy sản phẩm nào với từ khóa "' . $request->keyword . '"'
                     : 'Không có sản phẩm nào trong trang này',
+                    
             ]);
         }
         return response()->json([
