@@ -2,6 +2,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\CategoryController;
+use App\Http\Controllers\Api\Admin\UserController;
 
 Route::prefix('admin')->group(function () {
     //products 
@@ -21,8 +22,16 @@ Route::prefix('admin')->group(function () {
         Route::get('/trash/list', [CategoryController::class, 'trash']);
         Route::post('/restore/{id}', [CategoryController::class, 'restore']);
         Route::delete('/force-delete/{id}', [CategoryController::class, 'forceDelete']);
+
+            
+        
+
     });
+
+    //quanlytaikhoan
+    Route::patch('users/{id}/status', [UserController::class, 'updateStatus']);    
+    Route::apiResource('users', UserController::class)->only([
+    'index', 'store', 'show'
+]);// Các route chuẩn: index, store, show, update, destroy
+
 });
-
-
-
