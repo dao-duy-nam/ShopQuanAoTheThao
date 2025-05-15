@@ -22,7 +22,16 @@ class ProductController extends Controller
 
         // Ẩn sản phẩm đã bị xóa mềm
         $products = $query->latest()->paginate(10);
-
+        if ($products->isEmpty()) {
+            return response()->json([
+                'data' => [],
+                'status' => 200,
+                'message' => $request->filled('keyword')
+                    ? 'Không tìm thấy sản phẩm nào với từ khóa "' . $request->keyword . '"'
+                    : 'Không có sản phẩm nào trong trang này',
+                    
+            ]);
+        }
         return response()->json([
             'data' => ProductResource::collection($products),
             'status' => 200,
@@ -113,7 +122,7 @@ class ProductController extends Controller
             'so_luong.integer'        => 'Số lượng sản phẩm phải là số nguyên.',
             'so_luong.min'            => 'Số lượng sản phẩm không được nhỏ hơn 0.',
             'mo_ta.string'            => 'Mô tả sản phẩm phải là chuỗi ký tự.',
-            'hinh_anh.string'         => 'Hình ảnh phải là chuỗi ký tự.', 
+            'hinh_anh.string'         => 'Hình ảnh phải là chuỗi ký tự.',
             'hinh_anh.url'            => 'Hình ảnh phải là đường dẫn hợp lệ.',
             'danh_muc_id.required'    => 'Danh mục sản phẩm không được để trống.',
             'danh_muc_id.exists'      => 'Danh mục sản phẩm không hợp lệ.',
@@ -146,7 +155,7 @@ class ProductController extends Controller
     public function destroy($id)
     {
         $product = Product::findOrFail($id);
-        if($product->hinh_anh){
+        if ($product->hinh_anh) {
             Storage::disk('public')->delete($product->hinh_anh);
         }
         $product->delete();
