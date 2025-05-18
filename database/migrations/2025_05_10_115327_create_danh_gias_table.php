@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('san_pham_id')->constrained('san_phams')->onDelete('cascade');
             $table->text('noi_dung');
             $table->unsignedTinyInteger('so_sao');
+            $table->string('hinh_anh')->nullable();
             $table->timestamps();
         });
     }
