@@ -1,4 +1,5 @@
 <?php
+
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\CategoryController;
@@ -12,26 +13,19 @@ Route::prefix('admin')->group(function () {
     Route::apiResource('products', ProductController::class);
     //categories
     Route::prefix('category')->group(function () {
-        Route::get('/', [CategoryController::class, 'index']);
-        Route::post('/', [CategoryController::class, 'store']);
-        Route::get('/{id}', [CategoryController::class, 'show']);
-        Route::put('/{id}', [CategoryController::class, 'update']);
-        Route::delete('/{id}', [CategoryController::class, 'destroy']);
-
-        // Soft delete routes
+        Route::apiResource('/', CategoryController::class)->parameters(['' => 'id'])->except(['create', 'edit']);
+        // Routes cho soft delete
         Route::get('/trash/list', [CategoryController::class, 'trash']);
         Route::post('/restore/{id}', [CategoryController::class, 'restore']);
         Route::delete('/force-delete/{id}', [CategoryController::class, 'forceDelete']);
-
-            
-        
-
     });
 
     //quanlytaikhoan
-    Route::patch('users/{id}/status', [UserController::class, 'updateStatus']);    
+    Route::patch('users/{id}/status', [UserController::class, 'updateStatus']);
     Route::apiResource('users', UserController::class)->only([
-    'index', 'store', 'show'
-]);// Các route chuẩn: index, store, show, update, destroy
+        'index',
+        'store',
+        'show'
+    ]); // Các route chuẩn: index, store, show, update, destroy
 
 });

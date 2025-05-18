@@ -15,9 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('tieu_de')->nullable();
             $table->string('hinh_anh');
-            $table->string('link')->nullable();
             $table->enum('trang_thai', ['hien', 'an'])->default('hien');
-            $table->integer('thu_tu')->default(0); // để sắp xếp
             $table->timestamps();
         });
     }
