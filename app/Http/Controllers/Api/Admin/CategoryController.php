@@ -19,7 +19,13 @@ class CategoryController extends Controller
             $query->where('ten', 'like', '%' . $keyword . '%');
         }
 
-        return $query->orderBy('created_at', 'desc')->paginate(10);
+        $categories = $query->orderBy('created_at', 'desc')->paginate(10);
+
+        return response()->json([
+            'message' => 'Danh sách danh mục',
+            'status' => 200,
+            'data' => $categories
+        ], 200);
     }
 
     public function store(Request $request)
@@ -43,13 +49,23 @@ class CategoryController extends Controller
         }
 
         $danhMuc = Category::create($validated);
-        return response()->json($danhMuc, 201);
+
+        return response()->json([
+            'message' => 'Tạo danh mục thành công',
+            'status' => 201,
+            'data' => $danhMuc
+        ], 201);
     }
 
     public function show($id)
     {
         $danhMuc = Category::findOrFail($id);
-        return response()->json($danhMuc);
+
+        return response()->json([
+            'message' => 'Chi tiết danh mục',
+            'status' => 200,
+            'data' => $danhMuc
+        ], 200);
     }
 
     public function update(Request $request, $id)
@@ -71,7 +87,6 @@ class CategoryController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            // Xóa ảnh cũ nếu có
             if ($danhMuc->image && Storage::disk('public')->exists($danhMuc->image)) {
                 Storage::disk('public')->delete($danhMuc->image);
             }
@@ -80,61 +95,99 @@ class CategoryController extends Controller
         }
 
         $danhMuc->update($validated);
-        return response()->json($danhMuc);
+
+        return response()->json([
+            'message' => 'Cập nhật danh mục thành công',
+            'status' => 200,
+            'data' => $danhMuc
+        ], 200);
     }
 
     public function destroy($id)
     {
         $danhMuc = Category::findOrFail($id);
 
-        
         if ($danhMuc->ten === 'Không phân loại') {
-            return response()->json(['error' => 'Danh mục "Không phân loại" không được phép xóa'], 403);
+            return response()->json([
+                'message' => 'Danh mục Không phân loại không được phép xóa',
+                'status' => 403,
+                'data' => null
+            ], 403);
         }
 
-        
         $defaultCategory = Category::where('ten', 'Không phân loại')->first();
         if (!$defaultCategory) {
-            return response()->json(['error' => 'Không tìm thấy danh mục mặc định'], 404);
+            return response()->json([
+                'message' => 'Không tìm thấy danh mục mặc định',
+                'status' => 404,
+                'data' => null
+            ], 404);
         }
 
-        
         Product::where('danh_muc_id', $danhMuc->id)->update([
+            'id_danh_muc_cu' => $danhMuc->id,
             'danh_muc_id' => $defaultCategory->id
         ]);
 
         $danhMuc->delete();
-        return response()->json(['message' => 'Đã xóa mềm danh mục và chuyển sản phẩm sang "Không phân loại"']);
-    }
 
+        return response()->json([
+            'message' => 'Đã xóa mềm danh mục và chuyển sản phẩm sang không phân loại',
+            'status' => 200,
+            'data' => null
+        ], 200);
+    }
 
     public function trash()
     {
-        return Category::onlyTrashed()->get();
+        $trashed = Category::onlyTrashed()->get();
+
+        return response()->json([
+            'message' => 'Danh sách danh mục đã xóa mềm',
+            'status' => 200,
+            'data' => $trashed
+        ], 200);
     }
 
     public function restore($id)
     {
         $danhMuc = Category::onlyTrashed()->findOrFail($id);
         $danhMuc->restore();
-        return response()->json(['message' => 'Khôi phục danh mục thành công']);
+
+        Product::where('id_danh_muc_cu', $id)->update([
+            'danh_muc_id' => $id,
+            'id_danh_muc_cu' => null
+        ]);
+
+        return response()->json([
+            'message' => 'Khôi phục danh mục và các sản phẩm liên quan thành công',
+            'status' => 200,
+            'data' => $danhMuc
+        ], 200);
     }
 
     public function forceDelete($id)
     {
         $danhMuc = Category::onlyTrashed()->findOrFail($id);
 
-        
         if ($danhMuc->ten === 'Không phân loại') {
-            return response()->json(['error' => 'Danh mục này không được phép xóa vĩnh viễn'], 403);
+            return response()->json([
+                'message' => 'Danh mục này không được phép xóa vĩnh viễn',
+                'status' => 403,
+                'data' => null
+            ], 403);
         }
 
-        
         if ($danhMuc->image && Storage::disk('public')->exists($danhMuc->image)) {
             Storage::disk('public')->delete($danhMuc->image);
         }
 
         $danhMuc->forceDelete();
-        return response()->json(['message' => 'Xóa vĩnh viễn danh mục thành công']);
+
+        return response()->json([
+            'message' => 'Xóa vĩnh viễn danh mục thành công',
+            'status' => 200,
+            'data' => null
+        ], 200);
     }
 }
