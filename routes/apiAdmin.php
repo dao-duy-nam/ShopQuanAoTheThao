@@ -14,7 +14,7 @@ Route::prefix('admin')->group(function () {
         Route::post('logout', [AdminAuthController::class, 'logout']);
     });
 
-    
+
     Route::middleware(['auth:sanctum', 'admin'])->group(function () {
         // Quản lý sản phẩm 
         Route::get('products/trash', [ProductController::class, 'trashed']);
@@ -31,12 +31,13 @@ Route::prefix('admin')->group(function () {
         });
 
         // Quản lý tài khoản
-        Route::patch('users/{id}/status', [UserController::class, 'updateStatus']);
-        Route::apiResource('users', UserController::class)->only([
-            'index',
-            'store',
-            'show'
-        ]);
+        Route::prefix('users')->group(function () {
+            Route::get('/', [UserController::class, 'index']);
+            Route::post('/', [UserController::class, 'store']);
+            Route::get('/{id}', [UserController::class, 'show']);
+            Route::patch('/{id}/role', [UserController::class, 'updateRole']);
+            Route::patch('/{id}/block', [UserController::class, 'block']);
+        }); // Các route chuẩn: index, store, show, update, destroy
     });
 
     // Cho cả admin hoặc staff truy cập được 
