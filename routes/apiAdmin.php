@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\CategoryController;
 use App\Http\Controllers\Api\Admin\UserController;
+use App\Http\Controllers\Api\Admin\BannerController;
 
 Route::prefix('admin')->group(function () {
     //products 
@@ -28,4 +29,12 @@ Route::prefix('admin')->group(function () {
         'show'
     ]); // Các route chuẩn: index, store, show, update, destroy
 
+    // Quản lý banner
+Route::prefix('banner')->group(function () {
+    Route::apiResource('/', BannerController::class)->parameters(['' => 'id'])->except(['create', 'edit']);
+
+    Route::get('/trash/list', [BannerController::class, 'trash']);
+    Route::post('/restore/{id}', [BannerController::class, 'restore']);
+    Route::delete('/force-delete/{id}', [BannerController::class, 'forceDelete']);
+});
 });
