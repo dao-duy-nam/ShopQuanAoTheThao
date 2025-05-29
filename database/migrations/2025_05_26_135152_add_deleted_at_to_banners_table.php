@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('banners', function (Blueprint $table) {
-            $table->id();
-            $table->string('tieu_de')->nullable();
-            $table->string('hinh_anh');
-            $table->enum('trang_thai', ['hien', 'an'])->default('hien');
-            $table->timestamps();
+        Schema::table('banners', function (Blueprint $table) {
+            $table->softDeletes();
         });
     }
 
@@ -25,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('banners');
+        Schema::table('banners', function (Blueprint $table) {
+            //
+        });
     }
 };

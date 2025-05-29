@@ -17,6 +17,7 @@ return new class extends Migration
             $table->decimal('gia', 10, 2);
             $table->decimal('gia_khuyen_mai', 10, 2)->nullable();
             $table->integer('so_luong');
+            $table->integer('so_luong_da_ban')->default(0);
             $table->text('mo_ta')->nullable();
             $table->string('hinh_anh')->nullable();
             $table->foreignId('danh_muc_id')->constrained('danh_mucs')->cascadeOnDelete();

@@ -15,8 +15,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('gio_hang_id')->constrained('gio_hangs')->cascadeOnDelete();
             $table->foreignId('san_pham_id')->constrained('san_phams');
-            $table->foreignId('phien_ban_id')->constrained('bien_thes');
+            $table->foreignId('bien_the_id')->nullable()->constrained('bien_thes');
             $table->integer('so_luong');
+            $table->decimal('gia_san_pham', 10, 2);    // Giá sản phẩm tại thời điểm thêm vào giỏ hàng
             $table->decimal('thanh_tien', 10, 2);
             $table->timestamps();
         });
