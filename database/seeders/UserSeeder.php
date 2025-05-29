@@ -13,10 +13,11 @@ class UserSeeder extends Seeder
         User::create([
             'name' => 'Nguyễn Văn A',
             'email' => 'nguyenvana@example.com',
-            'password' => bcrypt('password123'), // Mã hóa mật khẩu
+            'password' => bcrypt('password123'),
             'so_dien_thoai' => '0123456789',
-            'vai_tro_id' => 7, // Giả sử vai trò là 'Admin'
+            'vai_tro_id' => 1,
             'trang_thai' => 'active',
+            'ngay_sinh' => '1990-01-01', // thêm ngày sinh
         ]);
 
         // Dữ liệu giả cho người dùng 2
@@ -25,8 +26,9 @@ class UserSeeder extends Seeder
             'email' => 'tranthib@example.com',
             'password' => bcrypt('password123'),
             'so_dien_thoai' => '0987654321',
-            'vai_tro_id' => 8, // Giả sử vai trò là 'User'
+            'vai_tro_id' => 2,
             'trang_thai' => 'active',
+            'ngay_sinh' => '1992-05-15', // thêm ngày sinh
         ]);
     }
 }
