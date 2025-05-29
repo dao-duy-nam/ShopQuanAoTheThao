@@ -72,6 +72,13 @@ class CategoryController extends Controller
     {
         $danhMuc = Category::findOrFail($id);
 
+        if ($danhMuc->ten === 'Không phân loại') {
+            return response()->json([
+                'message' => 'Danh mục Không phân loại không được phép cập nhật',
+                'status' => 403,
+                'data' => null
+            ], 403);
+        }
         $validated = $request->validate([
             'ten' => 'required|string|max:255',
             'mo_ta' => 'nullable|string',
