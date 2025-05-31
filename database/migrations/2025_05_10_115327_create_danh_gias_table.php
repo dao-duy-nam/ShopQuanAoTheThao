@@ -13,11 +13,12 @@ return new class extends Migration
     {
         Schema::create('danh_gias', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('nguoi_dung_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('san_pham_id')->constrained('san_phams')->onDelete('cascade');
             $table->text('noi_dung');
             $table->unsignedTinyInteger('so_sao');
             $table->string('hinh_anh')->nullable();
+             $table->boolean('is_hidden')->default(false);
             $table->timestamps();
         });
     }
