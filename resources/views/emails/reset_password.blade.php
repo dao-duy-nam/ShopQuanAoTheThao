@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Đặt lại mật khẩu</title>
+    <title>Xác thực OTP</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -22,25 +22,22 @@
         h1 {
             color: #007BFF;
             font-weight: 700;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
         }
         p {
             font-size: 16px;
-            line-height: 1.5;
+            line-height: 1.6;
         }
-        a.button {
-            display: inline-block;
-            padding: 12px 25px;
+        .otp-code {
+            font-size: 32px;
+            font-weight: bold;
+            color: #e53935;
+            text-align: center;
+            padding: 15px;
+            border: 2px dashed #e53935;
             margin: 20px 0;
-            font-weight: 600;
-            color: white !important;
-            background-color: #007BFF;
-            border-radius: 6px;
-            text-decoration: none;
-            transition: background-color 0.3s ease;
-        }
-        a.button:hover {
-            background-color: #0056b3;
+            border-radius: 8px;
+            background-color: #fff3f3;
         }
         .footer {
             margin-top: 30px;
@@ -53,12 +50,16 @@
 </head>
 <body>
     <div class="container">
-        <h1>Đặt lại mật khẩu</h1>
-        <p>Chào bạn,</p>
-        <p>Bạn nhận được email này vì chúng tôi đã nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.</p>
-        <p>Vui lòng nhấn vào nút dưới đây để đặt lại mật khẩu:</p>
-        <p><a href="{{ $resetLink }}" class="button" target="_blank" rel="noopener noreferrer">Đặt lại mật khẩu</a></p>
-        <p>Nếu bạn không yêu cầu, bạn có thể bỏ qua email này một cách an toàn.</p>
+        <h1>Xác thực OTP</h1>
+        <p>Xin chào {{ $name }},</p>
+        <p>Bạn đã yêu cầu đặt lại mật khẩu. Vui lòng sử dụng mã OTP bên dưới để xác nhận:</p>
+
+        <div class="otp-code">{{ $otp }}</div>
+
+        <p>Mã OTP chỉ có hiệu lực trong vòng <strong>2 phút</strong>. Vui lòng không chia sẻ mã này với bất kỳ ai.</p>
+
+        <p>Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua email này.</p>
+
         <div class="footer">
             <p>Trân trọng,</p>
             <p><strong>{{ config('app.name') }}</strong></p>
