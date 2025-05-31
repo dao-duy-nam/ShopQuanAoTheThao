@@ -1,21 +1,31 @@
 <?php
+
 namespace App\Mail;
 
+use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Queue\SerializesModels;
 
 class ResetPasswordMail extends Mailable
 {
-    public $resetLink;
+    use Queueable, SerializesModels;
 
-    public function __construct($resetLink)
+    public $user;
+    public $otp;
+
+    public function __construct($user, $otp)
     {
-        $this->resetLink = $resetLink;
+        $this->user = $user;
+        $this->otp = $otp;
     }
 
     public function build()
     {
-        return $this->subject('Đặt lại mật khẩu')
-                    ->view('emails.reset_password')
-                    ->with(['resetLink' => $this->resetLink]);
+        return $this->subject('Mã OTP đặt lại mật khẩu')
+                    ->view('emails.reset_password') 
+                    ->with([
+                        'name' => $this->user->name,
+                        'otp' => $this->otp,
+                    ]);
     }
 }
