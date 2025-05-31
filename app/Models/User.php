@@ -6,7 +6,7 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Contracts\Auth\MustVerifyEmail;  
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -30,7 +30,12 @@ class User extends Authenticatable implements MustVerifyEmail
     ];
     protected $casts = [
         'email_verified_at' => 'datetime',
+
+        'otp_attempts' => 'integer',
+        'otp_locked_until' => 'datetime',
+        'otp_expired_at' => 'datetime',
     ];
+
 
     public function Role()
     {

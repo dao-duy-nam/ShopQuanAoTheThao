@@ -1,9 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\VerificationController;
-use App\Http\Controllers\Api\ForgotPasswordController;
+use App\Http\Controllers\Api\Client\AuthController;
+use App\Http\Controllers\Api\Client\ForgotPasswordController;
 
 
 Route::prefix('auth')->group(function () {
@@ -15,7 +14,9 @@ Route::prefix('auth')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
     });
-    Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink']);
+    Route::post('forgot-password', [ForgotPasswordController::class, 'forgotPassword']);
+    Route::post('resend-otp', [ForgotPasswordController::class, 'resendOtp']);
+    Route::post('verify-otp-password', [ForgotPasswordController::class, 'verifyForgotOtp']);
     Route::post('reset-password',  [ForgotPasswordController::class, 'resetPassword']);
 });
 
