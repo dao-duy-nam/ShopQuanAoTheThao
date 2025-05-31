@@ -2,10 +2,11 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Admin\UserController;
+use App\Http\Controllers\Api\Admin\BannerController;
+use App\Http\Controllers\Api\Admin\DanhGiaController;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\CategoryController;
 use App\Http\Controllers\Api\Admin\AdminAuthController;
-use App\Http\Controllers\Api\Admin\BannerController;
 
 Route::prefix('admin')->group(function () {
 
@@ -56,4 +57,11 @@ Route::prefix('admin')->group(function () {
         Route::delete('/force-delete/{id}', [BannerController::class, 'forceDelete']);
     });
 
+    //quản lý đánh giá
+    Route::prefix('reviews')->group(function () {
+    Route::get('/', [DanhGiaController::class, 'index']);             
+    Route::get('/{id}', [DanhGiaController::class, 'show']);          
+    Route::patch('/{id}/toggle-visibility', [DanhGiaController::class, 'toggleVisibility']);  
+    
+    });
 });
