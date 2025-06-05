@@ -35,6 +35,11 @@ class User extends Authenticatable implements MustVerifyEmail
         'otp_locked_until' => 'datetime',
         'otp_expired_at' => 'datetime',
     ];
+    public function danhGias()
+{
+    return $this->hasMany(DanhGia::class);
+}
+
 
 
     public function Role()
