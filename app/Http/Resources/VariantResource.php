@@ -10,8 +10,8 @@ class VariantResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'Size' => $this->Size?->kich_co,
-            'Color' => $this->Color?->ten_mau_sac,
+            'kich_co' => $this->Size?->kich_co,
+            'ten_mau_sac' => $this->Color?->ten_mau_sac,
             'so_luong' => $this->so_luong,
             'gia' => $this->gia,
             'gia_khuyen_mai' => $this->gia_khuyen_mai,
