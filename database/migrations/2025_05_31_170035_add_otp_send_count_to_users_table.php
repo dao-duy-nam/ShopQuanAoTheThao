@@ -12,7 +12,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->integer('otp_send_count')->default(0)->after('otp_attempts'); // thêm sau cột otp_attempts nếu có
+            $table->integer('otp_send_count')->default(0); 
         });
     }
 
