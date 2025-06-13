@@ -23,7 +23,7 @@ class Variant extends Model
         'gia_khuyen_mai',
         'hinh_anh'
     ];
-
+    protected $casts = ['hinh_anh' => 'array'];
    
     public function Product()
     {

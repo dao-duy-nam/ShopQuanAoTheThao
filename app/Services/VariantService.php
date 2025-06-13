@@ -27,55 +27,23 @@ class VariantService
                 'so_luong' => $variant['so_luong'],
                 'gia' => $variant['gia'],
                 'gia_khuyen_mai' => $variant['gia_khuyen_mai'] ?? null,
+                'hinh_anh' => $this->encodeImages($variant['hinh_anh'] ?? null),
             ]);
         }
     }
-    public function updateVariants(Product $product, array $data): void
+    protected function encodeImages($images): ?string
     {
-        if (!empty($data['deleted_variant_ids'])) {
-            $deletedIds = $data['deleted_variant_ids'];
-            $validIds = Variant::where('san_pham_id', $product->id)
-                ->whereIn('id', $deletedIds)
-                ->pluck('id')
-                ->toArray();
-            $invalidIds = array_diff($deletedIds, $validIds);
-            if (!empty($invalidIds)) {
-                throw new \Exception('Các ID biến thể sau không tồn tại');
-            }
-            Variant::whereIn('id', $validIds)->delete();
+        $paths = [];
+        if ($images instanceof \Illuminate\Http\UploadedFile) {
+            $images = [$images];
         }
-        foreach ($data['variants'] as $variant) {
-            $kichCo = Size::firstOrCreate(
-                ['kich_co' => $variant['kich_co']],
-                ['created_at' => now(), 'updated_at' => now()]
-            );
-            $mauSac = Color::firstOrCreate(
-                ['ten_mau_sac' => $variant['mau_sac']],
-                ['created_at' => now(), 'updated_at' => now()]
-            );
-            if (!empty($variant['id'])) {
-                $variantModel = Variant::where('id', $variant['id'])
-                    ->where('san_pham_id', $product->id)
-                    ->first();
-                if ($variantModel) {
-                    $variantModel->update([
-                        'kich_co_id' => $kichCo->id,
-                        'mau_sac_id' => $mauSac->id,
-                        'so_luong' => $variant['so_luong'],
-                        'gia' => $variant['gia'],
-                        'gia_khuyen_mai' => $variant['gia_khuyen_mai'] ?? null,
-                    ]);
+        if (is_array($images)) {
+            foreach ($images as $image) {
+                if ($image instanceof \Illuminate\Http\UploadedFile) {
+                    $paths[] = $image->store('variants', 'public');
                 }
-            } else {
-                Variant::create([
-                    'san_pham_id' => $product->id,
-                    'kich_co_id' => $kichCo->id,
-                    'mau_sac_id' => $mauSac->id,
-                    'so_luong' => $variant['so_luong'],
-                    'gia' => $variant['gia'],
-                    'gia_khuyen_mai' => $variant['gia_khuyen_mai'] ?? null,
-                ]);
             }
         }
+        return !empty($paths) ? json_encode($paths) : null;
     }
 }

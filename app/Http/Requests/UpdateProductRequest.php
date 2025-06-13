@@ -30,14 +30,6 @@ class UpdateProductRequest extends FormRequest
             'hinh_anh'        => 'nullable|string|url',
             'hinh_anh_public_id' => 'nullable|string',
             'danh_muc_id'     => 'required|exists:danh_mucs,id',
-            'variants'        => 'required|array|min:1',
-            'variants.*.id'   => 'nullable|integer|exists:bien_thes,id',
-            'variants.*.kich_co'        => 'required|string|max:100',
-            'variants.*.mau_sac'        => 'required|string|max:100',
-            'variants.*.so_luong'       => 'required|integer|min:0',
-            'variants.*.gia'            => 'required|numeric|min:0',
-            'variants.*.gia_khuyen_mai' => 'nullable|numeric|min:0',
-            'deleted_variant_ids'       => 'nullable|array',
         ];
     }
     public function messages(): array
@@ -60,26 +52,6 @@ class UpdateProductRequest extends FormRequest
             'hinh_anh_public_id.string' => 'ID hình ảnh phải là chuỗi.',
             'danh_muc_id.required' => 'Danh mục sản phẩm không được để trống.',
             'danh_muc_id.exists' => 'Danh mục sản phẩm không hợp lệ.',
-            'variants.required' => 'Phải có ít nhất một biến thể.',
-            'variants.array' => 'Biến thể phải là một mảng.',
-            'variants.*.id.integer' => 'ID biến thể phải là số nguyên.',
-            'variants.*.id.exists' => 'ID biến thể không tồn tại.',
-            'variants.*.kich_co.required' => 'Kích cỡ không được để trống.',
-            'variants.*.kich_co.string' => 'Kích cỡ phải là chuỗi.',
-            'variants.*.kich_co.max' => 'Kích cỡ không được vượt quá 100 ký tự.',
-            'variants.*.mau_sac.required' => 'Màu sắc không được để trống.',
-            'variants.*.mau_sac.string' => 'Màu sắc phải là chuỗi.',
-            'variants.*.mau_sac.max' => 'Màu sắc không được vượt quá 100 ký tự.',
-            'variants.*.so_luong.required' => 'Số lượng của biến thể không được để trống.',
-            'variants.*.so_luong.integer' => 'Số lượng của biến thể phải là số nguyên.',
-            'variants.*.so_luong.min' => 'Số lượng của biến thể phải lớn hơn hoặc bằng 0.',
-            'variants.*.gia.required' => 'Giá của biến thể không được để trống.',
-            'variants.*.gia.numeric' => 'Giá của biến thể phải là số.',
-            'variants.*.gia.min' => 'Giá của biến thể phải lớn hơn hoặc bằng 0.',
-            'variants.*.gia_khuyen_mai.numeric' => 'Giá khuyến mãi của biến thể phải là số.',
-            'variants.*.gia_khuyen_mai.min' => 'Giá khuyến mãi của biến thể phải lớn hơn hoặc bằng 0.',
-            'deleted_variant_ids.array' => 'Danh sách biến thể xóa phải là mảng.',
-            'deleted_variant_ids.*.integer' => 'ID biến thể xóa phải là số nguyên.',
         ];
     }
 }

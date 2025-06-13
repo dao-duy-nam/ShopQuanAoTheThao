@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Models\Product;
 use App\Models\Variant;
-use Cloudinary\Cloudinary;
 use Illuminate\Http\Request;
 use App\Services\VariantService;
 use Illuminate\Support\Facades\Log;
@@ -12,7 +11,6 @@ use App\Http\Controllers\Controller;
 use Cloudinary\Api\Upload\UploadApi;
 use App\Http\Resources\ProductResource;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 
@@ -61,6 +59,9 @@ class ProductController extends Controller
             'so_luong' => 0,
         ]);
         if (!empty($data['variants'])) {
+            foreach ($data['variants'] as $i => &$variant) {
+                $variant['hinh_anh'] = $request->file("variants.$i.hinh_anh") ?? null;
+            }
             $this->variantService->createVariants($product, $data['variants']);
         }
         return response()->json([
@@ -80,7 +81,7 @@ class ProductController extends Controller
         ]);
     }
 
-    public function update(UpdateProductRequest $request, $id, VariantService $variantService)
+    public function update(UpdateProductRequest $request, $id)
     {
         $product = Product::findOrFail($id);
         $data = $request->validated();
@@ -105,7 +106,6 @@ class ProductController extends Controller
             'mo_ta' => $data['mo_ta'] ?? null,
             'danh_muc_id' => $data['danh_muc_id'],
         ]);
-        $variantService->updateVariants($product, $data);
         return response()->json([
             'data' => new ProductResource($product->fresh(['variants.Size', 'variants.Color'])),
             'status' => 200,
