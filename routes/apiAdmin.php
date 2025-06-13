@@ -26,6 +26,7 @@ Route::prefix('admin')->group(function () {
         Route::delete('products/force-delete/{id}', [ProductController::class, 'forceDelete']);
         Route::apiResource('products', ProductController::class)->except(['index', 'show']);
         Route::post('products/{id}', [ProductController::class, 'update'])->name('products.update');
+
         // Quản lý danh mục
         Route::prefix('category')->group(function () {
             Route::apiResource('/', CategoryController::class)->parameters(['' => 'id'])->except(['create', 'edit']);

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Variant extends Model
 {
     use HasFactory,SoftDeletes;
+    
 
     protected $table = 'bien_thes';
 
@@ -40,5 +41,9 @@ class Variant extends Model
     public function Color()
     {
         return $this->belongsTo(Color::class, 'mau_sac_id');
+    }
+    public function reviews()
+    {
+        return $this->hasMany(DanhGia::class, 'variant_id');
     }
 }

@@ -11,10 +11,17 @@ class UserSeeder extends Seeder
     {
         // Dữ liệu giả cho người dùng 1
         User::create([
+<<<<<<< HEAD
             'name' => 'Nguyễn Văn abc',
             'email' => 'nguyenvanacc1a@example.com',
             'password' => bcrypt('password12346'),
             'so_dien_thoai' => '0123456781',
+=======
+            'name' => 'Nguyễn Văn A',
+            'email' => 'hoba1382004@gmail.com',
+            'password' => bcrypt('admin1'),
+            'so_dien_thoai' => '0123456789',
+>>>>>>> b621858 (feat reviewclient)
             'vai_tro_id' => 1,
             'trang_thai' => 'active',
             'ngay_sinh' => '1999-01-11', // thêm ngày sinh
