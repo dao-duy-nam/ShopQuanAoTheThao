@@ -20,6 +20,7 @@ return new class extends Migration
             $table->integer('so_luong_da_ban')->default(0);
             $table->decimal('gia', 10, 2);
             $table->decimal('gia_khuyen_mai', 10, 2)->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }

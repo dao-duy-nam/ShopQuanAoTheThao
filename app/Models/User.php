@@ -7,6 +7,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Role;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -35,12 +36,18 @@ class User extends Authenticatable implements MustVerifyEmail
         'otp_locked_until' => 'datetime',
         'otp_expired_at' => 'datetime',
     ];
+    public function danhGias()
+{
+    return $this->hasMany(DanhGia::class);
+}
 
 
-    public function Role()
-    {
-        return $this->belongsTo(Role::class);
-    }
+
+   public function role()
+{
+    return $this->belongsTo(Role::class, 'vai_tro_id', 'id');
+}
+
 
     const ROLE_ADMIN = 1;
     const ROLE_USER = 2;
@@ -64,5 +71,17 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isRoleStaff()
     {
         return $this->vai_tro_id == self::ROLE_STAFF;
+    }
+
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class, 'user_id');
+    }
+
+    
+    public function reviews()
+    {
+        return $this->hasMany(DanhGia::class, 'user_id');
     }
 }

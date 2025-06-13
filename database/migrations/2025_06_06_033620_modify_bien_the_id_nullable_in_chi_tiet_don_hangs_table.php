@@ -11,18 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('mau_sacs', function (Blueprint $table) {
-            $table->id();
-            $table->string('ten_mau_sac')->unique();
-            $table->timestamps();
+        Schema::table('chi_tiet_don_hangs', function (Blueprint $table) {
+            $table->foreignId('bien_the_id')->nullable()->change();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('mau_sacs');
+        Schema::table('chi_tiet_don_hangs', function (Blueprint $table) {
+            $table->foreignId('bien_the_id')->nullable(false)->change();
+        });
     }
 };

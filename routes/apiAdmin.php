@@ -23,7 +23,7 @@ Route::prefix('admin')->group(function () {
         Route::get('products/trash', [ProductController::class, 'trashed']);
         Route::patch('products/restore/{id}', [ProductController::class, 'restore']);
         Route::delete('products/force-delete/{id}', [ProductController::class, 'forceDelete']);
-        Route::apiResource('products', ProductController::class)->except(['index', 'show']);
+        Route::apiResource('products', ProductController::class);
 
         // Quản lý danh mục
         Route::prefix('category')->group(function () {
