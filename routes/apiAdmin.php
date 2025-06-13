@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\Admin\VariantController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\Admin\BannerController;
 use App\Http\Controllers\Api\Admin\DanhGiaController;
@@ -23,7 +24,8 @@ Route::prefix('admin')->group(function () {
         Route::get('products/trash', [ProductController::class, 'trashed']);
         Route::patch('products/restore/{id}', [ProductController::class, 'restore']);
         Route::delete('products/force-delete/{id}', [ProductController::class, 'forceDelete']);
-        Route::apiResource('products', ProductController::class);
+        Route::apiResource('products', ProductController::class)->except(['index', 'show']);
+        Route::post('products/{id}', [ProductController::class, 'update'])->name('products.update');
 
         // Quản lý danh mục
         Route::prefix('category')->group(function () {
@@ -59,9 +61,20 @@ Route::prefix('admin')->group(function () {
 
     //quản lý đánh giá
     Route::prefix('reviews')->group(function () {
-    Route::get('/', [DanhGiaController::class, 'index']);             
-    Route::get('/{id}', [DanhGiaController::class, 'show']);          
-    Route::patch('/{id}/toggle-visibility', [DanhGiaController::class, 'toggleVisibility']);  
-    
+        Route::get('/', [DanhGiaController::class, 'index']);
+        Route::get('/{id}', [DanhGiaController::class, 'show']);
+        Route::patch('/{id}/toggle-visibility', [DanhGiaController::class, 'toggleVisibility']);
+    });
+    // Quản lý biến thể sản phẩm
+    Route::prefix('variants')->group(function () {
+        Route::get('/{id}', [VariantController::class, 'show']);
+        Route::post('/{productId}', [VariantController::class, 'store']);
+        Route::post('update/{id}', [VariantController::class, 'update']);
+        Route::delete('/{id}', [VariantController::class, 'destroy']);
+        Route::delete('/product/{productId}', [VariantController::class, 'deleteByProductId']);
+        Route::patch('/restore/{id}', [VariantController::class, 'restore']);
+        Route::patch('/restore/product/{productId}', [VariantController::class, 'restoreByProductId']);
+        Route::delete('/force-delete/{id}', [VariantController::class, 'forceDelete']);
+        Route::delete('/force-delete/product/{productId}', [VariantController::class, 'forceDeleteByProductId']);
     });
 });
