@@ -2,7 +2,11 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Client\AuthController;
+<<<<<<< HEAD
 use App\Http\Controllers\Api\Client\ProductController;
+=======
+use App\Http\Controllers\API\Client\ReviewController;
+>>>>>>> b621858 (feat reviewclient)
 use App\Http\Controllers\Api\Client\ForgotPasswordController;
 
 
@@ -22,14 +26,20 @@ Route::prefix('auth')->group(function () {
 });
 
 
-Route::middleware(['auth:sanctum', 'role:user'])->group(function () {
-    // Route::post('/dat-hang',        [OrderController::class,   'store']);
-    // Route::post('/binh-luan',       [CommentController::class, 'store']);
-    // Route::post('/yeu-thich',       [FavoriteController::class,'store']);
+Route::get('/reviews/{product}', [ReviewController::class, 'index']);
 
+<<<<<<< HEAD
 });
 
 Route::prefix('products')->group(function () {
     Route::get('/', [ProductController::class, 'index']);
     Route::get('{id}', [ProductController::class, 'show']);
+=======
+
+
+Route::middleware(['auth:sanctum', 'user'])->group(function () {
+    Route::post('/reviews', [ReviewController::class, 'store']);
+    Route::put('/reviews/{id}', [ReviewController::class, 'update']);
+    Route::delete('/reviews/{id}', [ReviewController::class, 'destroy']);
+>>>>>>> b621858 (feat reviewclient)
 });
