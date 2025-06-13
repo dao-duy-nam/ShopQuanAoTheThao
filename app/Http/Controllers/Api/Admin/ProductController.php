@@ -49,7 +49,7 @@ class ProductController extends Controller
             'hinh_anh'        => 'nullable|string|url',
             'danh_muc_id'     => 'required|exists:danh_mucs,id',
             'gia'             => 'required|numeric|min:0',
-            'variants'        => 'required|array|min:1',
+            'variants'       => 'nullable|array',
             'variants.*.kich_co'        => 'required|string|max:100',
             'variants.*.mau_sac'        => 'required|string|max:100',
             'variants.*.so_luong'       => 'required|integer|min:0',
@@ -67,7 +67,6 @@ class ProductController extends Controller
             'gia.required' => 'Giá sản phẩm không được để trống.',
             'gia.numeric'  => 'Giá sản phẩm phải là số.',
             'gia.min'      => 'Giá sản phẩm không được nhỏ hơn 0.',
-            'variants.required'    => 'Phải có ít nhất một biến thể.',
             'variants.array'       => 'Biến thể phải là một mảng.',
             'variants.*.kich_co.required' => 'Kích cỡ biến thể không được để trống.',
             'variants.*.kich_co.string'   => 'Kích cỡ biến thể phải là chuỗi ký tự.',
@@ -96,23 +95,25 @@ class ProductController extends Controller
             'gia' => $data['gia'],
             'so_luong' => 0,
         ]);
-        foreach ($data['variants'] as $variant) {
-            $kichCo = Size::firstOrCreate(
-                ['kich_co' => $variant['kich_co']],
-                ['created_at' => now(), 'updated_at' => now()]
-            );
-            $mauSac = Color::firstOrCreate(
-                ['ten_mau_sac' => $variant['mau_sac']],
-                ['created_at' => now(), 'updated_at' => now()]
-            );
-            Variant::create([
-                'san_pham_id' => $product->id,
-                'kich_co_id' => $kichCo->id,
-                'mau_sac_id' => $mauSac->id,
-                'so_luong' => $variant['so_luong'],
-                'gia' => $variant['gia'],
-                'gia_khuyen_mai' => $variant['gia_khuyen_mai'] ?? null,
-            ]);
+        if (!empty($data['variants'])) {
+            foreach ($data['variants'] as $variant) {
+                $kichCo = Size::firstOrCreate(
+                    ['kich_co' => $variant['kich_co']],
+                    ['created_at' => now(), 'updated_at' => now()]
+                );
+                $mauSac = Color::firstOrCreate(
+                    ['ten_mau_sac' => $variant['mau_sac']],
+                    ['created_at' => now(), 'updated_at' => now()]
+                );
+                Variant::create([
+                    'san_pham_id' => $product->id,
+                    'kich_co_id' => $kichCo->id,
+                    'mau_sac_id' => $mauSac->id,
+                    'so_luong' => $variant['so_luong'],
+                    'gia' => $variant['gia'],
+                    'gia_khuyen_mai' => $variant['gia_khuyen_mai'] ?? null,
+                ]);
+            }
         }
         return response()->json([
             'data' => new ProductResource($product->fresh(['variants.size', 'variants.color'])),

@@ -21,6 +21,7 @@ class Variant extends Model
         'so_luong_da_ban',
         'gia',
         'gia_khuyen_mai',
+        'hinh_anh'
     ];
 
    
