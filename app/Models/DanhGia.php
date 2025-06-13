@@ -2,17 +2,24 @@
 
 namespace App\Models;
 
+use App\Models\User;
+use App\Models\Variant;
 use Illuminate\Database\Eloquent\Model;
 
 class DanhGia extends Model
 {
-    //
-     protected $fillable = ['user_id', 'san_pham_id',
-     
+    protected $table = 'danh_gias';
+    protected $fillable = [
+        'user_id',
+        'san_pham_id',
+        'bien_the_id',
         'noi_dung',
         'so_sao',
         'hinh_anh',
         'is_hidden'
+    ];
+    protected $casts = [
+        'hinh_anh' => 'array',
     ];
 
     public function user()
@@ -20,12 +27,13 @@ class DanhGia extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function sanphams()
+    public function product()
     {
         return $this->belongsTo(Product::class);
     }
-     public function bienThe()
+
+    public function variant()
     {
-        return $this->belongsTo(BienThe::class);
+        return $this->belongsTo(Variant::class, 'bien_the_id');
     }
 }
