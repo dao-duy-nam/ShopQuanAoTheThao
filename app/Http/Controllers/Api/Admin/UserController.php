@@ -90,36 +90,57 @@ class UserController extends Controller
     }
 
    public function block(Request $request, $id)
-{
-    $request->validate([
-        'ly_do_block' => 'required|string',
-        'kieu_block' => 'nullable|in:vinh_vien,7_ngay,1_ngay',
-    ]);
+    {
+        $request->validate([
+            'ly_do_block' => 'required|string',
+        ]);
 
-    $user = User::findOrFail($id);
+        $user = User::findOrFail($id);
 
-    $kieuBlock = $request->kieu_block ?? '1_ngay'; // Nếu không truyền thì mặc định là 1 ngày
+        $user->update([
+            'trang_thai' => 'blocked',
+            'ly_do_block' => $request->ly_do_block,
+            'block_den_ngay' => null,
+            'kieu_block' => 'vinh_vien',
+        ]);
 
-    $blockDenNgay = match ($kieuBlock) {
-        '1_ngay' => now()->addDay(),
-        '7_ngay' => now()->addDays(7),
-        'vinh_vien' => null,
-    };
+        return response()->json([
+            'message' => 'Tài khoản đã bị khóa vĩnh viễn',
+            'status' => 200,
+            'data' => $user->only([
+                'id',
+                'name',
+                'email',
+                'trang_thai',
+                'kieu_block',
+                'block_den_ngay',
+                'ly_do_block'
+            ])
+        ]);
+    }
+    public function unblock($id)
+    {
+        $user = User::findOrFail($id);
 
-    $user->trang_thai = 'blocked';
-    $user->ly_do_block = $request->ly_do_block;
-    $user->block_den_ngay = $blockDenNgay;
-    $user->kieu_block = $kieuBlock;
-    $user->save();
+        if ($user->trang_thai !== 'blocked') {
+            return response()->json([
+                'message' => 'Tài khoản không bị khóa',
+            ], 400);
+        }
 
-    return response()->json([
-        'message' => 'Tài khoản đã bị khóa',
-        'status' => 200,
-        'data' => $user->only([
-            'id', 'name', 'email', 'trang_thai', 'kieu_block', 'block_den_ngay', 'ly_do_block'
-        ])
-    ], 200);
-}
+        $user->update([
+            'trang_thai' => 'active',
+            'ly_do_block' => null,
+            'block_den_ngay' => null,
+            'kieu_block' => null,
+        ]);
+
+        return response()->json([
+            'message' => 'Tài khoản đã được mở khóa',
+            'data' => $user->only(['id', 'name', 'email', 'trang_thai']),
+        ]);
+    }
+
 
 
 
