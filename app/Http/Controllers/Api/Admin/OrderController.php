@@ -8,9 +8,28 @@ use Illuminate\Http\Request;
 class OrderController
 {
     // Danh sách đơn hàng
-    public function index()
+public function index(Request $request)
     {
-        return response()->json(Order::with(['orderDetails', 'paymentMethod'])->get());
+        // Lấy tất cả các đơn hàng với phân trang
+        $query = Order::query();
+
+        // Kiểm tra nếu có giá trị tìm kiếm trong request
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            
+            // Tìm kiếm theo các cột: ma_don_hang, user_id, trang_thai_don_hang
+            $query->where(function($query) use ($search) {
+                $query->where('ma_don_hang', 'like', "%$search%")
+                      ->orWhere('user_id', 'like', "%$search%")
+                      ->orWhere('trang_thai_don_hang', 'like', "%$search%");
+            });
+        }
+
+        // Phân trang kết quả
+        $orders = $query->paginate(10);  // 10 đơn hàng mỗi trang
+
+        // Trả về kết quả tìm kiếm và phân trang dưới dạng JSON
+        return response()->json($orders);
     }
 
     // Chi tiết đơn hàng
