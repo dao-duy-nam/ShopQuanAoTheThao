@@ -67,6 +67,24 @@ class AuthController extends Controller
             return response()->json(['message' => 'Email hoặc mật khẩu không đúng.']);
         }
 
+         // Kiểm tra trạng thái tài khoản bị block
+        if ($user->trang_thai === 'blocked') {
+            if (is_null($user->block_den_ngay) || now()->lessThan($user->block_den_ngay)) {
+                return response()->json([
+                    'message' => 'Tài khoản của bạn đang bị khóa.',
+                    'ly_do_block' => $user->ly_do_block,
+                    'block_den_ngay' => $user->block_den_ngay,
+                ], 403);
+            }
+
+           
+            $user->update([
+                'trang_thai' => 'active',
+                'block_den_ngay' => null,
+                'ly_do_block' => null,
+                'kieu_block' => null,
+            ]);
+        }
 
         if (!$user->hasVerifiedEmail()) {
             return response()->json([

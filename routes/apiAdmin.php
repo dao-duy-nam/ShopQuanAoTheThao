@@ -42,6 +42,7 @@ Route::prefix('admin')->group(function () {
             Route::get('/{id}', [UserController::class, 'show']);
             Route::patch('/{id}/role', [UserController::class, 'updateRole']);
             Route::patch('/{id}/block', [UserController::class, 'block']);
+            Route::post('/{id}/unblock', [UserController::class, 'unblock']);
         });
     });
 

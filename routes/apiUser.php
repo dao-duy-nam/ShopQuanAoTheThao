@@ -2,8 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Client\AuthController;
-use App\Http\Controllers\Api\Client\ProductController;
 use App\Http\Controllers\API\Client\ReviewController;
+use App\Http\Controllers\Api\Client\ProductController;
+use App\Http\Controllers\Api\Client\ClientAccountController;
 use App\Http\Controllers\Api\Client\ForgotPasswordController;
 
 
@@ -32,4 +33,10 @@ Route::middleware(['auth:sanctum', 'user'])->group(function () {
     Route::put('/reviews/{id}', [ReviewController::class, 'update']);
     Route::delete('/reviews/{id}', [ReviewController::class, 'destroy']);
 
+});
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/client/profile', [ClientAccountController::class, 'profile']);
+    Route::put('/client/profile', [ClientAccountController::class, 'updateProfile']);
+    Route::put('/client/change-password', [ClientAccountController::class, 'changePassword']);
+    Route::post('/client/logout', [ClientAccountController::class, 'logout']);
 });
