@@ -68,6 +68,8 @@ Route::prefix('admin')->group(function () {
     // Quản lý biến thể sản phẩm
     Route::prefix('variants')->group(function () {
         Route::get('/{id}', [VariantController::class, 'show']);
+        Route::get('/list/{productId}', [VariantController::class, 'getByProductId']);
+        Route::get('/deleted/{productId}', [VariantController::class, 'getDeletedByProductId']);
         Route::post('/{productId}', [VariantController::class, 'store']);
         Route::post('update/{id}', [VariantController::class, 'update']);
         Route::delete('/{id}', [VariantController::class, 'destroy']);
