@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -24,5 +25,17 @@ class Product extends Model
     {
         return $this->belongsTo(Category::class, 'danh_muc_id');
     }
-}
+    public function danhGias()
+    {
+        return $this->hasMany(DanhGia::class);
+    }
 
+    public function bienThes()
+    {
+        return $this->hasMany(BienThe::class);
+    }
+        public function variants()
+    {
+        return $this->hasMany(Variant::class, 'san_pham_id');
+    }
+}

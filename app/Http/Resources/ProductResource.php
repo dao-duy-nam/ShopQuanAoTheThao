@@ -19,6 +19,7 @@ class ProductResource extends JsonResource
             'danh_muc_id'     => $this->danh_muc_id,
             'created_at'      => $this->created_at ? $this->created_at->format('d/m/Y H:i') : null,
             'updated_at'      => $this->updated_at ? $this->updated_at->format('d/m/Y H:i') : null,
+            'variants' => VariantResource::collection($this->variants),
         ];
     }
 }

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('gio_hangs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('nguoi_dung_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->timestamps(); // tạo created_at và updated_at
         });
     }

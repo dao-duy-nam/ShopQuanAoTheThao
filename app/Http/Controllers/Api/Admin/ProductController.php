@@ -3,24 +3,33 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Models\Product;
+use App\Models\Variant;
 use Illuminate\Http\Request;
+use App\Services\VariantService;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use Cloudinary\Api\Upload\UploadApi;
 use App\Http\Resources\ProductResource;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\StoreProductRequest;
+use App\Http\Requests\UpdateProductRequest;
 
 class ProductController extends Controller
 {
+    protected $variantService;
+
+    public function __construct(VariantService $variantService)
+    {
+        $this->variantService = $variantService;
+    }
+
     public function index(Request $request)
     {
-        $query = Product::query();
+        $query = Product::with(['variants.size', 'variants.color']);
 
-        // Tìm kiếm
         if ($request->has('keyword')) {
             $query->where('ten', 'like', '%' . $request->keyword . '%');
         }
-
-        // Ẩn sản phẩm đã bị xóa mềm
         $products = $query->latest()->paginate(10);
         if ($products->isEmpty()) {
             return response()->json([
@@ -29,7 +38,6 @@ class ProductController extends Controller
                 'message' => $request->filled('keyword')
                     ? 'Không tìm thấy sản phẩm nào với từ khóa "' . $request->keyword . '"'
                     : 'Không có sản phẩm nào trong trang này',
-                    
             ]);
         }
         return response()->json([
@@ -39,48 +47,25 @@ class ProductController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreProductRequest  $request)
     {
-        $validator = Validator::make($request->all(), [
-            'ten'             => 'required|string|max:255',
-            'gia'             => 'required|numeric|min:0',
-            'gia_khuyen_mai'  => 'nullable|numeric|min:0',
-            'so_luong'        => 'required|integer|min:0',
-            'mo_ta'           => 'nullable|string',
-            'hinh_anh'        => 'nullable|string|url',
-            'danh_muc_id'     => 'required|exists:danh_mucs,id',
-        ], [
-            'ten.required'             => 'Tên sản phẩm không được để trống.',
-            'ten.string'               => 'Tên sản phẩm phải là chuỗi ký tự.',
-            'ten.max'                  => 'Tên sản phẩm không được vượt quá 255 ký tự.',
-            'gia.required'             => 'Giá sản phẩm không được để trống.',
-            'gia.numeric'              => 'Giá sản phẩm phải là số.',
-            'gia.min'                  => 'Giá sản phẩm không được nhỏ hơn 0.',
-            'gia_khuyen_mai.numeric'  => 'Giá khuyến mãi phải là số.',
-            'gia_khuyen_mai.min'      => 'Giá khuyến mãi không được nhỏ hơn 0.',
-            'so_luong.required'       => 'Số lượng sản phẩm không được để trống.',
-            'so_luong.integer'        => 'Số lượng sản phẩm phải là số nguyên.',
-            'so_luong.min'            => 'Số lượng sản phẩm không được nhỏ hơn 0.',
-            'mo_ta.string'            => 'Mô tả sản phẩm phải là chuỗi ký tự.',
-            'hinh_anh.string'         => 'Hình ảnh phải là chuỗi ký tự.',
-            'hinh_anh.url'            => 'Hình ảnh phải là đường dẫn hợp lệ.',
-            'danh_muc_id.required'    => 'Danh mục sản phẩm không được để trống.',
-            'danh_muc_id.exists'      => 'Danh mục sản phẩm không hợp lệ.',
+        $data = $request->validated();
+        $product = Product::create([
+            'ten' => $data['ten'],
+            'mo_ta' => $data['mo_ta'] ?? null,
+            'hinh_anh' => $data['hinh_anh'] ?? null,
+            'danh_muc_id' => $data['danh_muc_id'],
+            'gia' => $data['gia'],
+            'so_luong' => 0,
         ]);
-
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        if (!empty($data['variants'])) {
+            foreach ($data['variants'] as $i => &$variant) {
+                $variant['hinh_anh'] = $request->file("variants.$i.hinh_anh") ?? null;
+            }
+            $this->variantService->createVariants($product, $data['variants']);
         }
-
-        if ($request->hasFile('hinh_anh')) {
-            $imagePath = $request->file('hinh_anh')->store('products', 'public');
-            $dataValidate['hinh_anh'] = $imagePath;
-        }
-        $product = Product::create($request->all());
-
         return response()->json([
-            'data' => new ProductResource($product),
+            'data' => new ProductResource($product->fresh(['variants.size', 'variants.color'])),
             'status' => 201,
             'message' => 'Tạo sản phẩm thành công',
         ]);
@@ -88,81 +73,56 @@ class ProductController extends Controller
 
     public function show($id)
     {
-        $product = Product::withTrashed()->findOrFail($id);
-
+        $product = Product::findOrFail($id);
         return response()->json([
-            'data' => new ProductResource($product),
+            'data' => new ProductResource($product->fresh(['variants.size', 'variants.color'])),
             'status' => 200,
             'message' => 'Hiển thị chi tiết sản phẩm thành công',
         ]);
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateProductRequest $request, $id)
     {
-        $product = Product::withTrashed()->findOrFail($id);
-
-        $validator = Validator::make($request->all(), [
-            'ten'             => 'required|string|max:255',
-            'gia'             => 'required|numeric|min:0',
-            'gia_khuyen_mai'  => 'nullable|numeric|min:0',
-            'so_luong'        => 'required|integer|min:0',
-            'mo_ta'           => 'nullable|string',
-            'hinh_anh'        => 'nullable|string|url',
-            'danh_muc_id'     => 'required|exists:danh_mucs,id',
-        ], [
-            'ten.required'             => 'Tên sản phẩm không được để trống.',
-            'ten.string'               => 'Tên sản phẩm phải là chuỗi ký tự.',
-            'ten.max'                  => 'Tên sản phẩm không được vượt quá 255 ký tự.',
-            'gia.required'             => 'Giá sản phẩm không được để trống.',
-            'gia.numeric'              => 'Giá sản phẩm phải là số.',
-            'gia.min'                  => 'Giá sản phẩm không được nhỏ hơn 0.',
-            'gia_khuyen_mai.numeric'  => 'Giá khuyến mãi phải là số.',
-            'gia_khuyen_mai.min'      => 'Giá khuyến mãi không được nhỏ hơn 0.',
-            'so_luong.required'       => 'Số lượng sản phẩm không được để trống.',
-            'so_luong.integer'        => 'Số lượng sản phẩm phải là số nguyên.',
-            'so_luong.min'            => 'Số lượng sản phẩm không được nhỏ hơn 0.',
-            'mo_ta.string'            => 'Mô tả sản phẩm phải là chuỗi ký tự.',
-            'hinh_anh.string'         => 'Hình ảnh phải là chuỗi ký tự.',
-            'hinh_anh.url'            => 'Hình ảnh phải là đường dẫn hợp lệ.',
-            'danh_muc_id.required'    => 'Danh mục sản phẩm không được để trống.',
-            'danh_muc_id.exists'      => 'Danh mục sản phẩm không hợp lệ.',
-        ]);
-
-
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        if ($request->hasFile('hinh_anh')) {
-            $imagePath = $request->file('hinh_anh')->store('products', 'public');
-            $dataValidate['hinh_anh'] = $imagePath;
-
-            if ($product->hinh_anh) {
-                Storage::disk('public')->delete($product->hinh_anh);
+        $product = Product::findOrFail($id);
+        $data = $request->validated();
+        if (!empty($data['hinh_anh']) && !empty($data['hinh_anh_public_id'])) {
+            if (!empty($product->hinh_anh_public_id)) {
+                try {
+                    $uploadApi = new UploadApi();
+                    $uploadApi->destroy($product->hinh_anh_public_id);
+                } catch (\Exception $e) {
+                    Log::error("Xóa ảnh Cloudinary thất bại: " . $e->getMessage());
+                }
             }
+            $product->hinh_anh = $data['hinh_anh'];
+            $product->hinh_anh_public_id = $data['hinh_anh_public_id'];
         }
 
-        $product->update($request->all());
-
+        $product->update([
+            'ten' => $data['ten'],
+            'gia' => $data['gia'],
+            'gia_khuyen_mai' => $data['gia_khuyen_mai'] ?? null,
+            'so_luong' => $data['so_luong'],
+            'mo_ta' => $data['mo_ta'] ?? null,
+            'danh_muc_id' => $data['danh_muc_id'],
+        ]);
         return response()->json([
-            'data' => new ProductResource($product),
+            'data' => new ProductResource($product->fresh(['variants.Size', 'variants.Color'])),
             'status' => 200,
             'message' => 'Cập nhật sản phẩm thành công',
         ]);
     }
 
+
+
     public function destroy($id)
     {
         $product = Product::findOrFail($id);
-        if ($product->hinh_anh) {
-            Storage::disk('public')->delete($product->hinh_anh);
-        }
         $product->delete();
-
+        Variant::where('san_pham_id', $product->id)->delete();
         return response()->json([
             'status' => 200,
-            'message' => 'Xóa thành công',
+            'message' => 'Xóa sản phẩm thành công ',
         ]);
     }
 
@@ -181,6 +141,7 @@ class ProductController extends Controller
     {
         $product = Product::onlyTrashed()->findOrFail($id);
         $product->restore();
+        Variant::onlyTrashed()->where('san_pham_id', $product->id)->restore();
 
         return response()->json([
             'status' => 200,
@@ -191,6 +152,11 @@ class ProductController extends Controller
     public function forceDelete($id)
     {
         $product = Product::onlyTrashed()->findOrFail($id);
+
+        if ($product->hinh_anh) {
+            Storage::disk('public')->delete($product->hinh_anh);
+        }
+        Variant::onlyTrashed()->where('san_pham_id', $product->id)->forceDelete();
         $product->forceDelete();
 
         return response()->json([

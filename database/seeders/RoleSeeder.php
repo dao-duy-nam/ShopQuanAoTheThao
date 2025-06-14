@@ -10,7 +10,19 @@ class RoleSeeder extends Seeder
 {
     public function run(): void
     {
-        Role::create(['ten_vai_tro' => 'Admin', 'mo_ta' => 'Quản trị viên']);
-        Role::create(['ten_vai_tro' => 'User', 'mo_ta' => 'Người dùng thông thường']);
+        Role::Create(
+            ['ten_vai_tro' => 'admin'],
+            ['mo_ta' => 'Quản trị viên']
+        );
+
+        Role::Create(
+            ['ten_vai_tro' => 'user'],
+            ['mo_ta' => 'Người dùng thông thường']
+        );
+
+        Role::Create(
+            ['ten_vai_tro' => 'staff'],
+            ['mo_ta' => 'Nhân viên ']
+        );
     }
 }

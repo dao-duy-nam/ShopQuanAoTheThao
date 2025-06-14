@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('kich_cos', function (Blueprint $table) {
             $table->id();
-            $table->string('kich_co');
+            $table->string('kich_co')->unique();
             $table->timestamps();
         });
     }
