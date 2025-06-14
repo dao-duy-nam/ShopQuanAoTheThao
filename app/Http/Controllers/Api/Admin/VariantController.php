@@ -27,19 +27,19 @@ class VariantController extends Controller
         ]);
     }
 
-    public function getByProductId($productId)
-    {
-        $variants = Variant::with(['Size', 'Color'])
-            ->where('san_pham_id', $productId)
-            ->withTrashed()
-            ->get();
+   public function getByProductId($productId)
+{
+    $variants = Variant::with(['Size', 'Color'])
+        ->where('san_pham_id', $productId)
+        ->get();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Lấy danh sách biến thể theo sản phẩm thành công.',
-            'data' => $variants
-        ]);
-    }
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Lấy danh sách biến thể theo sản phẩm thành công.',
+        'data' => $variants
+    ]);
+}
+
 
     public function store(StoreVariantRequest $request, $productId)
     {
@@ -178,6 +178,27 @@ class VariantController extends Controller
             'status' => 'success',
             'message' => 'Khôi phục tất cả biến thể của sản phẩm thành công.',
             'data' => null
+        ]);
+    }
+    public function getDeletedByProductId($productId)
+    {
+        $variants = Variant::onlyTrashed()
+            ->with(['Size', 'Color'])
+            ->where('san_pham_id', $productId)
+            ->get();
+
+        if ($variants->isEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Không có biến thể bị xóa mềm của sản phẩm này.',
+                'data' => []
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Lấy danh sách biến thể đã xóa mềm của sản phẩm thành công.',
+            'data' => $variants
         ]);
     }
 
