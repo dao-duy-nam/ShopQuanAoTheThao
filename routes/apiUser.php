@@ -32,7 +32,6 @@ Route::middleware(['auth:sanctum', 'user'])->group(function () {
     Route::post('/reviews', [ReviewController::class, 'store']);
     Route::put('/reviews/{id}', [ReviewController::class, 'update']);
     Route::delete('/reviews/{id}', [ReviewController::class, 'destroy']);
-
 });
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/client/profile', [ClientAccountController::class, 'profile']);

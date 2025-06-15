@@ -15,7 +15,7 @@ class VariantResource extends JsonResource
             'so_luong' => $this->so_luong,
             'gia' => $this->gia,
             'gia_khuyen_mai' => $this->gia_khuyen_mai,
-            'hinh_anh' => $this->hinh_anh ? json_decode($this->hinh_anh, true) : null,
+            'hinh_anh' => $this->hinh_anh,
         ];
     }
 }
