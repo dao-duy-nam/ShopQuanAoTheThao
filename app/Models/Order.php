@@ -29,5 +29,9 @@ class Order extends Model
         return $this->hasMany(OrderDetail::class, 'don_hang_id');
     }
 
+         public function paymentMethod()
+    {
+        return $this->belongsTo(PaymentMethod::class, 'phuong_thuc_thanh_toan_id');
+    }
     
 }

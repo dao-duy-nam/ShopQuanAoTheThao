@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\Admin\DanhGiaController;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\CategoryController;
 use App\Http\Controllers\Api\Admin\AdminAuthController;
+use App\Http\Controllers\Api\Admin\OrderController;
 
 Route::prefix('admin')->group(function () {
 
@@ -42,6 +43,7 @@ Route::prefix('admin')->group(function () {
             Route::get('/{id}', [UserController::class, 'show']);
             Route::patch('/{id}/role', [UserController::class, 'updateRole']);
             Route::patch('/{id}/block', [UserController::class, 'block']);
+            Route::post('/{id}/unblock', [UserController::class, 'unblock']);
         });
     });
 
@@ -79,4 +81,13 @@ Route::prefix('admin')->group(function () {
         Route::delete('/force-delete/{id}', [VariantController::class, 'forceDelete']);
         Route::delete('/force-delete/product/{productId}', [VariantController::class, 'forceDeleteByProductId']);
     });
+
+
+    Route::prefix('orders')->group(function () {
+    Route::get('/', [OrderController::class, 'index']);
+    Route::get('/{id}', [OrderController::class, 'show']);
+    // Route::post('/', [OrderController::class, 'store']);
+    Route::put('/{id}', [OrderController::class, 'update']);
+    // Route::delete('/{id}', [OrderController::class, 'destroy']);
+});
 });
