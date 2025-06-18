@@ -12,11 +12,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('users', function (Blueprint $table) {
-<<<<<<< HEAD
-            $table->integer('otp_send_count')->default(0); 
-=======
             $table->integer('otp_send_count')->default(0);
->>>>>>> b621858 (feat reviewclient)
         });
     }
 
