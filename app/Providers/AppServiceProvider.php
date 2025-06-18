@@ -2,32 +2,23 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Middleware\UserMiddleware;
-use App\Http\Middleware\AdminMiddleware;
-use App\Http\Middleware\StaffMiddleware;
-use App\Http\Middleware\AdminOrStaffMiddleware;
-use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
+use Illuminate\Support\ServiceProvider;
 
-class RouteServiceProvider extends ServiceProvider
+class AppServiceProvider extends ServiceProvider
 {
-    
+    /**
+     * Register any application services.
+     */
+    public function register(): void
+    {
+        //
+    }
 
-public function boot(): void
-{
-    
-    Route::aliasMiddleware('admin', AdminMiddleware::class);
-    Route::aliasMiddleware('staff', StaffMiddleware::class);
-    Route::aliasMiddleware('user', UserMiddleware::class);
-    Route::aliasMiddleware('adminorstaff', AdminOrStaffMiddleware::class);
-
-    parent::boot();
-
-    $this->routes(function () {
-        Route::middleware('api')->group(base_path('routes/apiUser.php'));
-        Route::middleware('api')->group(base_path('routes/apiAdmin.php'));
-        Route::middleware('web')->group(base_path('routes/web.php'));
-    });
-}
-
+    /**
+     * Bootstrap any application services.
+     */
+    public function boot(): void
+    {
+        //
+    }
 }
