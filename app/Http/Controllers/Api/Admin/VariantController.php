@@ -41,7 +41,16 @@ class VariantController extends Controller
     public function store(StoreVariantRequest $request, $productId)
     {
         $validated = $request->validated();
+        $duplicateAttributeTypes = collect($validated['attributes'])
+            ->pluck('thuoc_tinh_id')
+            ->duplicates();
 
+        if ($duplicateAttributeTypes->isNotEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Không thể chọn nhiều giá trị cho cùng một loại thuộc tính (ví dụ: nhiều kích cỡ, nhiều màu sắc).',
+            ], 422);
+        }
         // Kiểm tra trùng biến thể
         $inputAttributes = collect($validated['attributes'])->map(function ($attr) {
             return $attr['thuoc_tinh_id'] . ':' . $attr['gia_tri'];

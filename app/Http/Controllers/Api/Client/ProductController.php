@@ -3,29 +3,29 @@
 namespace App\Http\Controllers\Api\Client;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ProductResource;
 use App\Models\Product;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-
     public function index(Request $request)
     {
-        $query = Product::with(['variants.color', 'variants.size']); 
+        $query = Product::with(['variants.attributeValues.attribute']);
+
         if ($request->filled('keyword')) {
             $query->where('ten', 'like', '%' . $request->keyword . '%');
         }
-        if ($request->filled('mau_sac_id')) {
-            $mauSacId = $request->mau_sac_id;
-            $query->whereHas('variants', function ($q) use ($mauSacId) {
-                $q->where('mau_sac_id', $mauSacId);
-            });
-        }
-        if ($request->filled('kich_co_id')) {
-            $kichCoId = $request->kich_co_id;
-            $query->whereHas('variants', function ($q) use ($kichCoId) {
-                $q->where('kich_co_id', $kichCoId);
-            });
+
+        if ($request->has('attribute_filter') && is_array($request->attribute_filter)) {
+            foreach ($request->attribute_filter as $attrName => $attrValue) {
+                $query->whereHas('variants.attributeValues', function ($q) use ($attrName, $attrValue) {
+                    $q->whereRaw('LOWER(gia_tri) = ?', [mb_strtolower($attrValue)])
+                        ->whereHas('attribute', function ($q2) use ($attrName) {
+                            $q2->whereRaw('LOWER(ten) = ?', [mb_strtolower($attrName)]);
+                        });
+                });
+            }
         }
         if ($request->filled('gia_min')) {
             $query->where('gia', '>=', $request->gia_min);
@@ -40,17 +40,19 @@ class ProductController extends Controller
         }
         $perPage = $request->get('per_page', 10);
         $products = $query->paginate($perPage);
-        return response()->json($products);
+        return ProductResource::collection($products);
     }
+
+
 
     public function show($id)
     {
-        $product = Product::with(['variants.color', 'variants.size'])->find($id);
+        $product = Product::with(['variants.attributeValues.attribute'])->find($id);
         if (!$product) {
             return response()->json([
-                'message' => 'Product not found',
+                'message' => 'Sản phẩm không tồn tại.',
             ], 404);
         }
-        return response()->json($product);
+        return new ProductResource($product);
     }
 }
