@@ -14,7 +14,7 @@ class OrderSeeder extends Seeder
         // Đơn hàng đã giao thành công
         $donHang1 = Order::create([
             'ma_don_hang' => 'DH001',
-            'user_id' => 3,
+            'user_id' => 2,
             'phuong_thuc_thanh_toan_id' => 1,
             'trang_thai_don_hang' => 'da_giao',
             'trang_thai_thanh_toan' => 'da_thanh_toan',

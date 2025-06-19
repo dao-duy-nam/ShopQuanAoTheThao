@@ -10,12 +10,16 @@ class VariantResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'kich_co' => $this->Size?->kich_co,
-            'ten_mau_sac' => $this->Color?->ten_mau_sac,
             'so_luong' => $this->so_luong,
             'gia' => $this->gia,
             'gia_khuyen_mai' => $this->gia_khuyen_mai,
             'hinh_anh' => $this->hinh_anh,
+            'thuoc_tinh' => $this->attributeValues->map(function ($value) {
+                return [
+                    'ten' => optional($value->attribute)->ten,
+                    'gia_tri' => $value->gia_tri,
+                ];
+            })->values(), // reset key -> 0,1,2
         ];
     }
 }

@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
-use App\Models\Size;
-use App\Models\Color;
 use App\Models\Product;
 use App\Models\Variant;
 use Illuminate\Http\Request;
+use App\Models\AttributeValue;
 use App\Services\VariantService;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
@@ -52,40 +51,12 @@ class ProductController extends Controller
     {
         $data = $request->validated();
 
-
         $imagePaths = [];
         if ($request->hasFile('hinh_anh')) {
             foreach ($request->file('hinh_anh') as $image) {
                 $imagePaths[] = $image->store('products', 'public');
             }
         }
-
-
-        if (empty($data['variants'])) {
-
-            Size::firstOrCreate(['kich_co'      => 'DEFAULT']);
-            Color::firstOrCreate(['ten_mau_sac' => 'DEFAULT']);
-
-
-            $data['variants'] = [[
-                'kich_co'        => 'DEFAULT',
-                'mau_sac'        => 'DEFAULT',
-                'so_luong'       => $data['so_luong'],
-                'gia'            => $data['gia'],
-                'gia_khuyen_mai' => $data['gia_khuyen_mai'] ?? null,
-                'hinh_anh'       => null,
-            ]];
-        }
-
-
-        foreach ($data['variants'] as $i => &$variant) {
-            $variant['hinh_anh'] = $request->hasFile("variants.$i.hinh_anh")
-                ? $request->file("variants.$i.hinh_anh")->store('variant-images', 'public')
-                : ($variant['hinh_anh'] ?? null);
-        }
-
-
-        $totalQty = collect($data['variants'])->sum('so_luong');
 
         $product = Product::create([
             'ten'            => $data['ten'],
@@ -94,20 +65,42 @@ class ProductController extends Controller
             'danh_muc_id'    => $data['danh_muc_id'],
             'gia'            => $data['gia'],
             'gia_khuyen_mai' => $data['gia_khuyen_mai'] ?? null,
-            'so_luong'       => $totalQty,
+            'so_luong'       => $data['so_luong'] ?? 0,
         ]);
 
-
-        $this->variantService->createVariants($product, $data['variants']);
-
+        if (!empty($data['variants'])) {
+            foreach ($data['variants'] as $i => $variantData) {
+                $variantImages = [];
+                if ($request->hasFile("variants.$i.images")) {
+                    foreach ($request->file("variants.$i.images") as $img) {
+                        $variantImages[] = $img->store('variants', 'public');
+                    }
+                }
+                $variant = Variant::create([
+                    'san_pham_id'     => $product->id,
+                    'so_luong'        => $variantData['so_luong'],
+                    'gia'             => $variantData['gia'],
+                    'gia_khuyen_mai'  => $variantData['gia_khuyen_mai'] ?? null,
+                    'hinh_anh'        => json_encode($variantImages),
+                ]);
+                if (!empty($variantData['attributes']) && is_array($variantData['attributes'])) {
+                    foreach ($variantData['attributes'] as $attr) {
+                        $value = AttributeValue::firstOrCreate([
+                            'thuoc_tinh_id' => $attr['thuoc_tinh_id'],
+                            'gia_tri'       => $attr['gia_tri'],
+                        ]);
+                        $variant->attributeValues()->attach($value->id);
+                    }
+                }
+            }
+        }
 
         return response()->json([
-            'data'    => new ProductResource($product),
-            'status'  => 201,
-            'message' => 'Tạo sản phẩm thành công',
+            'status' => 'success',
+            'message' => 'Tạo sản phẩm thành công' . (empty($data['variants']) ? '' : ' và đã thêm biến thể.'),
+            'data' => new ProductResource($product->load('variants.attributeValues.attribute')),
         ]);
     }
-
 
 
     public function show($id)
@@ -128,7 +121,7 @@ class ProductController extends Controller
         $product = Product::with('variants.size', 'variants.color')->findOrFail($id);
         $data    = $request->validated();
 
-        
+
         if ($request->hasFile('hinh_anh')) {
             foreach (json_decode($product->hinh_anh ?? '[]', true) as $oldPath) {
                 if (Storage::disk('public')->exists($oldPath)) {
@@ -143,14 +136,12 @@ class ProductController extends Controller
 
             $product->hinh_anh = json_encode($newPaths);
         }
-
-        
         $isDefaultVariant = $product->variants->count() === 1 &&
             optional($product->variants->first()->size)->kich_co === 'DEFAULT' &&
             optional($product->variants->first()->color)->ten_mau_sac === 'DEFAULT';
 
         if ($isDefaultVariant) {
-            
+
             $product->update([
                 'ten'            => $data['ten'],
                 'gia'            => $data['gia'],
@@ -160,22 +151,21 @@ class ProductController extends Controller
                 'so_luong'       => $data['so_luong'],
             ]);
 
-            
             $product->variants->first()->update([
                 'so_luong' => $data['so_luong']
             ]);
         } else {
-            
+
             $product->update([
                 'ten'            => $data['ten'],
                 'gia'            => $data['gia'],
                 'gia_khuyen_mai' => $data['gia_khuyen_mai'] ?? null,
                 'mo_ta'          => $data['mo_ta'] ?? null,
                 'danh_muc_id'    => $data['danh_muc_id'],
-                
+
             ]);
 
-            
+
             $totalQty = $product->variants()->sum('so_luong');
             $product->update(['so_luong' => $totalQty]);
         }
@@ -186,8 +176,6 @@ class ProductController extends Controller
             'message' => 'Cập nhật sản phẩm thành công',
         ]);
     }
-
-
 
 
     public function destroy($id)
@@ -226,22 +214,13 @@ class ProductController extends Controller
 
     public function forceDelete($id)
     {
-
         $product = Product::onlyTrashed()->findOrFail($id);
-
-
         foreach (json_decode($product->hinh_anh ?? '[]', true) as $path) {
             if (Storage::disk('public')->exists($path)) {
                 Storage::disk('public')->delete($path);
             }
         }
-
-
-        $variants = Variant::onlyTrashed()
-            ->where('san_pham_id', $product->id)
-            ->get();
-
-
+        $variants = Variant::onlyTrashed()->where('san_pham_id', $product->id)->get();
         foreach ($variants as $variant) {
             foreach (json_decode($variant->hinh_anh ?? '[]', true) as $img) {
                 if (Storage::disk('public')->exists($img)) {
@@ -249,16 +228,8 @@ class ProductController extends Controller
                 }
             }
         }
-
-
-        Variant::onlyTrashed()
-            ->where('san_pham_id', $product->id)
-            ->forceDelete();
-
-
+        Variant::onlyTrashed()->where('san_pham_id', $product->id)->forceDelete();
         $product->forceDelete();
-
-
         return response()->json([
             'status'  => 200,
             'message' => 'Đã xóa vĩnh viễn sản phẩm cùng toàn bộ ảnh & biến thể.',

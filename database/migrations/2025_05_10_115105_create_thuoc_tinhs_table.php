@@ -11,10 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('anh_san_phams', function (Blueprint $table) {
+        Schema::create('thuoc_tinhs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('san_pham_id')->constrained('san_phams')->cascadeOnDelete();
-            $table->string('hinh_anh');
+            $table->string('ten'); // Ví dụ: Màu sắc, Kích thước
             $table->timestamps();
         });
     }
@@ -24,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('anh_san_phams');
+        Schema::dropIfExists('thuoc_tinhs');
     }
 };
