@@ -1,14 +1,15 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\Admin\VariantController;
 use App\Http\Controllers\Api\Admin\UserController;
+use App\Http\Controllers\Api\Admin\OrderController;
 use App\Http\Controllers\Api\Admin\BannerController;
 use App\Http\Controllers\Api\Admin\DanhGiaController;
 use App\Http\Controllers\Api\Admin\ProductController;
+use App\Http\Controllers\Api\Admin\VariantController;
 use App\Http\Controllers\Api\Admin\CategoryController;
 use App\Http\Controllers\Api\Admin\AdminAuthController;
-use App\Http\Controllers\Api\Admin\OrderController;
+use App\Http\Controllers\Api\Admin\AttributeController;
 
 Route::prefix('admin')->group(function () {
 
@@ -82,6 +83,15 @@ Route::prefix('admin')->group(function () {
         Route::delete('/force-delete/product/{productId}', [VariantController::class, 'forceDeleteByProductId']);
     });
 
+    Route::prefix('attributes')->group(function () {
+        Route::get('/', [AttributeController::class, 'index']);
+        Route::get('/deleted', [AttributeController::class, 'trashed']);
+        Route::post('/', [AttributeController::class, 'store']);
+        Route::post('/{id}', [AttributeController::class, 'update']);
+        Route::delete('/{id}', [AttributeController::class, 'destroy']);
+        Route::patch('/restore/{id}', [AttributeController::class, 'restore']);
+        Route::delete('/force-delete/{id}', [AttributeController::class, 'forceDelete']);
+    });
 
     Route::prefix('orders')->group(function () {
         Route::get('/', [OrderController::class, 'index']);
