@@ -3,21 +3,20 @@
 namespace App\Models;
 
 use App\Models\Product;
+use App\Models\AttributeValue;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Variant extends Model
 {
-    use HasFactory,SoftDeletes;
-    
+    use HasFactory, SoftDeletes;
+
 
     protected $table = 'bien_thes';
 
     protected $fillable = [
         'san_pham_id',
-        'kich_co_id',
-        'mau_sac_id',
         'so_luong',
         'so_luong_da_ban',
         'gia',
@@ -25,25 +24,24 @@ class Variant extends Model
         'hinh_anh'
     ];
     protected $casts = ['hinh_anh' => 'array'];
-   
+
     public function Product()
     {
         return $this->belongsTo(Product::class, 'san_pham_id');
     }
 
-  
-    public function Size()
+    public function attributeValues()
     {
-        return $this->belongsTo(Size::class, 'kich_co_id');
+        return $this->belongsToMany(
+            AttributeValue::class,
+            'bien_the_thuoc_tinhs',
+            'bien_the_id',
+            'gia_tri_thuoc_tinh_id'
+        )->withTimestamps();
     }
 
-   
-    public function Color()
+    public function attributeMappings()
     {
-        return $this->belongsTo(Color::class, 'mau_sac_id');
-    }
-    public function reviews()
-    {
-        return $this->hasMany(DanhGia::class, 'variant_id');
+        return $this->hasMany(VariantAttribute::class, 'bien_the_id');
     }
 }

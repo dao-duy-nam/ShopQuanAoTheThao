@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
-use App\Models\Size;
-
-use App\Models\Color;
 use App\Models\Variant;
 use Illuminate\Http\Request;
+use App\Models\AttributeValue;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\VariantResource;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\StoreVariantRequest;
 use App\Http\Requests\UpdateVariantRequest;
@@ -16,66 +16,111 @@ class VariantController extends Controller
 {
     public function show($id)
     {
-        $variant = Variant::with(['Size', 'Color'])
-            ->where('id', $id)
-            ->firstOrFail();
+        $variant = Variant::with('attributeValues.attribute')->findOrFail($id);
 
         return response()->json([
             'status' => 'success',
             'message' => 'Lấy chi tiết biến thể thành công.',
-            'data' => $variant
+            'data' => new VariantResource($variant)
         ]);
     }
 
-   public function getByProductId($productId)
-{
-    $variants = Variant::with(['Size', 'Color'])
-        ->where('san_pham_id', $productId)
-        ->get();
+    public function getByProductId($productId)
+    {
+        $variants = Variant::with('attributeValues.attribute')
+            ->where('san_pham_id', $productId)
+            ->get();
 
-    return response()->json([
-        'status' => 'success',
-        'message' => 'Lấy danh sách biến thể theo sản phẩm thành công.',
-        'data' => $variants
-    ]);
-}
-
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Lấy danh sách biến thể theo sản phẩm thành công.',
+            'data' => VariantResource::collection($variants)
+        ]);
+    }
 
     public function store(StoreVariantRequest $request, $productId)
     {
         $validated = $request->validated();
 
-        $Size = Size::firstOrCreate(['kich_co' => $validated['kich_co']]);
-        $Color = Color::firstOrCreate(['ten_mau_sac' => $validated['mau_sac']]);
+        // Kiểm tra trùng biến thể
+        $inputAttributes = collect($validated['attributes'])->map(function ($attr) {
+            return $attr['thuoc_tinh_id'] . ':' . $attr['gia_tri'];
+        })->sort()->values()->implode(',');
 
-        $hinhAnh = $this->uploadImages($request->file('images'));
+        $existingVariants = Variant::where('san_pham_id', $productId)->with('attributeValues')->get();
 
-        $variant = Variant::create([
-            'san_pham_id' => $productId,
-            'kich_co_id' => $Size->id,
-            'mau_sac_id' => $Color->id,
-            'so_luong' => $validated['so_luong'],
-            'gia' => $validated['gia'],
-            'gia_khuyen_mai' => $validated['gia_khuyen_mai'] ?? null,
-            'hinh_anh' => $hinhAnh,
-        ]);
+        foreach ($existingVariants as $variant) {
+            $existingAttrs = $variant->attributeValues->map(function ($val) {
+                return $val->thuoc_tinh_id . ':' . $val->gia_tri;
+            })->sort()->values()->implode(',');
+
+            if ($existingAttrs === $inputAttributes) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Biến thể với tổ hợp thuộc tính này đã tồn tại.',
+                ], 422);
+            }
+        }
+
+        $variant = DB::transaction(function () use ($validated, $productId, $request) {
+            $images = $this->uploadImages($request->file('images'));
+
+            $variant = Variant::create([
+                'san_pham_id' => $productId,
+                'so_luong' => $validated['so_luong'],
+                'gia' => $validated['gia'],
+                'gia_khuyen_mai' => $validated['gia_khuyen_mai'] ?? null,
+                'hinh_anh' => $images,
+            ]);
+
+            foreach ($validated['attributes'] as $attribute) {
+                $value = AttributeValue::firstOrCreate([
+                    'thuoc_tinh_id' => $attribute['thuoc_tinh_id'],
+                    'gia_tri' => $attribute['gia_tri'],
+                ]);
+                $variant->attributeValues()->attach($value->id);
+            }
+
+            $variant->load('attributeValues.attribute');
+            return $variant;
+        });
 
         return response()->json([
             'status' => 'success',
             'message' => 'Tạo biến thể thành công.',
-            'data' => $variant
+            'data' => new VariantResource($variant)
         ]);
     }
 
     public function update(UpdateVariantRequest $request, $id)
     {
         $variant = Variant::withTrashed()->findOrFail($id);
-
         $validated = $request->validated();
+        if (isset($validated['attributes'])) {
+            $inputAttributes = collect($validated['attributes'])->map(function ($attr) {
+                return $attr['thuoc_tinh_id'] . ':' . $attr['gia_tri'];
+            })->sort()->values()->implode(',');
+
+            $existingVariants = Variant::where('san_pham_id', $variant->san_pham_id)
+                ->where('id', '!=', $variant->id)
+                ->with('attributeValues')->get();
+
+            foreach ($existingVariants as $existingVariant) {
+                $existingAttrs = $existingVariant->attributeValues->map(function ($val) {
+                    return $val->thuoc_tinh_id . ':' . $val->gia_tri;
+                })->sort()->values()->implode(',');
+
+                if ($existingAttrs === $inputAttributes) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Biến thể với tổ hợp thuộc tính này đã tồn tại.',
+                    ], 422);
+                }
+            }
+        }
 
         if ($request->hasFile('images')) {
             $newImages = $this->uploadImages($request->file('images'));
-
             $oldImages = $variant->hinh_anh ?? [];
 
             foreach ($newImages as $newImage) {
@@ -93,126 +138,99 @@ class VariantController extends Controller
 
         $variant->update($validated);
 
+        if (isset($validated['attributes'])) {
+            $attributeValueIds = [];
+            foreach ($validated['attributes'] as $attribute) {
+                $value = AttributeValue::firstOrCreate([
+                    'thuoc_tinh_id' => $attribute['thuoc_tinh_id'],
+                    'gia_tri' => $attribute['gia_tri'],
+                ]);
+                $attributeValueIds[] = $value->id;
+            }
+            $variant->attributeValues()->sync($attributeValueIds);
+        }
+
+        $variant->load('attributeValues.attribute');
+
         return response()->json([
             'status' => 'success',
             'message' => 'Cập nhật biến thể thành công.',
-            'data' => $variant
+            'data' => new VariantResource($variant)
         ]);
     }
 
-
     public function destroy($id)
     {
-        $variant = Variant::find($id);
-        if (!$variant) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Biến thể không tồn tại.',
-                'data' => null
-            ], 404);
-        }
-
+        $variant = Variant::findOrFail($id);
         $variant->delete();
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Xóa mềm biến thể thành công.',
+            'message' => 'Đã xóa mềm biến thể.',
             'data' => null
         ]);
     }
 
     public function deleteByProductId($productId)
     {
-        $exists = Variant::where('san_pham_id', $productId)->exists();
-        if (!$exists) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Không tìm thấy biến thể nào của sản phẩm này.',
-                'data' => null
-            ], 404);
-        }
-
         Variant::where('san_pham_id', $productId)->delete();
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Xóa mềm tất cả biến thể của sản phẩm thành công.',
+            'message' => 'Đã xóa mềm tất cả biến thể của sản phẩm.',
             'data' => null
         ]);
     }
 
     public function restore($id)
     {
-        $variant = Variant::onlyTrashed()->find($id);
-        if (!$variant) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Biến thể không tồn tại hoặc chưa bị xóa mềm.',
-                'data' => null
-            ], 404);
-        }
-
+        $variant = Variant::onlyTrashed()->findOrFail($id);
         $variant->restore();
+        $variant->load('attributeValues.attribute');
 
         return response()->json([
             'status' => 'success',
             'message' => 'Khôi phục biến thể thành công.',
-            'data' => $variant
+            'data' => new VariantResource($variant)
         ]);
     }
 
     public function restoreByProductId($productId)
     {
-        $exists = Variant::onlyTrashed()->where('san_pham_id', $productId)->exists();
-        if (!$exists) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Không có biến thể bị xóa mềm của sản phẩm này để khôi phục.',
-                'data' => null
-            ], 404);
-        }
-
         Variant::onlyTrashed()->where('san_pham_id', $productId)->restore();
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Khôi phục tất cả biến thể của sản phẩm thành công.',
+            'message' => 'Khôi phục tất cả biến thể đã xóa mềm của sản phẩm.',
             'data' => null
         ]);
     }
+
     public function getDeletedByProductId($productId)
     {
         $variants = Variant::onlyTrashed()
-            ->with(['Size', 'Color'])
+            ->with('attributeValues.attribute')
             ->where('san_pham_id', $productId)
             ->get();
 
         if ($variants->isEmpty()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Không có biến thể bị xóa mềm của sản phẩm này.',
+                'message' => 'Không tìm thấy biến thể đã xóa mềm.',
                 'data' => []
             ], 404);
         }
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Lấy danh sách biến thể đã xóa mềm của sản phẩm thành công.',
-            'data' => $variants
+            'message' => 'Lấy danh sách biến thể đã xóa mềm thành công.',
+            'data' => VariantResource::collection($variants)
         ]);
     }
 
     public function forceDelete($id)
     {
-        $variant = Variant::onlyTrashed()->find($id);
-        if (!$variant) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Biến thể không tồn tại hoặc chưa bị xóa mềm.',
-                'data' => null
-            ], 404);
-        }
-
+        $variant = Variant::onlyTrashed()->findOrFail($id);
         $variant->forceDelete();
 
         return response()->json([
@@ -224,20 +242,11 @@ class VariantController extends Controller
 
     public function forceDeleteByProductId($productId)
     {
-        $exists = Variant::onlyTrashed()->where('san_pham_id', $productId)->exists();
-        if (!$exists) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Không có biến thể bị xóa mềm của sản phẩm này để xóa vĩnh viễn.',
-                'data' => null
-            ], 404);
-        }
-
         Variant::onlyTrashed()->where('san_pham_id', $productId)->forceDelete();
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Xóa vĩnh viễn tất cả biến thể của sản phẩm thành công.',
+            'message' => 'Xóa vĩnh viễn tất cả biến thể đã xóa mềm của sản phẩm.',
             'data' => null
         ]);
     }
@@ -246,13 +255,8 @@ class VariantController extends Controller
     {
         if (!$images) return [];
 
-        $paths = [];
-
-        foreach ($images as $image) {
-            $path = $image->store('variants', 'public');
-            $paths[] = $path;
-        }
-
-        return $paths;
+        return array_map(function ($image) {
+            return $image->store('variants', 'public');
+        }, $images);
     }
 }

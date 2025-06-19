@@ -11,10 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('kich_cos', function (Blueprint $table) {
+        Schema::create('bien_the_thuoc_tinhs', function (Blueprint $table) {
             $table->id();
-            $table->string('kich_co')->unique();
+            $table->foreignId('bien_the_id')->constrained('bien_thes')->cascadeOnDelete();
+            $table->foreignId('gia_tri_thuoc_tinh_id')->constrained('gia_tri_thuoc_tinhs')->cascadeOnDelete();
             $table->timestamps();
+            $table->unique(['bien_the_id', 'gia_tri_thuoc_tinh_id']);
         });
     }
 
@@ -23,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('kich_cos');
+        Schema::dropIfExists('bien_the_thuoc_tinhs');
     }
 };

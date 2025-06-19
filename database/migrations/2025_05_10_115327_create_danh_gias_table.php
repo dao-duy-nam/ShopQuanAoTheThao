@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('san_pham_id')->nullable()->constrained('san_phams')->onDelete('cascade');
             $table->foreignId('bien_the_id')->nullable()->constrained('bien_thes')->onDelete('cascade');
+            $table->json('thuoc_tinh_bien_the')->nullable(); 
             $table->text('noi_dung');
             $table->unsignedTinyInteger('so_sao');
             $table->string('hinh_anh')->nullable();

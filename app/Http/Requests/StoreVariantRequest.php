@@ -16,13 +16,13 @@ class StoreVariantRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'kich_co' => 'required|string|max:255',
-            'mau_sac' => 'required|string|max:255',
-            'so_luong' => 'required|integer|min:0',
+           'so_luong' => 'required|integer|min:0',
             'gia' => 'required|numeric|min:0',
             'gia_khuyen_mai' => 'nullable|numeric|min:0',
-            'images' => 'nullable|array|max:4',
-            'images.*' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'images.*' => 'nullable|image',
+            'attributes' => 'required|array',
+            'attributes.*.thuoc_tinh_id' => 'required|integer|exists:thuoc_tinhs,id',
+            'attributes.*.gia_tri' => 'required|string|max:255',
         ];
     }
 
@@ -30,12 +30,6 @@ class StoreVariantRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'kich_co.required' => 'Kích cỡ là bắt buộc.',
-            'kich_co.string' => 'Kích cỡ phải là chuỗi ký tự.',
-            'kich_co.max' => 'Kích cỡ không được vượt quá 255 ký tự.',
-            'mau_sac.required' => 'Màu sắc là bắt buộc.',
-            'mau_sac.string' => 'Màu sắc phải là chuỗi ký tự.',
-            'mau_sac.max' => 'Màu sắc không được vượt quá 255 ký tự.',
             'so_luong.required' => 'Số lượng là bắt buộc.',
             'so_luong.integer' => 'Số lượng phải là số nguyên.',
             'so_luong.min' => 'Số lượng phải lớn hơn hoặc bằng 0.',
@@ -44,11 +38,14 @@ class StoreVariantRequest extends FormRequest
             'gia.min' => 'Giá phải lớn hơn hoặc bằng 0.',
             'gia_khuyen_mai.numeric' => 'Giá khuyến mãi phải là số.',
             'gia_khuyen_mai.min' => 'Giá khuyến mãi phải lớn hơn hoặc bằng 0.',
-            'images.array' => 'Hình ảnh phải là một danh sách.',
-            'images.max' => 'Không được tải lên quá 4 hình ảnh.',
             'images.*.image' => 'Tệp tải lên phải là hình ảnh.',
-            'images.*.mimes' => 'Hình ảnh phải có định dạng jpg, jpeg hoặc png.',
-            'images.*.max' => 'Hình ảnh không được vượt quá 2MB.',
+            'attributes.required' => 'Danh sách thuộc tính là bắt buộc.',
+            'attributes.*.thuoc_tinh_id.required' => 'ID thuộc tính là bắt buộc.',
+            'attributes.*.thuoc_tinh_id.integer' => 'ID thuộc tính phải là số nguyên.',
+            'attributes.*.thuoc_tinh_id.exists' => 'ID thuộc tính không tồn tại.',
+            'attributes.*.gia_tri.required' => 'Giá trị thuộc tính là bắt buộc.',
+            'attributes.*.gia_tri.string' => 'Giá trị thuộc tính phải là chuỗi.',
+            'attributes.*.gia_tri.max' => 'Giá trị thuộc tính không được vượt quá 255 ký tự.',
         ];
     }
 }
