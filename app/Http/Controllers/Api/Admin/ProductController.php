@@ -118,9 +118,8 @@ class ProductController extends Controller
 
     public function update(UpdateProductRequest $request, $id)
     {
-        $product = Product::with('variants.size', 'variants.color')->findOrFail($id);
+        $product = Product::findOrFail($id);
         $data    = $request->validated();
-
 
         if ($request->hasFile('hinh_anh')) {
             foreach (json_decode($product->hinh_anh ?? '[]', true) as $oldPath) {
@@ -136,42 +135,18 @@ class ProductController extends Controller
 
             $product->hinh_anh = json_encode($newPaths);
         }
-        $isDefaultVariant = $product->variants->count() === 1 &&
-            optional($product->variants->first()->size)->kich_co === 'DEFAULT' &&
-            optional($product->variants->first()->color)->ten_mau_sac === 'DEFAULT';
 
-        if ($isDefaultVariant) {
-
-            $product->update([
-                'ten'            => $data['ten'],
-                'gia'            => $data['gia'],
-                'gia_khuyen_mai' => $data['gia_khuyen_mai'] ?? null,
-                'mo_ta'          => $data['mo_ta'] ?? null,
-                'danh_muc_id'    => $data['danh_muc_id'],
-                'so_luong'       => $data['so_luong'],
-            ]);
-
-            $product->variants->first()->update([
-                'so_luong' => $data['so_luong']
-            ]);
-        } else {
-
-            $product->update([
-                'ten'            => $data['ten'],
-                'gia'            => $data['gia'],
-                'gia_khuyen_mai' => $data['gia_khuyen_mai'] ?? null,
-                'mo_ta'          => $data['mo_ta'] ?? null,
-                'danh_muc_id'    => $data['danh_muc_id'],
-
-            ]);
-
-
-            $totalQty = $product->variants()->sum('so_luong');
-            $product->update(['so_luong' => $totalQty]);
-        }
+        $product->update([
+            'ten'            => $data['ten'],
+            'gia'            => $data['gia'],
+            'gia_khuyen_mai' => $data['gia_khuyen_mai'] ?? null,
+            'mo_ta'          => $data['mo_ta'] ?? null,
+            'danh_muc_id'    => $data['danh_muc_id'],
+            'so_luong'       => $data['so_luong'], 
+        ]);
 
         return response()->json([
-            'data'    => new ProductResource($product),
+            'data'    => new ProductResource($product->refresh()),
             'status'  => 200,
             'message' => 'Cập nhật sản phẩm thành công',
         ]);
