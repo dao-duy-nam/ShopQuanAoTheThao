@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Models\Product;
 use App\Models\Variant;
 use Illuminate\Http\Request;
+use App\Models\AttributeValue;
 use App\Services\VariantService;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use Cloudinary\Api\Upload\UploadApi;
 use App\Http\Resources\ProductResource;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\StoreProductRequest;
@@ -25,7 +25,7 @@ class ProductController extends Controller
 
     public function index(Request $request)
     {
-        $query = Product::with(['variants.size', 'variants.color']);
+        $query = Product::query();
 
         if ($request->has('keyword')) {
             $query->where('ten', 'like', '%' . $request->keyword . '%');
@@ -47,72 +47,118 @@ class ProductController extends Controller
         ]);
     }
 
-    public function store(StoreProductRequest  $request)
+    public function store(StoreProductRequest $request)
     {
         $data = $request->validated();
-        $product = Product::create([
-            'ten' => $data['ten'],
-            'mo_ta' => $data['mo_ta'] ?? null,
-            'hinh_anh' => $data['hinh_anh'] ?? null,
-            'danh_muc_id' => $data['danh_muc_id'],
-            'gia' => $data['gia'],
-            'so_luong' => 0,
-        ]);
-        if (!empty($data['variants'])) {
-            foreach ($data['variants'] as $i => &$variant) {
-                $variant['hinh_anh'] = $request->file("variants.$i.hinh_anh") ?? null;
+
+        $imagePaths = [];
+        if ($request->hasFile('hinh_anh')) {
+            foreach ($request->file('hinh_anh') as $image) {
+                $imagePaths[] = $image->store('products', 'public');
             }
-            $this->variantService->createVariants($product, $data['variants']);
         }
+
+        $product = Product::create([
+            'ten'            => $data['ten'],
+            'mo_ta'          => $data['mo_ta'] ?? null,
+            'hinh_anh'       => json_encode($imagePaths),
+            'danh_muc_id'    => $data['danh_muc_id'],
+            'gia'            => $data['gia'],
+            'gia_khuyen_mai' => $data['gia_khuyen_mai'] ?? null,
+            'so_luong'       => $data['so_luong'] ?? 0,
+        ]);
+
+        if (!empty($data['variants'])) {
+            foreach ($data['variants'] as $i => $variantData) {
+                $variantImages = [];
+                if ($request->hasFile("variants.$i.images")) {
+                    foreach ($request->file("variants.$i.images") as $img) {
+                        $variantImages[] = $img->store('variants', 'public');
+                    }
+                }
+                $variant = Variant::create([
+                    'san_pham_id'     => $product->id,
+                    'so_luong'        => $variantData['so_luong'],
+                    'gia'             => $variantData['gia'],
+                    'gia_khuyen_mai'  => $variantData['gia_khuyen_mai'] ?? null,
+                    'hinh_anh'        => json_encode($variantImages),
+                ]);
+                if (!empty($variantData['attributes']) && is_array($variantData['attributes'])) {
+                    $usedAttributeIds = [];
+                    foreach ($variantData['attributes'] as $attr) {
+                        if (in_array($attr['thuoc_tinh_id'], $usedAttributeIds)) {
+                            return response()->json([
+                                'status' => 'error',
+                                'message' => "Biến thể #" . ($i + 1) . " có thuộc tính bị trùng (ID: {$attr['thuoc_tinh_id']}).",
+                            ], 422);
+                        }
+                        $usedAttributeIds[] = $attr['thuoc_tinh_id'];
+                        $value = AttributeValue::firstOrCreate([
+                            'thuoc_tinh_id' => $attr['thuoc_tinh_id'],
+                            'gia_tri'       => $attr['gia_tri'],
+                        ]);
+                        $variant->attributeValues()->attach($value->id);
+                    }
+                }
+            }
+        }
+
         return response()->json([
-            'data' => new ProductResource($product->fresh(['variants.size', 'variants.color'])),
-            'status' => 201,
-            'message' => 'Tạo sản phẩm thành công',
+            'status' => 'success',
+            'message' => 'Tạo sản phẩm thành công' . (empty($data['variants']) ? '' : ' và đã thêm biến thể.'),
+            'data' => new ProductResource($product->load('variants.attributeValues.attribute')),
         ]);
     }
+
 
     public function show($id)
     {
         $product = Product::findOrFail($id);
+
         return response()->json([
-            'data' => new ProductResource($product->fresh(['variants.size', 'variants.color'])),
-            'status' => 200,
+            'data'    => new ProductResource($product),
+            'status'  => 200,
             'message' => 'Hiển thị chi tiết sản phẩm thành công',
         ]);
     }
 
+
+
     public function update(UpdateProductRequest $request, $id)
     {
         $product = Product::findOrFail($id);
-        $data = $request->validated();
-        if (!empty($data['hinh_anh']) && !empty($data['hinh_anh_public_id'])) {
-            if (!empty($product->hinh_anh_public_id)) {
-                try {
-                    $uploadApi = new UploadApi();
-                    $uploadApi->destroy($product->hinh_anh_public_id);
-                } catch (\Exception $e) {
-                    Log::error("Xóa ảnh Cloudinary thất bại: " . $e->getMessage());
+        $data    = $request->validated();
+
+        if ($request->hasFile('hinh_anh')) {
+            foreach (json_decode($product->hinh_anh ?? '[]', true) as $oldPath) {
+                if (Storage::disk('public')->exists($oldPath)) {
+                    Storage::disk('public')->delete($oldPath);
                 }
             }
-            $product->hinh_anh = $data['hinh_anh'];
-            $product->hinh_anh_public_id = $data['hinh_anh_public_id'];
+
+            $newPaths = [];
+            foreach ($request->file('hinh_anh') as $img) {
+                $newPaths[] = $img->store('products', 'public');
+            }
+
+            $product->hinh_anh = json_encode($newPaths);
         }
 
         $product->update([
-            'ten' => $data['ten'],
-            'gia' => $data['gia'],
+            'ten'            => $data['ten'],
+            'gia'            => $data['gia'],
             'gia_khuyen_mai' => $data['gia_khuyen_mai'] ?? null,
-            'so_luong' => $data['so_luong'],
-            'mo_ta' => $data['mo_ta'] ?? null,
-            'danh_muc_id' => $data['danh_muc_id'],
+            'mo_ta'          => $data['mo_ta'] ?? null,
+            'danh_muc_id'    => $data['danh_muc_id'],
+            'so_luong'       => $data['so_luong'],
         ]);
+
         return response()->json([
-            'data' => new ProductResource($product->fresh(['variants.Size', 'variants.Color'])),
-            'status' => 200,
+            'data'    => new ProductResource($product->refresh()),
+            'status'  => 200,
             'message' => 'Cập nhật sản phẩm thành công',
         ]);
     }
-
 
 
     public function destroy($id)
@@ -152,16 +198,24 @@ class ProductController extends Controller
     public function forceDelete($id)
     {
         $product = Product::onlyTrashed()->findOrFail($id);
-
-        if ($product->hinh_anh) {
-            Storage::disk('public')->delete($product->hinh_anh);
+        foreach (json_decode($product->hinh_anh ?? '[]', true) as $path) {
+            if (Storage::disk('public')->exists($path)) {
+                Storage::disk('public')->delete($path);
+            }
+        }
+        $variants = Variant::onlyTrashed()->where('san_pham_id', $product->id)->get();
+        foreach ($variants as $variant) {
+            foreach (json_decode($variant->hinh_anh ?? '[]', true) as $img) {
+                if (Storage::disk('public')->exists($img)) {
+                    Storage::disk('public')->delete($img);
+                }
+            }
         }
         Variant::onlyTrashed()->where('san_pham_id', $product->id)->forceDelete();
         $product->forceDelete();
-
         return response()->json([
-            'status' => 200,
-            'message' => 'Đã xóa vĩnh viễn sản phẩm',
+            'status'  => 200,
+            'message' => 'Đã xóa vĩnh viễn sản phẩm cùng toàn bộ ảnh & biến thể.',
         ]);
     }
 }

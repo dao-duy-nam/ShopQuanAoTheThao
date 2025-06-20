@@ -14,8 +14,6 @@ return new class extends Migration
         Schema::create('bien_thes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('san_pham_id')->constrained('san_phams')->cascadeOnDelete();
-            $table->foreignId('kich_co_id')->constrained('kich_cos');
-            $table->foreignId('mau_sac_id')->constrained('mau_sacs');
             $table->integer('so_luong');
             $table->json('hinh_anh')->nullable();
             $table->integer('so_luong_da_ban')->default(0);

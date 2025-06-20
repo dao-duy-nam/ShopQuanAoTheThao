@@ -11,9 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('mau_sacs', function (Blueprint $table) {
+        Schema::create('gia_tri_thuoc_tinhs', function (Blueprint $table) {
             $table->id();
-            $table->string('ten_mau_sac')->unique();
+            $table->string('gia_tri'); // Ví dụ: Đỏ, Xanh, M, L
+            $table->foreignId('thuoc_tinh_id')->constrained('thuoc_tinhs')->cascadeOnDelete();
             $table->timestamps();
         });
     }
@@ -23,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('mau_sacs');
+        Schema::dropIfExists('gia_tri_thuoc_tinhs');
     }
 };

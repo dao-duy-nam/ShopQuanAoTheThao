@@ -21,15 +21,12 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             RoleSeeder::class,
             UserSeeder::class,
-<<<<<<< HEAD
-            KichCoSeeder::class,      
-            MauSacSeeder::class,
-            BienTheSeeder::class,
             DanhGiaSeeder::class,
-=======
             PaymentSeeder::class,
-            OrderSeeder::class
->>>>>>> b621858 (feat reviewclient)
+            OrderSeeder::class,
+            AttributeSeeder::class,
+            AttributeValueSeeder::class,
+            VariantSeeder::class,
         ]);
     }
 }

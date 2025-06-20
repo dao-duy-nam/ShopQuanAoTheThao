@@ -11,10 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('kich_cos', function (Blueprint $table) {
-            $table->id();
-            $table->string('kich_co')->unique();
-            $table->timestamps();
+        Schema::table('thuoc_tinhs', function (Blueprint $table) {
+            $table->softDeletes();
         });
     }
 
@@ -23,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('kich_cos');
+        Schema::table('thuoc_tinhs', function (Blueprint $table) {
+            $table->dropSoftDeletes();
+        });
     }
 };
