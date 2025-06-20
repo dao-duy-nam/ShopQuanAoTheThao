@@ -84,7 +84,15 @@ class ProductController extends Controller
                     'hinh_anh'        => json_encode($variantImages),
                 ]);
                 if (!empty($variantData['attributes']) && is_array($variantData['attributes'])) {
+                    $usedAttributeIds = [];
                     foreach ($variantData['attributes'] as $attr) {
+                        if (in_array($attr['thuoc_tinh_id'], $usedAttributeIds)) {
+                            return response()->json([
+                                'status' => 'error',
+                                'message' => "Biến thể #" . ($i + 1) . " có thuộc tính bị trùng (ID: {$attr['thuoc_tinh_id']}).",
+                            ], 422);
+                        }
+                        $usedAttributeIds[] = $attr['thuoc_tinh_id'];
                         $value = AttributeValue::firstOrCreate([
                             'thuoc_tinh_id' => $attr['thuoc_tinh_id'],
                             'gia_tri'       => $attr['gia_tri'],
@@ -142,7 +150,7 @@ class ProductController extends Controller
             'gia_khuyen_mai' => $data['gia_khuyen_mai'] ?? null,
             'mo_ta'          => $data['mo_ta'] ?? null,
             'danh_muc_id'    => $data['danh_muc_id'],
-            'so_luong'       => $data['so_luong'], 
+            'so_luong'       => $data['so_luong'],
         ]);
 
         return response()->json([
