@@ -7,6 +7,15 @@ class BienThe extends Model
 {
     protected $table = 'bien_thes';
 
+        protected $fillable = [
+        'san_pham_id',
+        'so_luong',
+        'gia',
+        'gia_khuyen_mai',
+        'hinh_anh',
+        'so_luong_da_ban',
+    ];
+    
     public function sanphams()
     {
         return $this->belongsTo(Product::class);
@@ -21,4 +30,5 @@ class BienThe extends Model
     {
         return $this->belongsTo(MauSac::class);
     }
+
 }

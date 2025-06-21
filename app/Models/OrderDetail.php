@@ -12,8 +12,6 @@ class OrderDetail extends Model
         'don_hang_id',    
         'san_pham_id',    
         'bien_the_id',    
-        'mau_sac',        
-        'kich_thuoc',    
         'so_luong',       
         'don_gia',        
         'tong_tien',      
