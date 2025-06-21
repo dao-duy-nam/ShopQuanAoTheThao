@@ -35,38 +35,10 @@ public function index(Request $request)
     // Chi tiết đơn hàng
     public function show($id)
     {
-        $order = Order::with(['orderDetails', 'paymentMethod'])->findOrFail($id);
+        $order = Order::with(['orderDetail', 'paymentMethod'])->findOrFail($id);
         return response()->json($order);
     }
-
-    // Tạo mới đơn hàng
-    // public function store(Request $request)
-    // {
-    //     $validated = $request->validate([
-    //         'ma_don_hang' => 'required|unique:don_hangs,ma_don_hang',
-    //         'nguoi_dung_id' => 'required|integer',
-    //         'phuong_thuc_thanh_toan_id' => 'required|integer|exists:phuong_thuc_thanh_toans,id',
-    //         'trang_thai_don_hang' => 'required|string',
-    //         'trang_thai_thanh_toan' => 'required|string',
-    //         'order_details' => 'required|array',
-    //     ]);
-
-    //     $order = Order::create([
-    //         'ma_don_hang' => $request->ma_don_hang,
-    //         'user_id' => $request->nguoi_dung_id,
-    //         'phuong_thuc_thanh_toan_id' => $request->phuong_thuc_thanh_toan_id,
-    //         'trang_thai_don_hang' => $request->trang_thai_don_hang,
-    //         'trang_thai_thanh_toan' => $request->trang_thai_thanh_toan,
-    //     ]);
-
-    //     foreach ($request->order_details as $item) {
-    //         $order->orderDetails()->create($item);
-    //     }
-
-    //     return response()->json(['message' => 'Tạo đơn hàng thành công'], 201);
-    // }
-
-    // Cập nhật trạng thái đơn hàng
+    
 public function update(Request $request, $id)
 {
     $validated = $request->validate([
@@ -128,13 +100,5 @@ public function update(Request $request, $id)
 
 
 
-    // Xoá đơn hàng
-    // public function destroy($id)
-    // {
-    //     $order = Order::findOrFail($id);
-    //     $order->orderDetails()->delete();
-    //     $order->delete();
 
-    //     return response()->json(['message' => 'Xoá đơn hàng thành công']);
-    // }
 }
