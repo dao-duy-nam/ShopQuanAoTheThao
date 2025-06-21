@@ -6,7 +6,7 @@ use App\Http\Controllers\API\Client\ReviewController;
 use App\Http\Controllers\Api\Client\ProductController;
 use App\Http\Controllers\Api\Client\ClientAccountController;
 use App\Http\Controllers\Api\Client\ForgotPasswordController;
-
+use App\Http\Controllers\Api\Client\ClientOrderController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
@@ -39,3 +39,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/client/change-password', [ClientAccountController::class, 'changePassword']);
     Route::post('/client/logout', [ClientAccountController::class, 'logout']);
 });
+
+
+// Route::middleware('auth:sanctum')->group(function () {
+//         Route::post('/client/orders', [ClientOrderController::class, 'store']);
+// });
+
+Route::post('/client/orders', [ClientOrderController::class, 'store']);
