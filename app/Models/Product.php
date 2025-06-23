@@ -13,8 +13,6 @@ class Product extends Model
 
     protected $fillable = [
         'ten',
-        'gia',
-        'gia_khuyen_mai',
         'so_luong',
         'mo_ta',
         'hinh_anh',
