@@ -29,8 +29,7 @@ class ProductFactory extends Factory
                 'Xiaomi Redmi Note 12',
                 'MacBook Air M2',
             ]),
-            'gia' => $this->faker->numberBetween(1000000, 50000000), // Giá từ 1 triệu đến 50 triệu
-            'gia_khuyen_mai' => $this->faker->optional(0.7, null)->numberBetween(800000, 45000000), // 70% có giá khuyến mãi
+            
             'so_luong' => $this->faker->numberBetween(0, 100), // Số lượng từ 0 đến 100
             'mo_ta' => $this->faker->paragraph(2), // Mô tả 2 câu
             'hinh_anh' => $this->faker->optional(0.8, null)->imageUrl(640, 480, 'products'), // 80% có ảnh
