@@ -39,7 +39,8 @@ Route::prefix('admin')->group(function () {
 
         // Quản lý tài khoản
         Route::prefix('users')->group(function () {
-            Route::get('/', [UserController::class, 'index']);
+             Route::get('/ad', [UserController::class, 'listAdmins']);
+            Route::get('/cus', [UserController::class, 'listCustomers']);
             Route::post('/', [UserController::class, 'store']);
             Route::get('/{id}', [UserController::class, 'show']);
             Route::patch('/{id}/role', [UserController::class, 'updateRole']);
