@@ -10,69 +10,95 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    public function index(Request $request)
+    public function listAdmins(Request $request)
+    {
+        return $this->getUsersByRoleName('admin', $request);
+    }
+
+    public function listCustomers(Request $request)
+    {
+        return $this->getUsersByRoleName('user', $request);
+    }
+
+    // Hàm phụ dùng chung
+    protected function getUsersByRoleName(string $roleName, Request $request)
     {
         $query = DB::table('users')
             ->leftJoin('vai_tros', 'users.vai_tro_id', '=', 'vai_tros.id')
             ->select(
-                'users.id', 'users.name', 'users.email', 'users.so_dien_thoai',
-                'users.anh_dai_dien', 'users.trang_thai',
-                'users.vai_tro_id', 'vai_tros.ten_vai_tro', 'users.created_at', 'users.updated_at'
-            );
+                'users.id',
+                'users.name',
+                'users.email',
+                'users.so_dien_thoai',
+                'users.anh_dai_dien',
+                'users.trang_thai',
+                'users.vai_tro_id',
+                'vai_tros.ten_vai_tro',
+                'users.created_at',
+                'users.updated_at'
+            )
+            ->where('vai_tros.ten_vai_tro', $roleName);
 
         if ($request->filled('keyword')) {
             $keyword = $request->keyword;
             $query->where(function ($q) use ($keyword) {
                 $q->where('users.name', 'like', "%$keyword%")
-                  ->orWhere('vai_tros.ten_vai_tro', 'like', "%$keyword%");
+                    ->orWhere('users.email', 'like', "%$keyword%");
             });
         }
 
         $users = $query->paginate(10);
 
         return response()->json([
-            'message' => 'Danh sách người dùng',
+            'message' => 'Danh sách người dùng theo vai trò: ' . $roleName,
             'status' => 200,
-            'data' => $users->items(),  // Trả về mảng dữ liệu người dùng
+            'data' => $users->items(),
             'pagination' => [
                 'total' => $users->total(),
                 'per_page' => $users->perPage(),
                 'current_page' => $users->currentPage(),
                 'last_page' => $users->lastPage(),
             ],
-        ], 200);
+        ]);
     }
+
 
     public function store(Request $request)
-    {
-       $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:6',
-            'so_dien_thoai' => 'nullable|string',
-            'vai_tro_id' => 'required|exists:vai_tros,id',
-            'ngay_sinh' => 'required|date',
-        ]);
+{
+    $data = $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|unique:users,email',
+        'password' => 'required|min:6',
+        'so_dien_thoai' => 'nullable|string',
+        'vai_tro_id' => 'required|exists:vai_tros,id',
+        'ngay_sinh' => 'required|date',
+        'anh_dai_dien' => 'nullable|image|mimes:jpeg,png,jpg|max:2048', 
+    ]);
 
-        $data['password'] = Hash::make($data['password']);
-        $data['trang_thai'] = 'active';
-
-        // Dùng Eloquent tạo User mới
-        $user = User::create($data);
-
-        // Load relation vai tro (role)
-        $user->load('role');
-
-        return response()->json([
-            'message' => 'Tạo tài khoản thành công',
-            'status' => 201,
-            'data' => $user->toArray()
-        ], 201);
+     if ($request->hasFile('anh_dai_dien')) {
+        $path = $request->file('anh_dai_dien')->store('users', 'public');
+        $data['anh_dai_dien'] = $path;
     }
+
+    $data['password'] = Hash::make($data['password']);
+    $data['trang_thai'] = 'active';
+    $data['email_verified_at'] = now(); 
+
+    $user = User::create($data);
+
+    $user->load('role');
+
+    return response()->json([
+        'message' => 'Tạo tài khoản thành công',
+        'status' => 201,
+        'data' => $user
+    ], 201);
+}
+
 
     public function updateRole(Request $request, $id)
     {
-         $request->validate([
+        $request->validate([
             'vai_tro_id' => 'required|exists:vai_tros,id'
         ]);
 
@@ -89,7 +115,7 @@ class UserController extends Controller
         ], 200);
     }
 
-   public function block(Request $request, $id)
+    public function block(Request $request, $id)
     {
         $request->validate([
             'ly_do_block' => 'required|string',
