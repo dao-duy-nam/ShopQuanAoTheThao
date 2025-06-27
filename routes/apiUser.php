@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Client\ProductController;
 use App\Http\Controllers\Api\Client\ClientAccountController;
 use App\Http\Controllers\Api\Client\ForgotPasswordController;
 use App\Http\Controllers\Api\Client\ClientOrderController;
+use App\Http\Controllers\Api\Payment\VnpayController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
@@ -46,3 +47,11 @@ Route::middleware('auth:sanctum')->group(function () {
 // });
 
 Route::post('/client/orders', [ClientOrderController::class, 'store']);
+
+Route::prefix('payment/vnpay')->group(function () {
+    Route::post('create', [VnpayController::class, 'createPayment'])->middleware('auth:sanctum');
+    Route::get('return', [VnpayController::class, 'callback'])->name('payment.vnpay.callback');
+
+    
+    Route::match(['GET', 'POST'], 'ipn', [VnpayController::class, 'ipn'])->name('payment.vnpay.ipn');
+});

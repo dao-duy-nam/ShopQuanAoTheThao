@@ -11,9 +11,10 @@ class PaymentSeeder extends Seeder
     public function run()
     {
         DB::table('phuong_thuc_thanh_toans')->insert([
-            ['id' => 1, 'ten' => 'Tiền mặt', 'created_at' => now(), 'updated_at' => now()],
-            ['id' => 2, 'ten' => 'Chuyển khoản', 'created_at' => now(), 'updated_at' => now()],
-            // Thêm các phương thức thanh toán khác nếu cần
+            ['id' => 1, 'ten' => 'cod', 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 2, 'ten' => 'vnpay', 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 3, 'ten' => 'momo', 'created_at' => now(), 'updated_at' => now()],
+            
         ]);
     }
 }
