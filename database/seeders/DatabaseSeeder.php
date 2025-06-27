@@ -1,9 +1,8 @@
 <?php
 
 namespace Database\Seeders;
-
-use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\User;
 use App\Models\Product;
 use Illuminate\Database\Seeder;
 
@@ -23,10 +22,10 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             DanhGiaSeeder::class,
             PaymentSeeder::class,
-            OrderSeeder::class,
             AttributeSeeder::class,
             AttributeValueSeeder::class,
             VariantSeeder::class,
+            OrderSeeder::class,
         ]);
     }
 }
