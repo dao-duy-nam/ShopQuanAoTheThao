@@ -15,6 +15,7 @@ class OrderDetail extends Model
         'so_luong',       
         'don_gia',        
         'tong_tien',      
+        'thuoc_tinh_bien_the',      
     ];
 
     

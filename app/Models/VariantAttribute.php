@@ -21,8 +21,8 @@ class VariantAttribute extends Model
         return $this->belongsTo(Variant::class, 'bien_the_id');
     }
 
-    public function attributeValue()
-    {
-        return $this->belongsTo(AttributeValue::class, 'gia_tri_thuoc_tinh_id');
-    }
+public function attributeValue()
+{
+    return $this->belongsTo(AttributeValue::class, 'gia_tri_thuoc_tinh_id');
+}
 }
