@@ -44,4 +44,9 @@ class Variant extends Model
     {
         return $this->hasMany(VariantAttribute::class, 'bien_the_id');
     }
+
+public function variantAttributes()
+{
+    return $this->hasMany(VariantAttribute::class, 'bien_the_id');
+}
 }

@@ -43,11 +43,11 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 
-// Route::middleware('auth:sanctum')->group(function () {
-//         Route::post('/client/orders', [ClientOrderController::class, 'store']);
-// });
+Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/client/orders', [ClientOrderController::class, 'store']);
+});
 
-Route::post('/client/orders', [ClientOrderController::class, 'store']);
+// Route::post('/client/orders', [ClientOrderController::class, 'store']);
 
 Route::prefix('payment/vnpay')->group(function () {
     Route::post('create', [VnpayController::class, 'createPayment'])->middleware('auth:sanctum');

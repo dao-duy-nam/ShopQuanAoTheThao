@@ -11,9 +11,11 @@ class Order extends Model
     protected $fillable = [
         'ma_don_hang',
         'user_id',
+        'dia_chi',
         'phuong_thuc_thanh_toan_id',
         'trang_thai_don_hang',
         'trang_thai_thanh_toan',
+         'so_tien_thanh_toan',
     ];
 
     public function user()
