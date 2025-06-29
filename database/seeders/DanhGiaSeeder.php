@@ -7,6 +7,7 @@ use App\Models\DanhGia;
 use App\Models\User;
 use App\Models\BienThe;
 use App\Models\Product;
+use App\Models\Variant;
 
 class DanhGiaSeeder extends Seeder
 {
@@ -14,7 +15,7 @@ class DanhGiaSeeder extends Seeder
     {
         $users = User::inRandomOrder()->take(5)->get();
         $products = Product::inRandomOrder()->take(5)->get();
-        $bienThes = BienThe::inRandomOrder()->take(5)->get();
+        $bienThes = Variant::inRandomOrder()->take(5)->get();
 
         // Kiểm tra dữ liệu đủ để seed chưa
         if ($users->isEmpty() || ($products->isEmpty() && $bienThes->isEmpty())) {

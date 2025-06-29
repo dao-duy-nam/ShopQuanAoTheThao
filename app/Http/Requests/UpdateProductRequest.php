@@ -13,10 +13,9 @@ class UpdateProductRequest extends FormRequest
 
     public function rules(): array
     {
-        $productId = $this->route('id');
-
+       $productId = $this->route('product');
         return [
-            'ten'         => 'required|string|max:255|unique:san_phams,ten,' . $productId,
+             'ten'         => 'required|string|max:255|unique:san_phams,ten,' . $productId . ',id',
             'mo_ta'       => 'nullable|string',
             'hinh_anh'    => 'nullable|image|mimes:jpg,jpeg,png,webp',
             'danh_muc_id' => 'required|exists:danh_mucs,id',
