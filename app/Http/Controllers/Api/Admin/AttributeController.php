@@ -17,7 +17,20 @@ class AttributeController extends Controller
             'data' => $attributes,
         ]);
     }
-
+    public function show($id)
+    {
+        $attribute = Attribute::withTrashed()->with('values')->find($id);
+        if (!$attribute) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Không tìm thấy thuộc tính.',
+            ], 404);
+        }
+        return response()->json([
+            'status' => 'success',
+            'data' => $attribute,
+        ]);
+    }
     public function store(Request $request)
     {
         $validated = $request->validate([
