@@ -67,14 +67,14 @@ public function store(Request $request)
                 $tongTienDonHang += $tongTien;
 
                 $thuocTinhBienThe = $bienThe->variantAttributes->map(function ($attribute) {
-                    if (!$attribute->attributeValue || !$attribute->attributeValue->attribute) {
-                        return null;
-                    }
-                    return [
-                        'thuoc_tinh_id' => $attribute->attributeValue->attribute->id,
-                        'gia_tri' => $attribute->attributeValue->gia_tri
-                    ];
-                })->filter()->values();
+        if (!$attribute->attributeValue || !$attribute->attributeValue->attribute) {
+            return null;
+        }
+        return [
+            'gia_tri' => $attribute->attributeValue->gia_tri,
+            'thuoc_tinh' => $attribute->attributeValue->attribute->ten
+        ];
+    })->filter()->values();
 
                 OrderDetail::create([
                     'don_hang_id' => $order->id,
@@ -210,8 +210,8 @@ public function storeFromCart(Request $request)
                         return null;
                     }
                     return [
-                        'thuoc_tinh_id' => $attribute->attributeValue->attribute->id,
-                        'gia_tri' => $attribute->attributeValue->gia_tri
+                        'gia_tri' => $attribute->attributeValue->gia_tri,
+                        'thuoc_tinh' => $attribute->attributeValue->attribute->ten
                     ];
                 })->filter()->values();
 
