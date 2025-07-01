@@ -35,12 +35,16 @@ class OrderController extends Controller
     /**
      * Chi tiết đơn hàng theo ID
      */
-    public function show($id)
-    {
-        $order = Order::with(['orderDetail', 'paymentMethod'])->findOrFail($id);
+public function show($id)
+{
+    $order = Order::with([
+        'orderDetail.product',    // Lấy toàn bộ cột của bảng san_phams
+        'orderDetail.variant',    // (nếu muốn lấy luôn biến thể)
+        'paymentMethod'           // Lấy phương thức thanh toán
+    ])->findOrFail($id);
 
-        return response()->json($order);
-    }
+    return response()->json($order);
+}
 
     /**
      * Cập nhật trạng thái đơn hàng, trạng thái thanh toán và địa chỉ
