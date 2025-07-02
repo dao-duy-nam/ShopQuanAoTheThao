@@ -32,15 +32,15 @@ class CartController extends Controller
             }
 
             $chiTietGioHang = $gioHang->cartItem()
-                ->with(['sanPham', 'bienThe.attributeValues.attribute'])
+                ->with(['product', 'variant.attributeValues.attribute'])
                 ->get();
 
             $items = $chiTietGioHang->map(function ($item) {
                 $data = [
                     'id' => $item->id,
                     'san_pham_id' => $item->san_pham_id,
-                    'ten_san_pham' => $item->sanPham->ten,
-                    'hinh_anh' => $item->sanPham->hinh_anh,
+                    'ten_san_pham' => $item->product->ten,
+                    'hinh_anh' => $item->product->hinh_anh,
                     'so_luong' => $item->so_luong,
                     'gia_san_pham' => $item->gia_san_pham,
                     'thanh_tien' => $item->thanh_tien,
@@ -49,8 +49,8 @@ class CartController extends Controller
 
                 if ($item->bien_the_id) {
                     $data['bien_the'] = [
-                        'id' => $item->bienThe->id,
-                        'thuoc_tinh' => $item->bienThe->attributeValues->map(function ($attrValue) {
+                        'id' => $item->variant->id,
+                        'thuoc_tinh' => $item->variant->attributeValues->map(function ($attrValue) {
                             return [
                                 'ten_thuoc_tinh' => $attrValue->attribute->ten,
                                 'gia_tri' => $attrValue->gia_tri
@@ -152,7 +152,7 @@ class CartController extends Controller
         try {
             $user = Auth::user();
             $chiTietGioHang = CartItem::where('id', $id)
-                ->whereHas('gioHang', function ($query) use ($user) {
+                ->whereHas('cart', function ($query) use ($user) {
                     $query->where('user_id', $user->id);
                 })
                 ->firstOrFail();
