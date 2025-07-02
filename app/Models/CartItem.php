@@ -30,12 +30,12 @@ class CartItem extends Model
         return $this->belongsTo(Cart::class, 'gio_hang_id');
     }
 
-    public function sanPham()
+    public function product()
     {
         return $this->belongsTo(Product::class, 'san_pham_id');
     }
 
-    public function bienThe()
+    public function variant()
     {
         return $this->belongsTo(Variant::class, 'bien_the_id');
     }
@@ -43,9 +43,9 @@ class CartItem extends Model
     public function getGiaHienTaiAttribute()
     {
         if ($this->bien_the_id) {
-            return $this->bienThe->gia_khuyen_mai ?? $this->bienThe->gia;
+            return $this->variant->gia_khuyen_mai ?? $this->variant->gia;
         }
-        return $this->sanPham->gia_khuyen_mai ?? $this->sanPham->gia;
+        return $this->product->gia_khuyen_mai ?? $this->product->gia;
     }
 
     public function updateThanhTien()
