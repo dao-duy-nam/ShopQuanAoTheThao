@@ -4,29 +4,27 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Banner;
-// use Illuminate\Support\Facades\Request;
 use Illuminate\Http\Request;
 
 class BannerController extends Controller
 {
     public function index()
     {
-        return Banner::orderBy('thu_tu')->get();
+        return Banner::all();
     }
 
     public function store(Request $request)
     {
-    $validated = $request->validate([
-        'tieu_de' => 'required|string|max:255',
-        'hinh_anh' => 'required|string',
-        'link' => 'nullable|string',
-        'trang_thai' => 'boolean',
-        'thu_tu' => 'integer'
-    ]);
+        $validated = $request->validate([
+            'tieu_de' => 'required|string|max:255',
+            'hinh_anh' => 'required|string',
+            'link' => 'nullable|string',
+            'trang_thai' => 'boolean',
+        ]);
 
-    $banner = Banner::create($validated);
+        $banner = Banner::create($validated);
 
-    return response()->json($banner, 201);
+        return response()->json($banner, 201);
     }
 
     public function show($id)
@@ -41,7 +39,7 @@ class BannerController extends Controller
         return $banner;
     }
 
-    //  XÓA MỀM
+    // XÓA MỀM
     public function destroy($id)
     {
         $banner = Banner::findOrFail($id);
@@ -49,13 +47,13 @@ class BannerController extends Controller
         return response()->json(['message' => 'Xóa mềm banner thành công']);
     }
 
-    //  LẤY DANH SÁCH ĐÃ XÓA
+    // LẤY DANH SÁCH ĐÃ XÓA
     public function trash()
     {
-        return Banner::onlyTrashed()->orderBy('thu_tu')->get();
+        return Banner::onlyTrashed()->get();
     }
 
-    //  KHÔI PHỤC
+    // KHÔI PHỤC
     public function restore($id)
     {
         $banner = Banner::onlyTrashed()->findOrFail($id);
@@ -63,7 +61,7 @@ class BannerController extends Controller
         return response()->json(['message' => 'Khôi phục banner thành công']);
     }
 
-    // 💣 XÓA VĨNH VIỄN
+    // XÓA VĨNH VIỄN
     public function forceDelete($id)
     {
         $banner = Banner::onlyTrashed()->findOrFail($id);
@@ -71,5 +69,3 @@ class BannerController extends Controller
         return response()->json(['message' => 'Xóa vĩnh viễn banner thành công']);
     }
 }
-
-

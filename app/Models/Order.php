@@ -15,7 +15,10 @@ class Order extends Model
         'phuong_thuc_thanh_toan_id',
         'trang_thai_don_hang',
         'trang_thai_thanh_toan',
-         'so_tien_thanh_toan',
+        'so_tien_thanh_toan',
+        'thanh_pho',
+        'huyen',
+        'xa',
     ];
 
     public function user()
@@ -25,15 +28,14 @@ class Order extends Model
 
 
 
-   
+
     public function orderDetail()
     {
         return $this->hasMany(OrderDetail::class, 'don_hang_id');
     }
 
-         public function paymentMethod()
+    public function paymentMethod()
     {
         return $this->belongsTo(PaymentMethod::class, 'phuong_thuc_thanh_toan_id');
     }
-    
 }

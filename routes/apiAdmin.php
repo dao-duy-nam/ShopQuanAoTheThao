@@ -87,6 +87,7 @@ Route::prefix('admin')->group(function () {
     Route::prefix('attributes')->group(function () {
         Route::get('/', [AttributeController::class, 'index']);
         Route::get('/deleted', [AttributeController::class, 'trashed']);
+        Route::get('/{id}', [AttributeController::class, 'show']);
         Route::post('/', [AttributeController::class, 'store']);
         Route::post('/{id}', [AttributeController::class, 'update']);
         Route::delete('/{id}', [AttributeController::class, 'destroy']);

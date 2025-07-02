@@ -6,7 +6,6 @@ use App\Models\Product;
 use App\Models\Variant;
 use Illuminate\Http\Request;
 use App\Models\AttributeValue;
-use App\Services\VariantService;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductResource;
@@ -16,13 +15,7 @@ use App\Http\Requests\UpdateProductRequest;
 
 class ProductController extends Controller
 {
-    protected $variantService;
-
-    public function __construct(VariantService $variantService)
-    {
-        $this->variantService = $variantService;
-    }
-
+    
     public function index(Request $request)
     {
         $query = Product::query();

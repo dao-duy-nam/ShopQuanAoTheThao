@@ -44,16 +44,19 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
 Route::middleware('auth:sanctum')->group(function () {
-        Route::post('/client/orders', [ClientOrderController::class, 'store']);
+    Route::post('/client/orders', [ClientOrderController::class, 'store']);
 });
-
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/client/orders/from-cart', [ClientOrderController::class, 'storeFromCart']);
+    Route::get('/client/orders/{id}', [ClientOrderController::class, 'show']);
+});
 // Route::post('/client/orders', [ClientOrderController::class, 'store']);
 
 Route::prefix('payment/vnpay')->group(function () {
     Route::post('create', [VnpayController::class, 'createPayment'])->middleware('auth:sanctum');
     Route::get('return', [VnpayController::class, 'callback'])->name('payment.vnpay.callback');
 
-    
+
     Route::match(['GET', 'POST'], 'ipn', [VnpayController::class, 'ipn'])->name('payment.vnpay.ipn');
 });
 
@@ -64,6 +67,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/update/{id}', [CartController::class, 'updateQuantity']);
         Route::delete('/remove/{id}', [CartController::class, 'removeItem']);
         Route::delete('/clear', [CartController::class, 'clearCart']);
-       
+        // Route::get('/checkout-info', [CartController::class, 'getCheckoutInfo']);
     });
 });
