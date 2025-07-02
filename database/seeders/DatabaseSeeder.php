@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             AttributeValueSeeder::class,
             VariantSeeder::class,
             OrderSeeder::class,
+            BannerSeeder::class,
         ]);
     }
 }
