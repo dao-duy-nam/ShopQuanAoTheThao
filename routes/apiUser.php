@@ -49,6 +49,7 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/client/orders/from-cart', [ClientOrderController::class, 'storeFromCart']);
     Route::get('/client/orders/{id}', [ClientOrderController::class, 'show']);
+    Route::get('/client/orders/', [ClientOrderController::class, 'index']);
 });
 // Route::post('/client/orders', [ClientOrderController::class, 'store']);
 
