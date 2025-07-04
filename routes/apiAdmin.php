@@ -96,13 +96,14 @@ Route::prefix('admin')->group(function () {
         Route::delete('/force-delete/{id}', [AttributeController::class, 'forceDelete']);
     });
     Route::prefix('attribute-values')->group(function () {
+        Route::get('/attribute/{attributeId}', [AttributeValueController::class, 'getByAttributeId']);
         Route::get('/', [AttributeValueController::class, 'index']);
-        Route::get('/trash', [AttributeValueController::class, 'trash']);
-        Route::post('/restore/{id}', [AttributeValueController::class, 'restore']);
-        Route::post('/', [AttributeValueController::class, 'store']);
+        Route::post('/attribute/{attributeId}', [AttributeValueController::class, 'store']);
         Route::get('/{id}', [AttributeValueController::class, 'show']);
         Route::put('/{id}', [AttributeValueController::class, 'update']);
         Route::delete('/{id}', [AttributeValueController::class, 'destroy']);
+        Route::get('/trash/list', [AttributeValueController::class, 'trash']);
+        Route::post('/restore/{id}', [AttributeValueController::class, 'restore']);
     });
     Route::prefix('orders')->group(function () {
         Route::get('/', [OrderController::class, 'index']);
