@@ -12,30 +12,12 @@ class DanhGiaController extends Controller
     {
         $query = DanhGia::with([
             'user:id,name',
-            'product:id,ten',
+            'product:id,ten,hinh_anh',
             'variant.product:id,ten',
             'variant.variantAttributes.attributeValue.attribute',
-        ])->where('is_hidden', 0);
+        ]);
 
-        if ($request->search_user) {
-            $query->whereHas('user', fn($q) =>
-                $q->where('name', 'like', '%' . $request->search_user . '%')
-            );
-        }
 
-        if ($request->search_product) {
-            $query->where(function ($q) use ($request) {
-                $q->whereHas('product', fn($q2) =>
-                    $q2->where('ten', 'like', '%' . $request->search_product . '%')
-                )->orWhereHas('variant.product', fn($q3) =>
-                    $q3->where('ten', 'like', '%' . $request->search_product . '%')
-                );
-            });
-        }
-
-        if ($request->search_rating) {
-            $query->where('so_sao', $request->search_rating);
-        }
 
         $reviews = $query->paginate(10);
 
@@ -48,9 +30,10 @@ class DanhGiaController extends Controller
                 ],
                 'content' => $review->noi_dung,
                 'rating' => $review->so_sao,
-                'image' => $review->hinh_anh,
+                // 'image' => $review->hinh_anh,
                 'created_at' => $review->created_at,
                 'updated_at' => $review->updated_at,
+                'is_hidden' => $review->is_hidden,
             ];
 
             if ($review->bien_the_id && $review->variant) {
@@ -66,8 +49,9 @@ class DanhGiaController extends Controller
                 ];
             } else {
                 $base['product'] = [
-                    'id' => $review->sanpham_id,
+                    'id' => $review->san_pham_id,
                     'name' => $review->product->ten ?? null,
+                    'image' => $review->product->hinh_anh ?? null,
                 ];
             }
 
