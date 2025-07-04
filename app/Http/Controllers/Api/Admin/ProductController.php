@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\Variant;
 use Illuminate\Http\Request;
 use App\Models\AttributeValue;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductResource;
@@ -15,7 +16,7 @@ use App\Http\Requests\UpdateProductRequest;
 
 class ProductController extends Controller
 {
-    
+
     public function index(Request $request)
     {
         $query = Product::query();
@@ -44,74 +45,100 @@ class ProductController extends Controller
     {
         $data = $request->validated();
 
-
-        $imagePath = $request->hasFile('hinh_anh')
-            ? $request->file('hinh_anh')->store('products', 'public')
-            : null;
-
-
-        $product = Product::create([
-            'ten'         => $data['ten'],
-            'mo_ta'       => $data['mo_ta'] ?? null,
-            'hinh_anh'    => $imagePath,
-            'danh_muc_id' => $data['danh_muc_id'],
-            'so_luong'    => 0,
-        ]);
-
-
-        $tongSoLuong = 0;
-
-        foreach ($data['variants'] as $i => $variantData) {
-
-            $variantImage = null;
-            if ($request->hasFile("variants.$i.hinh_anh")) {
-                $variantImage = $request->file("variants.$i.hinh_anh")->store('variants', 'public');
-            }
-
-
-
-            $variant = Variant::create([
-                'san_pham_id'    => $product->id,
-                'so_luong'       => $variantData['so_luong'],
-                'gia'            => $variantData['gia'],
-                'gia_khuyen_mai' => $variantData['gia_khuyen_mai'] ?? null,
-                'hinh_anh'       => $variantImage,
-            ]);
-
-            $tongSoLuong += $variantData['so_luong'];
-
-
-            if (!empty($variantData['attributes']) && is_array($variantData['attributes'])) {
-                $used = [];
-                foreach ($variantData['attributes'] as $attr) {
-                    if (in_array($attr['thuoc_tinh_id'], $used)) {
-                        return response()->json([
-                            'status'  => 'error',
-                            'message' => "Biến thể #" . ($i + 1) . " trùng thuộc tính ID {$attr['thuoc_tinh_id']}",
-                        ], 422);
-                    }
-                    $used[] = $attr['thuoc_tinh_id'];
-
-                    $value = AttributeValue::firstOrCreate([
-                        'thuoc_tinh_id' => $attr['thuoc_tinh_id'],
-                        'gia_tri'       => $attr['gia_tri'],
-                    ]);
-                    $variant->attributeValues()->attach($value->id);
-                }
-            }
+        if (empty($data['variants']) || count($data['variants']) === 0) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Mỗi sản phẩm phải có ít nhất một biến thể.',
+            ], 422);
         }
 
+        try {
+            $product = DB::transaction(function () use ($request, $data) {
 
-        $product->update(['so_luong' => $tongSoLuong]);
+                $imagePath = $request->hasFile('hinh_anh')
+                    ? $request->file('hinh_anh')->store('products', 'public')
+                    : null;
 
 
-        return response()->json([
-            'status'  => 'success',
-            'message' => 'Tạo sản phẩm & biến thể thành công.',
-            'data'    => new ProductResource(
-                $product->load('variants.attributeValues.attribute')
-            ),
-        ]);
+                $product = Product::create([
+                    'ten'         => $data['ten'],
+                    'mo_ta'       => $data['mo_ta'] ?? null,
+                    'hinh_anh'    => $imagePath,
+                    'danh_muc_id' => $data['danh_muc_id'],
+                    'so_luong'    => 0,
+                ]);
+
+                $tongSoLuong = 0;
+
+
+                foreach ($data['variants'] as $i => $variantData) {
+                    $images = [];
+                    if ($request->hasFile("variants.$i.hinh_anh")) {
+                        foreach ($request->file("variants.$i.hinh_anh") as $imageFile) {
+                            $path = $imageFile->store('variants', 'public');
+                            $images[] = $path;
+                        }
+                    }
+                    $variant = Variant::create([
+                        'san_pham_id'    => $product->id,
+                        'so_luong'       => $variantData['so_luong'],
+                        'gia'            => $variantData['gia'],
+                        'gia_khuyen_mai' => $variantData['gia_khuyen_mai'] ?? null,
+                        'hinh_anh'       => json_encode($images),
+                    ]);
+                    $tongSoLuong += $variantData['so_luong'];
+                    if (!empty($variantData['attributes']) && is_array($variantData['attributes'])) {
+                        $usedThuocTinh = [];
+                        foreach ($variantData['attributes'] as $attr) {
+                            if (empty($attr['thuoc_tinh_id'])) {
+                                throw new \Exception("Thiếu thuộc tính ID ở biến thể #" . ($i + 1));
+                            }
+                            $thuocTinhId = $attr['thuoc_tinh_id'];
+                            if (in_array($thuocTinhId, $usedThuocTinh)) {
+                                throw new \Exception("Biến thể " . ($i + 1) . " bị trùng thuộc tính ID {$thuocTinhId}");
+                            }
+                            $usedThuocTinh[] = $thuocTinhId;
+                            $giaTri = null;
+                            if (!empty($attr['gia_tri_thuoc_tinh_id'])) {
+                                $giaTri = AttributeValue::where('id', $attr['gia_tri_thuoc_tinh_id'])
+                                    ->where('thuoc_tinh_id', $thuocTinhId)
+                                    ->first();
+
+                                if (!$giaTri) {
+                                    throw new \Exception("Giá trị thuộc tính ID {$attr['gia_tri_thuoc_tinh_id']} không hợp lệ với thuộc tính ID {$thuocTinhId}");
+                                }
+                            } elseif (!empty($attr['gia_tri'])) {
+                                $giaTri = AttributeValue::firstOrCreate([
+                                    'thuoc_tinh_id' => $thuocTinhId,
+                                    'gia_tri'       => $attr['gia_tri'],
+                                ]);
+                            } else {
+                                throw new \Exception("Bạn phải chọn hoặc nhập giá trị cho thuộc tính ID {$thuocTinhId} ở biến thể #" . ($i + 1));
+                            }
+
+                            $variant->attributeValues()->attach($giaTri->id);
+                        }
+                    }
+                }
+
+                $product->update(['so_luong' => $tongSoLuong]);
+
+                return $product;
+            });
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Tạo sản phẩm & biến thể thành công.',
+                'data'    => new ProductResource(
+                    $product->load('variants.attributeValues.attribute')
+                ),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => $e->getMessage(),
+            ], 422);
+        }
     }
 
 

@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\Admin\DanhGiaController;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\VariantController;
 use App\Http\Controllers\Api\Admin\CategoryController;
+use App\Http\Controllers\Api\Admin\AttributeValueController;
 use App\Http\Controllers\Api\Admin\AdminAuthController;
 use App\Http\Controllers\Api\Admin\AttributeController;
 
@@ -39,7 +40,7 @@ Route::prefix('admin')->group(function () {
 
         // Quản lý tài khoản
         Route::prefix('users')->group(function () {
-             Route::get('/ad', [UserController::class, 'listAdmins']);
+            Route::get('/ad', [UserController::class, 'listAdmins']);
             Route::get('/cus', [UserController::class, 'listCustomers']);
             Route::post('/', [UserController::class, 'store']);
             Route::get('/{id}', [UserController::class, 'show']);
@@ -94,7 +95,15 @@ Route::prefix('admin')->group(function () {
         Route::patch('/restore/{id}', [AttributeController::class, 'restore']);
         Route::delete('/force-delete/{id}', [AttributeController::class, 'forceDelete']);
     });
-
+    Route::prefix('attribute-values')->group(function () {
+        Route::get('/', [AttributeValueController::class, 'index']);
+        Route::get('/trash', [AttributeValueController::class, 'trash']);
+        Route::post('/restore/{id}', [AttributeValueController::class, 'restore']);
+        Route::post('/', [AttributeValueController::class, 'store']);
+        Route::get('/{id}', [AttributeValueController::class, 'show']);
+        Route::put('/{id}', [AttributeValueController::class, 'update']);
+        Route::delete('/{id}', [AttributeValueController::class, 'destroy']);
+    });
     Route::prefix('orders')->group(function () {
         Route::get('/', [OrderController::class, 'index']);
         Route::get('/{id}', [OrderController::class, 'show']);
