@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\Admin\CategoryController;
 use App\Http\Controllers\Api\Admin\AttributeValueController;
 use App\Http\Controllers\Api\Admin\AdminAuthController;
 use App\Http\Controllers\Api\Admin\AttributeController;
+use App\Http\Controllers\Api\Admin\DiscountCodeController;
 
 Route::prefix('admin')->group(function () {
 
@@ -111,5 +112,15 @@ Route::prefix('admin')->group(function () {
         // Route::post('/', [OrderController::class, 'store']);
         Route::put('/{id}', [OrderController::class, 'update']);
         // Route::delete('/{id}', [OrderController::class, 'destroy']);
+    });
+    Route::prefix('discount-codes')->group(function () {
+        Route::get('/', [DiscountCodeController::class, 'index']);
+        Route::post('/', [DiscountCodeController::class, 'store']);
+        Route::get('/{id}', [DiscountCodeController::class, 'show']);
+        Route::put('/{id}', [DiscountCodeController::class, 'update']);
+        Route::patch('/{id}/status', [DiscountCodeController::class, 'changeStatus']);
+        Route::delete('/{id}', [DiscountCodeController::class, 'destroy']);
+        Route::get('/trash/list', [DiscountCodeController::class, 'trash']);
+        Route::post('/restore/{id}', [DiscountCodeController::class, 'restore']);
     });
 });
