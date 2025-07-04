@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
-use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreDiscountCodeRequest;
-use App\Http\Requests\UpdateDiscountCodeRequest;
-use App\Http\Resources\DiscountCodeResource;
+use App\Models\User;
 use App\Models\DiscountCode;
 use Illuminate\Http\Request;
+use App\Mail\DiscountCodeMail;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Mail;
+use App\Http\Resources\DiscountCodeResource;
+use App\Http\Requests\StoreDiscountCodeRequest;
+use App\Http\Requests\UpdateDiscountCodeRequest;
 
 class DiscountCodeController extends Controller
 {
@@ -100,6 +103,50 @@ class DiscountCodeController extends Controller
         return response()->json([
             'message' => 'Khôi phục mã giảm giá thành công.',
             'data' => new DiscountCodeResource($code),
+        ]);
+    }
+
+    public function sendToUsers(Request $request, $id)
+    {
+        $request->validate([
+            'kieu' => 'required|in:tat_ca,ngau_nhien',
+            'so_luong' => 'nullable|integer|min:1',
+        ], [
+            'kieu.required' => 'Vui lòng chọn kiểu gửi.',
+            'kieu.in' => 'Kiểu gửi không hợp lệ.',
+            'so_luong.integer' => 'Số lượng phải là số nguyên.',
+            'so_luong.min' => 'Số lượng ít nhất phải là 1.',
+        ]);
+
+        $code = DiscountCode::findOrFail($id);
+        $users = collect();
+
+        if ($request->kieu === 'tat_ca') {
+            $users = User::where('vai_tro_id', User::ROLE_USER)
+                ->whereNotNull('email')
+                ->get();
+        } elseif ($request->kieu === 'ngau_nhien') {
+
+            $tongUser = User::where('vai_tro_id', User::ROLE_USER)
+                ->whereNotNull('email')
+                ->count();
+
+            $soLuong = $request->input('so_luong', rand(1, min(10, $tongUser)));
+
+            $users = User::where('vai_tro_id', User::ROLE_USER)
+                ->whereNotNull('email')
+                ->inRandomOrder()
+                ->limit($soLuong)
+                ->get();
+        }
+
+        foreach ($users as $user) {
+            Mail::to($user->email)->queue(new DiscountCodeMail($user, $code));
+        }
+
+        return response()->json([
+            'message' => 'Đã gửi mã giảm giá thành công.',
+            'so_luong_gui' => $users->count(),
         ]);
     }
 }

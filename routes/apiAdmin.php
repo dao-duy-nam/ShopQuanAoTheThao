@@ -122,5 +122,6 @@ Route::prefix('admin')->group(function () {
         Route::delete('/{id}', [DiscountCodeController::class, 'destroy']);
         Route::get('/trash/list', [DiscountCodeController::class, 'trash']);
         Route::post('/restore/{id}', [DiscountCodeController::class, 'restore']);
+        Route::post('/{id}/send', [DiscountCodeController::class, 'sendToUsers']);
     });
 });
