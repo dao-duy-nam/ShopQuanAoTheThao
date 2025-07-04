@@ -23,6 +23,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'anh_dai_dien',
         'vai_tro_id',
         'trang_thai',
+        'ly_do_block'
     ];
 
     protected $hidden = [
