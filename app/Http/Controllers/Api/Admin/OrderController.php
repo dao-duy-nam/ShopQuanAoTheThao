@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\OrderStatusChangedMail;
 use App\Models\Order;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class OrderController extends Controller
 {
@@ -46,10 +48,8 @@ public function show($id)
     return response()->json($order);
 }
 
-    /**
-     * Cập nhật trạng thái đơn hàng, trạng thái thanh toán và địa chỉ
-     */
- public function update(Request $request, $id)
+
+public function update(Request $request, $id)
 {
     $validated = $request->validate([
         'trang_thai_don_hang' => 'nullable|in:cho_xac_nhan,dang_chuan_bi,dang_van_chuyen,da_giao,da_huy,tra_hang',
@@ -57,7 +57,7 @@ public function show($id)
         'dia_chi' => 'nullable|string|max:255',
     ]);
 
-    $order = Order::findOrFail($id);
+    $order = Order::with('user')->findOrFail($id);
 
     $orderStatusFlow = [
         'cho_xac_nhan' => ['dang_chuan_bi', 'da_huy'],
@@ -76,7 +76,9 @@ public function show($id)
         'da_huy' => [],
     ];
 
-    // Kiểm tra trạng thái đơn hàng nếu có gửi
+    $hasOrderStatusChanged = false;
+    $hasPaymentStatusChanged = false;
+
     if (isset($validated['trang_thai_don_hang'])) {
         $currentOrderStatus = $order->trang_thai_don_hang;
         $nextOrderStatus = $validated['trang_thai_don_hang'];
@@ -87,7 +89,9 @@ public function show($id)
             ], 400);
         }
 
-        // Chuyển trạng thái thanh toán tự động dựa trên trạng thái đơn hàng
+        $hasOrderStatusChanged = $currentOrderStatus !== $nextOrderStatus;
+
+        // Gán tự động trạng thái thanh toán
         if ($nextOrderStatus === 'da_giao') {
             $validated['trang_thai_thanh_toan'] = 'da_thanh_toan';
         } elseif ($nextOrderStatus === 'da_huy') {
@@ -97,7 +101,6 @@ public function show($id)
         }
     }
 
-    // Kiểm tra trạng thái thanh toán nếu có gửi
     if (isset($validated['trang_thai_thanh_toan'])) {
         $currentPaymentStatus = $order->trang_thai_thanh_toan;
         $nextPaymentStatus = $validated['trang_thai_thanh_toan'];
@@ -107,15 +110,23 @@ public function show($id)
                 'message' => "Không thể chuyển trạng thái thanh toán từ '$currentPaymentStatus' sang '$nextPaymentStatus'."
             ], 400);
         }
+
+        $hasPaymentStatusChanged = $currentPaymentStatus !== $nextPaymentStatus;
     }
 
-    // Cập nhật đơn hàng
     $order->update($validated);
+
+    // === Gửi mail nếu có thay đổi trạng thái ===
+    if ($hasOrderStatusChanged || $hasPaymentStatusChanged) {
+        $message = "Trạng thái đơn hàng của bạn đã được cập nhật.";
+        Mail::to($order->user->email)->send(new OrderStatusChangedMail($order, $message));
+    }
 
     return response()->json([
         'message' => 'Cập nhật đơn hàng thành công',
         'order' => $order
     ]);
 }
+
 
 }

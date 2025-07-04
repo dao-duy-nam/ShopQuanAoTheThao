@@ -23,6 +23,17 @@ class UserSeeder extends Seeder
             'email_verified_at' => Carbon::now(), 
         ]);
 
+                User::create([
+            'name' => 'NGoc',
+            'email' => 'ngocnxph50224@gmail.com',
+            'password' => Hash::make('123456'),
+            'so_dien_thoai' => '0869541205',
+            'vai_tro_id' => 2, 
+            'trang_thai' => 'active',
+            'ngay_sinh' => '1990-01-01',
+            'email_verified_at' => Carbon::now(), 
+        ]);
+
         User::create([
             'name' => 'Nguyễn Văn abc',
             'email' => 'nguyenvanacc1a@example.com',
