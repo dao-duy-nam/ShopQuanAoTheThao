@@ -28,11 +28,11 @@ class Product extends Model
         return $this->hasMany(DanhGia::class);
     }
 
-    // public function bienThes()
-    // {
-    //     return $this->hasMany(BienThe::class);
-    // }
-        public function variants()
+    public function discountCodes()
+    {
+        return $this->hasMany(DiscountCode::class, 'san_pham_id');
+    }
+    public function variants()
     {
         return $this->hasMany(Variant::class, 'san_pham_id');
     }
