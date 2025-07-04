@@ -51,9 +51,8 @@ class VariantController extends Controller
                 'message' => 'Không thể chọn nhiều giá trị cho cùng một loại thuộc tính (ví dụ: nhiều kích cỡ, nhiều màu sắc).',
             ], 422);
         }
-        // Kiểm tra trùng biến thể
         $inputAttributes = collect($validated['attributes'])->map(function ($attr) {
-            return $attr['thuoc_tinh_id'] . ':' . $attr['gia_tri'];
+            return $attr['thuoc_tinh_id'] . ':' . ($attr['gia_tri'] ?? 'id:' . $attr['attribute_value_id']);
         })->sort()->values()->implode(',');
 
         $existingVariants = Variant::where('san_pham_id', $productId)->with('attributeValues')->get();
@@ -83,10 +82,7 @@ class VariantController extends Controller
             ]);
 
             foreach ($validated['attributes'] as $attribute) {
-                $value = AttributeValue::firstOrCreate([
-                    'thuoc_tinh_id' => $attribute['thuoc_tinh_id'],
-                    'gia_tri' => $attribute['gia_tri'],
-                ]);
+                $value = $this->resolveAttributeValue($attribute);
                 $variant->attributeValues()->attach($value->id);
             }
 
@@ -105,9 +101,10 @@ class VariantController extends Controller
     {
         $variant = Variant::withTrashed()->findOrFail($id);
         $validated = $request->validated();
+
         if (isset($validated['attributes'])) {
             $inputAttributes = collect($validated['attributes'])->map(function ($attr) {
-                return $attr['thuoc_tinh_id'] . ':' . $attr['gia_tri'];
+                return $attr['thuoc_tinh_id'] . ':' . ($attr['gia_tri'] ?? 'id:' . $attr['attribute_value_id']);
             })->sort()->values()->implode(',');
 
             $existingVariants = Variant::where('san_pham_id', $variant->san_pham_id)
@@ -150,10 +147,7 @@ class VariantController extends Controller
         if (isset($validated['attributes'])) {
             $attributeValueIds = [];
             foreach ($validated['attributes'] as $attribute) {
-                $value = AttributeValue::firstOrCreate([
-                    'thuoc_tinh_id' => $attribute['thuoc_tinh_id'],
-                    'gia_tri' => $attribute['gia_tri'],
-                ]);
+                $value = $this->resolveAttributeValue($attribute);
                 $attributeValueIds[] = $value->id;
             }
             $variant->attributeValues()->sync($attributeValueIds);
@@ -267,5 +261,17 @@ class VariantController extends Controller
         return array_map(function ($image) {
             return $image->store('variants', 'public');
         }, $images);
+    }
+
+    protected function resolveAttributeValue($attribute)
+    {
+        if (!empty($attribute['attribute_value_id'])) {
+            return AttributeValue::findOrFail($attribute['attribute_value_id']);
+        }
+
+        return AttributeValue::firstOrCreate([
+            'thuoc_tinh_id' => $attribute['thuoc_tinh_id'],
+            'gia_tri' => $attribute['gia_tri'],
+        ]);
     }
 }
