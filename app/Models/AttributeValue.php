@@ -1,15 +1,17 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class AttributeValue extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'gia_tri_thuoc_tinhs';
-
+    protected $dates = ['deleted_at'];
     protected $fillable = [
         'gia_tri',
         'thuoc_tinh_id',

@@ -14,28 +14,27 @@ class StoreProductRequest extends FormRequest
     public function rules(): array
     {
         return [
-            
             'ten'         => 'required|string|max:255|unique:san_phams,ten',
             'mo_ta'       => 'nullable|string',
-            'hinh_anh'    => 'nullable|image|mimes:jpg,jpeg,png,webp', 
+            'hinh_anh'    => 'nullable|image|mimes:jpg,jpeg,png,webp',
             'danh_muc_id' => 'required|exists:danh_mucs,id',
-
-            
             'variants'                          => 'required|array|min:1',
             'variants.*.so_luong'               => 'required|integer|min:0',
             'variants.*.gia'                    => 'required|numeric|min:0',
             'variants.*.gia_khuyen_mai'         => 'nullable|numeric|min:0',
-            'variants.*.image'                  => 'nullable|image|mimes:jpg,jpeg,png,webp', // 1 file
-            'variants.*.attributes'             => 'nullable|array',
-            'variants.*.attributes.*.thuoc_tinh_id' => 'required|integer|exists:thuoc_tinhs,id',
-            'variants.*.attributes.*.gia_tri'       => 'required|string|max:255',
+            'variants.*.hinh_anh' => 'nullable|array',
+            'variants.*.hinh_anh.*' => 'nullable|image|mimes:jpg,jpeg,png,webp',
+
+            'variants.*.attributes'                             => 'nullable|array',
+            'variants.*.attributes.*.thuoc_tinh_id'             => 'required|integer|exists:thuoc_tinhs,id',
+            'variants.*.attributes.*.gia_tri'                   => 'nullable|string|max:255',
+            'variants.*.attributes.*.gia_tri_thuoc_tinh_id'     => 'nullable|integer|exists:gia_tri_thuoc_tinhs,id',
         ];
     }
 
     public function messages(): array
     {
         return [
-            
             'ten.required'   => 'Vui lòng nhập tên sản phẩm.',
             'ten.unique'     => 'Tên sản phẩm đã tồn tại, vui lòng chọn tên khác.',
             'ten.string'     => 'Tên sản phẩm phải là chuỗi ký tự.',
@@ -46,7 +45,6 @@ class StoreProductRequest extends FormRequest
             'danh_muc_id.required' => 'Vui lòng chọn danh mục.',
             'danh_muc_id.exists'   => 'Danh mục không tồn tại.',
 
-            
             'variants.required' => 'Sản phẩm phải có ít nhất một biến thể.',
             'variants.array'    => 'Trường biến thể phải là mảng.',
             'variants.min'      => 'Phải có ít nhất một biến thể.',
@@ -58,14 +56,13 @@ class StoreProductRequest extends FormRequest
             'variants.*.gia.min'           => 'Giá không được nhỏ hơn 0.',
             'variants.*.gia_khuyen_mai.numeric' => 'Giá khuyến mãi phải là số.',
             'variants.*.gia_khuyen_mai.min'     => 'Giá khuyến mãi không được nhỏ hơn 0.',
-            'variants.*.image.image'       => 'Ảnh biến thể phải là hình ảnh.',
-            'variants.*.image.mimes'       => 'Ảnh biến thể chỉ chấp nhận jpg, jpeg, png, webp.',
-            'variants.*.attributes.array'  => 'Thuộc tính biến thể phải là mảng.',
+            'variants.*.hinh_anh.array' => 'Danh sách ảnh biến thể phải là một mảng.',
+            'variants.*.attributes.array' => 'Thuộc tính biến thể phải là mảng.',
             'variants.*.attributes.*.thuoc_tinh_id.required' => 'ID thuộc tính là bắt buộc.',
             'variants.*.attributes.*.thuoc_tinh_id.exists'   => 'Thuộc tính không tồn tại.',
-            'variants.*.attributes.*.gia_tri.required' => 'Giá trị thuộc tính là bắt buộc.',
-            'variants.*.attributes.*.gia_tri.string'   => 'Giá trị thuộc tính phải là chuỗi ký tự.',
-            'variants.*.attributes.*.gia_tri.max'      => 'Giá trị thuộc tính không vượt quá 255 ký tự.',
+            'variants.*.attributes.*.gia_tri.max' => 'Giá trị thuộc tính không vượt quá 255 ký tự.',
+            'variants.*.attributes.*.gia_tri_thuoc_tinh_id.integer' => 'ID giá trị thuộc tính phải là số.',
+            'variants.*.attributes.*.gia_tri_thuoc_tinh_id.exists'  => 'Giá trị thuộc tính không tồn tại.',
         ];
     }
 }
