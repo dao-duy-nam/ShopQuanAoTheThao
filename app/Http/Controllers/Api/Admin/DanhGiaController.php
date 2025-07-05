@@ -74,7 +74,7 @@ class DanhGiaController extends Controller
     {
         $review = DanhGia::with([
             'user:id,name',
-            'product:id,ten',
+            'product:id,ten,hinh_anh',
             'variant.product:id,ten',
             'variant.variantAttributes.attributeValue.attribute',
         ])->find($id);
@@ -94,7 +94,7 @@ class DanhGiaController extends Controller
             ],
             'content' => $review->noi_dung,
             'rating' => $review->so_sao,
-            'image' => $review->hinh_anh,
+            // 'image' => $review->hinh_anh,
             'created_at' => $review->created_at,
             'updated_at' => $review->updated_at,
         ];
@@ -112,8 +112,9 @@ class DanhGiaController extends Controller
             ];
         } else {
             $data['product'] = [
-                'id' => $review->sanpham_id,
-                'name' => $review->product->ten ?? null,
+               'id' => $review->san_pham_id,
+                    'name' => $review->product->ten ?? null,
+                    'image' => $review->product->hinh_anh ?? null,
             ];
         }
 
