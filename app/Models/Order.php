@@ -19,6 +19,8 @@ class Order extends Model
         'thanh_pho',
         'huyen',
         'xa',
+        'email_nguoi_dat',
+        'sdt_nguoi_dat',
     ];
 
     public function user()

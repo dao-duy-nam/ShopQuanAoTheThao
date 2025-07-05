@@ -42,9 +42,20 @@ Route::middleware(['auth:sanctum', 'user'])->group(function () {
     Route::put('/client/profile', [ClientAccountController::class, 'updateProfile']);
     Route::put('/client/change-password', [ClientAccountController::class, 'changePassword']);
     Route::post('/client/logout', [ClientAccountController::class, 'logout']);
+
+});
+
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/orders', [ClientOrderController::class, 'storeOrder']);
+});
+Route::middleware('auth:sanctum')->group(function () {
+    // Route::post('/client/orders/from-cart', [ClientOrderController::class, 'storeFromCart']);
+
     // Client orders
     Route::post('/client/orders', [ClientOrderController::class, 'store']);
-    Route::post('/client/orders/from-cart', [ClientOrderController::class, 'storeFromCart']);
+    // Route::post('/client/orders/from-cart', [ClientOrderController::class, 'storeFromCart']);
+
     Route::get('/client/orders/{id}', [ClientOrderController::class, 'show']);
     Route::get('/client/orders/', [ClientOrderController::class, 'index']);
     Route::post('order/huy-don/{id}', [ClientOrderController::class, 'huyDon']);
