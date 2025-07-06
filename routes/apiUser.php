@@ -39,7 +39,7 @@ Route::middleware(['auth:sanctum', 'user'])->group(function () {
 
 
     Route::get('/client/profile', [ClientAccountController::class, 'profile']);
-    Route::put('/client/profile', [ClientAccountController::class, 'updateProfile']);
+    Route::post('/client/profile', [ClientAccountController::class, 'updateProfile']);
     Route::put('/client/change-password', [ClientAccountController::class, 'changePassword']);
     Route::post('/client/logout', [ClientAccountController::class, 'logout']);
 
