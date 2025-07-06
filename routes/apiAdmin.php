@@ -25,7 +25,7 @@ Route::prefix('admin')->group(function () {
         // Quản lý tài khoản
         Route::prefix('users')->group(function () {
             Route::post('/', [UserController::class, 'store']);
-            Route::patch('/{id}/role', [UserController::class, 'updateRole']);
+            // Route::patch('/{id}/role', [UserController::class, 'updateRole']);
             Route::patch('/{id}/block', [UserController::class, 'block']);
             Route::post('/{id}/unblock', [UserController::class, 'unblock']);
         });
@@ -36,6 +36,8 @@ Route::prefix('admin')->group(function () {
         // Quản lý người dùng
         Route::prefix('users')->group(function () {
             Route::get('/ad', [UserController::class, 'listAdmins']);
+            Route::get('/staff', [UserController::class, 'listStaffs']);
+
             Route::get('/cus', [UserController::class, 'listCustomers']);
             Route::get('/{id}', [UserController::class, 'show']);
         });
