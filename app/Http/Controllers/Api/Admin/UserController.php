@@ -151,7 +151,7 @@ protected function getUsersByRoleNames(array $roleNames, Request $request)
         'kieu_block' => $request->kieu_block ?: 'vinh_vien', // nếu không truyền thì gán mặc định
     ]);
 
-    Mail::to($user->email)->send(new UserBlockedMail($user, $request->ly_do_block));
+    Mail::to($user->email)->queue(new UserBlockedMail($user, $request->ly_do_block));
 
     return response()->json([
         'message' => 'Tài khoản đã bị khóa ',
@@ -179,7 +179,7 @@ protected function getUsersByRoleNames(array $roleNames, Request $request)
         'kieu_block' => null,
     ]);
 
-    Mail::to($user->email)->send(new UserUnblockedMail($user));
+    Mail::to($user->email)->queue(new UserUnblockedMail($user));
 
     return response()->json([
         'message' => 'Tài khoản đã được mở khóa',
