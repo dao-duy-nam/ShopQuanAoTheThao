@@ -30,7 +30,7 @@ class DanhGiaController extends Controller
                 ],
                 'content' => $review->noi_dung,
                 'rating' => $review->so_sao,
-                // 'image' => $review->hinh_anh,
+                'image' => $review->hinh_anh,
                 'created_at' => $review->created_at,
                 'updated_at' => $review->updated_at,
                 'is_hidden' => $review->is_hidden,
@@ -94,7 +94,7 @@ class DanhGiaController extends Controller
             ],
             'content' => $review->noi_dung,
             'rating' => $review->so_sao,
-            // 'image' => $review->hinh_anh,
+            'image' => $review->hinh_anh,
             'created_at' => $review->created_at,
             'updated_at' => $review->updated_at,
         ];
