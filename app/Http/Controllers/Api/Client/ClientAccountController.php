@@ -1,16 +1,21 @@
 <?php
+
 namespace App\Http\Controllers\Api\Client;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
+use App\Http\Resources\UserProfileResource;
 
 class ClientAccountController extends Controller
 {
     public function profile(Request $request)
     {
-        $user = $request->user()->load(['diaChis' => function($q) { $q->where('mac_dinh', true); }]);
-        return response()->json($user);
+        $user = $request->user()->load(['diaChis' => function ($q) {
+            $q->where('mac_dinh', true);
+        }]);
+
+        return response()->json(new UserProfileResource($user));
     }
 
     public function updateProfile(Request $request)
@@ -25,6 +30,8 @@ class ClientAccountController extends Controller
             'quan_huyen' => 'nullable|string|max:255',
             'phuong_xa' => 'nullable|string|max:255',
             'dia_chi_chi_tiet' => 'nullable|string|max:255',
+            'gioi_tinh' => 'nullable|in:nam,nu,khac',
+            'ngay_sinh' => 'nullable|date',
         ]);
 
         if ($request->hasFile('anh_dai_dien')) {
@@ -36,6 +43,8 @@ class ClientAccountController extends Controller
             'name' => $data['name'],
             'so_dien_thoai' => $data['phone'] ?? $user->so_dien_thoai,
             'anh_dai_dien' => $data['anh_dai_dien'] ?? $user->anh_dai_dien,
+            'gioi_tinh' => $data['gioi_tinh'] ?? $user->gioi_tinh,
+            'ngay_sinh' => $data['ngay_sinh'] ?? $user->ngay_sinh,
         ]);
 
         if ($data['tinh_thanh'] ?? null && $data['quan_huyen'] ?? null && $data['phuong_xa'] ?? null) {
@@ -54,9 +63,11 @@ class ClientAccountController extends Controller
             }
         }
 
-        $user->load(['diaChis' => function($q) { $q->where('mac_dinh', true); }]);
+        $user->load(['diaChis' => function ($q) {
+            $q->where('mac_dinh', true);
+        }]);
 
-        return response()->json($user);
+        return response()->json(new UserProfileResource($user));
     }
 
     public function changePassword(Request $request)
