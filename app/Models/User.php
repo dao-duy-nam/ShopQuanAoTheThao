@@ -89,5 +89,9 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasOne(Cart::class, 'user_id');
     }
+      public function diaChis()
+    {
+        return $this->hasMany(DiaChi::class, 'user_id');
+    }
 }
 
