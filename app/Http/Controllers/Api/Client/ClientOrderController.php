@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Mail;
 class ClientOrderController extends Controller
 {
 
-    public function storeOrder(Request $request)
+    public function store(Request $request)
     {
         $validated = $request->validate([
             'phuong_thuc_thanh_toan_id' => 'required|exists:phuong_thuc_thanh_toans,id',
@@ -36,31 +36,28 @@ class ClientOrderController extends Controller
             'email_nguoi_dat' => 'nullable|email',
             'sdt_nguoi_dat' => 'nullable|string|max:20',
         ]);
-
+    
         $user = $request->user();
-
+    
         if ($user->vai_tro_id !== 2) {
             return response()->json(['error' => 'Bạn không có quyền đặt hàng.'], 403);
         }
-
+    
         DB::beginTransaction();
-
+    
         try {
-            // Lấy thông tin địa chỉ, liên hệ, ưu tiên dữ liệu gửi lên, fallback user info
             $diaChi = $validated['dia_chi'] ?? $user->dia_chi;
             $soDienThoai = $validated['so_dien_thoai'] ?? $user->so_dien_thoai;
             $thanhPho = $validated['thanh_pho'] ?? null;
             $huyen = $validated['huyen'] ?? null;
             $xa = $validated['xa'] ?? null;
-
             $tenNguoiDat = trim($validated['ten_nguoi_dat'] ?? '') ?: $user->name;
             $emailNguoiDat = trim($validated['email_nguoi_dat'] ?? '') ?: $user->email;
             $sdtNguoiDat = trim($validated['sdt_nguoi_dat'] ?? '') ?: $user->so_dien_thoai;
-
+    
             $tongTienDonHang = 0;
             $chiTietSanPham = [];
-
-            // Tạo đơn hàng mới
+    
             $order = Order::create([
                 'ma_don_hang' => 'DH' . strtoupper(Str::random(6)),
                 'user_id' => $user->id,
@@ -76,36 +73,32 @@ class ClientOrderController extends Controller
                 'email_nguoi_dat' => $emailNguoiDat,
                 'sdt_nguoi_dat' => $sdtNguoiDat,
             ]);
-
-            // Xử lý sản phẩm
+    
             $items = $validated['items'] ?? null;
-
+    
             if ($items) {
-                // MUA NGAY: duyệt từng item trong $items
+                // MUA NGAY
                 foreach ($items as $item) {
                     $soLuong = $item['so_luong'];
                     $bienTheId = $item['bien_the_id'] ?? null;
-                    $donGia = 0;
-                    $tongTien = 0;
-                    $thuocTinhBienThe = null;
-
+    
                     if ($bienTheId) {
                         $bienThe = Variant::with(['product', 'variantAttributes.attributeValue.attribute'])->findOrFail($bienTheId);
-                        if ($bienThe->so_luong < $soLuong) {
-                            throw new \Exception("Biến thể không đủ tồn kho.");
-                        }
-
+                        if ($bienThe->so_luong < $soLuong) throw new \Exception("Biến thể không đủ tồn kho.");
                         $donGia = $bienThe->gia_khuyen_mai ?? $bienThe->gia;
+                        if (is_null($donGia)) {
+                            throw new \Exception("Biến thể '{$bienThe->product->ten}' không có giá.");
+                        }
                         $tongTien = $donGia * $soLuong;
                         $tongTienDonHang += $tongTien;
-
+    
                         $thuocTinhBienThe = $bienThe->variantAttributes->map(function ($attr) {
                             return [
                                 'thuoc_tinh' => $attr->attributeValue->attribute->ten ?? '',
                                 'gia_tri' => $attr->attributeValue->gia_tri ?? ''
                             ];
                         })->filter()->values();
-
+    
                         OrderDetail::create([
                             'don_hang_id' => $order->id,
                             'san_pham_id' => $bienThe->product->id,
@@ -115,10 +108,8 @@ class ClientOrderController extends Controller
                             'tong_tien' => $tongTien,
                             'thuoc_tinh_bien_the' => $thuocTinhBienThe->isEmpty() ? null : json_encode($thuocTinhBienThe),
                         ]);
-
                         $bienThe->decrement('so_luong', $soLuong);
                         $bienThe->increment('so_luong_da_ban', $soLuong);
-
                         $chiTietSanPham[] = [
                             'ten_san_pham' => $bienThe->product->ten,
                             'so_luong' => $soLuong,
@@ -128,14 +119,14 @@ class ClientOrderController extends Controller
                         ];
                     } else {
                         $sanPham = Product::findOrFail($item['san_pham_id']);
-                        if ($sanPham->so_luong < $soLuong) {
-                            throw new \Exception("Sản phẩm '{$sanPham->ten}' không đủ tồn kho.");
-                        }
-
+                        if ($sanPham->so_luong < $soLuong) throw new \Exception("Sản phẩm '{$sanPham->ten}' không đủ tồn kho.");
                         $donGia = $sanPham->gia_khuyen_mai ?? $sanPham->gia;
+                        if (is_null($donGia)) {
+                            throw new \Exception("Sản phẩm '{$sanPham->ten}' không có giá.");
+                        }
                         $tongTien = $donGia * $soLuong;
                         $tongTienDonHang += $tongTien;
-
+    
                         OrderDetail::create([
                             'don_hang_id' => $order->id,
                             'san_pham_id' => $sanPham->id,
@@ -145,10 +136,8 @@ class ClientOrderController extends Controller
                             'tong_tien' => $tongTien,
                             'thuoc_tinh_bien_the' => null,
                         ]);
-
                         $sanPham->decrement('so_luong', $soLuong);
                         $sanPham->increment('so_luong_da_ban', $soLuong);
-
                         $chiTietSanPham[] = [
                             'ten_san_pham' => $sanPham->ten,
                             'so_luong' => $soLuong,
@@ -161,38 +150,33 @@ class ClientOrderController extends Controller
             } else {
                 // MUA QUA GIỎ HÀNG
                 $gioHang = DB::table('gio_hangs')->where('user_id', $user->id)->first();
-                if (!$gioHang) {
-                    throw new \Exception('Không tìm thấy giỏ hàng.');
-                }
+                Log::debug('Gio hang:', ['gioHang' => $gioHang]);
+                if (!$gioHang) throw new \Exception('Không tìm thấy giỏ hàng.');
                 $cartItems = DB::table('chi_tiet_gio_hangs')->where('gio_hang_id', $gioHang->id)->get();
-                if ($cartItems->isEmpty()) {
-                    throw new \Exception('Giỏ hàng đang trống.');
-                }
-
+                Log::debug('Cart items:', ['cartItems' => $cartItems]);
+                if ($cartItems->isEmpty()) throw new \Exception('Giỏ hàng đang trống.');
+    
                 foreach ($cartItems as $item) {
                     $soLuong = $item->so_luong;
-                    $bienTheId = $item->bien_the_id;
-                    $donGia = 0;
-                    $tongTien = 0;
-                    $thuocTinhBienThe = null;
-
+                    $bienTheId = $item->bien_the_id ?? null;
+    
                     if ($bienTheId) {
                         $bienThe = Variant::with(['product', 'variantAttributes.attributeValue.attribute'])->findOrFail($bienTheId);
-                        if ($bienThe->so_luong < $soLuong) {
-                            throw new \Exception("Biến thể không đủ tồn kho.");
-                        }
-
+                        if ($bienThe->so_luong < $soLuong) throw new \Exception("Biến thể không đủ tồn kho.");
                         $donGia = $bienThe->gia_khuyen_mai ?? $bienThe->gia;
+                        if (is_null($donGia)) {
+                            throw new \Exception("Biến thể '{$bienThe->product->ten}' không có giá.");
+                        }
                         $tongTien = $donGia * $soLuong;
                         $tongTienDonHang += $tongTien;
-
+    
                         $thuocTinhBienThe = $bienThe->variantAttributes->map(function ($attr) {
                             return [
                                 'thuoc_tinh' => $attr->attributeValue->attribute->ten ?? '',
                                 'gia_tri' => $attr->attributeValue->gia_tri ?? ''
                             ];
                         })->filter()->values();
-
+    
                         OrderDetail::create([
                             'don_hang_id' => $order->id,
                             'san_pham_id' => $bienThe->product->id,
@@ -202,10 +186,8 @@ class ClientOrderController extends Controller
                             'tong_tien' => $tongTien,
                             'thuoc_tinh_bien_the' => $thuocTinhBienThe->isEmpty() ? null : json_encode($thuocTinhBienThe),
                         ]);
-
                         $bienThe->decrement('so_luong', $soLuong);
                         $bienThe->increment('so_luong_da_ban', $soLuong);
-
                         $chiTietSanPham[] = [
                             'ten_san_pham' => $bienThe->product->ten,
                             'so_luong' => $soLuong,
@@ -215,14 +197,14 @@ class ClientOrderController extends Controller
                         ];
                     } else {
                         $sanPham = Product::findOrFail($item->san_pham_id);
-                        if ($sanPham->so_luong < $soLuong) {
-                            throw new \Exception("Sản phẩm '{$sanPham->ten}' không đủ tồn kho.");
-                        }
-
+                        if ($sanPham->so_luong < $soLuong) throw new \Exception("Sản phẩm '{$sanPham->ten}' không đủ tồn kho.");
                         $donGia = $sanPham->gia_khuyen_mai ?? $sanPham->gia;
+                        if (is_null($donGia)) {
+                            throw new \Exception("Sản phẩm '{$sanPham->ten}' không có giá.");
+                        }
                         $tongTien = $donGia * $soLuong;
                         $tongTienDonHang += $tongTien;
-
+    
                         OrderDetail::create([
                             'don_hang_id' => $order->id,
                             'san_pham_id' => $sanPham->id,
@@ -232,10 +214,8 @@ class ClientOrderController extends Controller
                             'tong_tien' => $tongTien,
                             'thuoc_tinh_bien_the' => null,
                         ]);
-
                         $sanPham->decrement('so_luong', $soLuong);
                         $sanPham->increment('so_luong_da_ban', $soLuong);
-
                         $chiTietSanPham[] = [
                             'ten_san_pham' => $sanPham->ten,
                             'so_luong' => $soLuong,
@@ -245,48 +225,37 @@ class ClientOrderController extends Controller
                         ];
                     }
                 }
-
-                // Xóa giỏ hàng sau khi tạo đơn
+    
+                // Xoá giỏ hàng
                 DB::table('chi_tiet_gio_hangs')->where('gio_hang_id', $gioHang->id)->delete();
                 DB::table('gio_hangs')->where('id', $gioHang->id)->delete();
             }
-
-            // Cập nhật tổng tiền đơn hàng
+    
             $order->update(['so_tien_thanh_toan' => $tongTienDonHang]);
-
             DB::commit();
-
-            // Gửi mail xác nhận đơn hàng
+    
             Mail::to($emailNguoiDat)->send(new OrderConfirmationMail($order));
-
+    
             return response()->json([
                 'message' => 'Đặt hàng thành công!',
+                'id' => $order->id, // 👈 thêm dòng này: ID thực trong DB
                 'ma_don_hang' => $order->ma_don_hang,
-                'dia_chi' => $diaChi,
-                'so_dien_thoai' => $soDienThoai,
-                'sdt_nguoi_dat' => $sdtNguoiDat,
-                'email_nguoi_dat' => $emailNguoiDat,
-                'ten_nguoi_dat' => $tenNguoiDat,
-                'thanh_pho' => $thanhPho,
-                'huyen' => $huyen,
-                'xa' => $xa,
                 'tong_tien' => $tongTienDonHang,
                 'chi_tiet_san_pham' => $chiTietSanPham,
             ], 201);
+    
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Lỗi đặt hàng', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            Log::error('Lỗi đặt hàng', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json(['error' => 'Lỗi: ' . $e->getMessage()], 500);
         }
     }
+    
 
 public function show($id)
 {
     try {
-        $user = request()->user();
+        $user = request()->user(); 
 
         $order = Order::with([
             'orderDetail.product',
@@ -300,47 +269,31 @@ public function show($id)
         }
 
         $orderDetail = $order->orderDetail->map(function ($detail) {
-            $thuocTinhBienThe = [];
+            $thuocTinhBienThe = null;
 
             if ($detail->bien_the_id && $detail->variant && $detail->variant->variantAttributes) {
-                $thuocTinhBienThe = $detail->variant->variantAttributes
-                    ->map(function ($attr) {
-                        if (!$attr->attributeValue || !$attr->attributeValue->attribute) {
-                            return null;
-                        }
-                        return [
-                            'thuoc_tinh_id' => $attr->attributeValue->attribute->id,
-                            'ten_thuoc_tinh' => $attr->attributeValue->attribute->ten,
-                            'gia_tri' => $attr->attributeValue->gia_tri,
-                        ];
-                    })
-                    ->filter()
-                    ->values()
-                    ->toArray();
-            }
-
-            // Xử lý lấy hinh_anh: trả thẳng base64 hoặc đường dẫn lưu trong DB
-            $hinhAnhData = null;
-            if ($detail->variant && $detail->variant->hinh_anh) {
-                $hinhAnh = $detail->variant->hinh_anh;
-                if (is_string($hinhAnh)) {
-                    $hinhAnhData = $hinhAnh; // Base64 hoặc đường dẫn trong DB
-                } elseif (is_array($hinhAnh) && count($hinhAnh) > 0) {
-                    $hinhAnhData = $hinhAnh[0]; // Lấy ảnh đầu tiên nếu là mảng
-                }
+                $thuocTinhBienThe = $detail->variant->variantAttributes->map(function ($attr) {
+                    if (!$attr->attributeValue || !$attr->attributeValue->attribute) {
+                        return null;
+                    }
+                    return [
+                        'thuoc_tinh_id' => $attr->attributeValue->attribute->id,
+                        'ten_thuoc_tinh' => $attr->attributeValue->attribute->ten,
+                        'gia_tri' => $attr->attributeValue->gia_tri,
+                    ];
+                })->filter()->values();
             }
 
             return [
                 'san_pham_id' => $detail->san_pham_id,
                 'ten_san_pham' => optional($detail->product)->ten,
-                'hinh_anh' => $hinhAnhData,
                 'bien_the_id' => $detail->bien_the_id,
                 'thuoc_tinh_bien_the' => $thuocTinhBienThe,
                 'so_luong' => $detail->so_luong,
                 'don_gia' => $detail->don_gia,
                 'tong_tien' => $detail->tong_tien,
             ];
-        })->toArray();
+        });
 
         return response()->json([
             'order' => [
@@ -353,9 +306,6 @@ public function show($id)
                 'email_nguoi_dat' => $order->email_nguoi_dat,
                 'sdt_nguoi_dat' => $order->sdt_nguoi_dat,
                 'dia_chi' => $order->dia_chi,
-                'thanh_pho' => $order->thanh_pho,
-                'huyen' => $order->huyen,
-                'xa' => $order->xa,
                 'phuong_thuc_thanh_toan' => optional($order->paymentMethod)->ten,
                 'trang_thai_don_hang' => $order->trang_thai_don_hang,
                 'trang_thai_thanh_toan' => $order->trang_thai_thanh_toan,
@@ -372,7 +322,6 @@ public function show($id)
         return response()->json(['error' => 'Lỗi: ' . $e->getMessage()], 500);
     }
 }
-
 
 
     public function index()

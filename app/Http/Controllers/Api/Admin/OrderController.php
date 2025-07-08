@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Mail\OrderStatusChangedMail;
+use App\Models\ActivityLog;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -120,6 +121,12 @@ public function update(Request $request, $id)
     if ($hasOrderStatusChanged || $hasPaymentStatusChanged) {
         $message = "Trạng thái đơn hàng của bạn đã được cập nhật.";
         Mail::to($order->user->email)->send(new OrderStatusChangedMail($order, $message));
+
+        ActivityLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'Cập nhật trạng thái đơn hàng #' . $order->id,
+            'status' => 'thông tin'
+        ]);
     }
 
     return response()->json([
