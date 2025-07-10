@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Role;
+use App\Models\DiscountCode;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
-use App\Models\Role;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -38,16 +39,16 @@ class User extends Authenticatable implements MustVerifyEmail
         'otp_expired_at' => 'datetime',
     ];
     public function danhGias()
-{
-    return $this->hasMany(DanhGia::class);
-}
+    {
+        return $this->hasMany(DanhGia::class);
+    }
 
 
 
-   public function role()
-{
-    return $this->belongsTo(Role::class, 'vai_tro_id', 'id');
-}
+    public function role()
+    {
+        return $this->belongsTo(Role::class, 'vai_tro_id', 'id');
+    }
 
 
     const ROLE_ADMIN = 1;
@@ -80,18 +81,23 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Order::class, 'user_id');
     }
 
-    
+
     public function reviews()
     {
         return $this->hasMany(DanhGia::class, 'user_id');
     }
-     public function cart()
+    public function cart()
     {
         return $this->hasOne(Cart::class, 'user_id');
     }
-      public function diaChis()
+    public function diaChis()
     {
         return $this->hasMany(DiaChi::class, 'user_id');
     }
+    public function discountCodes()
+    {
+        return $this->belongsToMany(DiscountCode::class, 'ma_giam_gia_nguoi_dung', 'nguoi_dung_id', 'ma_giam_gia_id')
+            ->withPivot('so_lan_da_dung')
+            ->withTimestamps();
+    }
 }
-

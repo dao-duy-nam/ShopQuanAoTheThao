@@ -45,6 +45,7 @@ Route::middleware(['auth:sanctum', 'user'])->group(function () {
     Route::post('/client/logout', [ClientAccountController::class, 'logout']);
 
     Route::post('/client/discount-code/check', [DiscountCodeController::class, 'check']);
+    Route::get('/client/discount-codes', [DiscountCodeController::class, 'userDiscounts']);
 });
 
 

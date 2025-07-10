@@ -59,8 +59,8 @@ class DiscountCodeController extends Controller
         // Nếu mã áp dụng cho sản phẩm cụ thể
         if ($voucher->ap_dung_cho === 'san_pham') {
             if (
-                !$voucher->san_pham_id || 
-                empty($data['san_pham_id']) || 
+                !$voucher->san_pham_id ||
+                empty($data['san_pham_id']) ||
                 $data['san_pham_id'] != $voucher->san_pham_id
             ) {
                 return response()->json(['message' => 'Mã chỉ áp dụng cho sản phẩm cụ thể.'], 400);
@@ -101,6 +101,35 @@ class DiscountCodeController extends Controller
                 'giam_gia' => $giam,
                 'tong_phai_tra' => $data['tong_tien'] - $giam,
             ]
+        ]);
+    }
+
+    public function userDiscounts(Request $request)
+    {
+        $user = $request->user();
+        $now = now();
+
+        if (!$user) {
+            return response()->json(['message' => 'Bạn cần đăng nhập để xem mã giảm giá.'], 401);
+        }
+        $discounts = $user->discountCodes()
+            ->where('trang_thai', true)
+            ->where('so_luong', '>', 0)
+            ->where(function ($q) use ($now) {
+                $q->whereNull('ngay_bat_dau')->orWhere('ngay_bat_dau', '<=', $now);
+            })
+            ->where(function ($q) use ($now) {
+                $q->whereNull('ngay_ket_thuc')->orWhere('ngay_ket_thuc', '>=', $now);
+            })
+            ->where(function ($q) {
+                $q->whereNull('gioi_han')
+                    ->orWhereRaw('ma_giam_gia_nguoi_dung.so_lan_da_dung < ma_giam_gias.gioi_han');
+            })
+            ->get();
+
+        return response()->json([
+            'message' => 'Danh sách mã giảm giá còn áp dụng của bạn.',
+            'data' => $discounts
         ]);
     }
 }
