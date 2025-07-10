@@ -7,6 +7,7 @@ use App\Http\Controllers\API\Client\ReviewController;
 use App\Http\Controllers\Api\Payment\VnpayController;
 use App\Http\Controllers\Api\Client\ProductController;
 use App\Http\Controllers\Api\Client\ClientOrderController;
+use App\Http\Controllers\Api\Client\DiscountCodeController;
 use App\Http\Controllers\Api\Client\ClientAccountController;
 use App\Http\Controllers\Api\Client\ForgotPasswordController;
 
@@ -43,6 +44,7 @@ Route::middleware(['auth:sanctum', 'user'])->group(function () {
     Route::put('/client/change-password', [ClientAccountController::class, 'changePassword']);
     Route::post('/client/logout', [ClientAccountController::class, 'logout']);
 
+    Route::post('/client/discount-code/check', [DiscountCodeController::class, 'check']);
 });
 
 
