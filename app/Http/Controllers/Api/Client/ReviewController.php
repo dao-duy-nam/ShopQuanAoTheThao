@@ -13,60 +13,7 @@ use Illuminate\Support\Facades\Storage;
 
 class ReviewController extends Controller
 {
-    public function index(Request $request, $id)
-    {
-
-        $query = DanhGia::with('user')
-            ->where('san_pham_id', $id)
-            ->where('is_hidden', false);
-
-
-        if ($request->filled('sao')) {
-            $query->where('so_sao', $request->sao);
-        } elseif ($request->boolean('co_hinh_anh')) {
-            $query->whereNotNull('hinh_anh')->where('hinh_anh', '!=', '[]');
-        }
-
-
-        $danhGias = $query->orderByDesc('so_sao')->paginate(10);
-
-
-        $tongDanhGia = DanhGia::where('san_pham_id', $id)
-            ->where('is_hidden', false)
-            ->count();
-
-        $tongSao = DanhGia::where('san_pham_id', $id)
-            ->where('is_hidden', false)
-            ->sum('so_sao');
-
-        $trungBinhSao = $tongDanhGia > 0 ? round($tongSao / $tongDanhGia, 1) : 0;
-
-
-        $thongKe = DanhGia::selectRaw('so_sao, COUNT(*) as so_luong')
-            ->where('san_pham_id', $id)
-            ->where('is_hidden', false)
-            ->groupBy('so_sao')
-            ->orderByDesc('so_sao')
-            ->get()
-            ->keyBy('so_sao');
-
-        return response()->json([
-            'data' => ReviewResource::collection($danhGias),
-            'meta' => [
-                'trung_binh_sao' => $trungBinhSao,
-                'so_luong_theo_sao' => [
-                    5 => $thongKe[5]->so_luong ?? 0,
-                    4 => $thongKe[4]->so_luong ?? 0,
-                    3 => $thongKe[3]->so_luong ?? 0,
-                    2 => $thongKe[2]->so_luong ?? 0,
-                    1 => $thongKe[1]->so_luong ?? 0,
-                ],
-                'tong_danh_gia' => $tongDanhGia,
-            ],
-            'status' => 200,
-            'message' => 'Hiển thị danh sách đánh giá thành công',
-        ]);
-    }
+    
 
     public function store(Request $request)
     {
