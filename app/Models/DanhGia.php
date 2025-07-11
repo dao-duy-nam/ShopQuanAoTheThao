@@ -29,7 +29,7 @@ class DanhGia extends Model
 
     public function product()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class, 'san_pham_id');
     }
 
     public function variant()

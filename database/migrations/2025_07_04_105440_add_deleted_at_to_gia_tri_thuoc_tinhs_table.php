@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('don_hangs', function (Blueprint $table) {
-                $table->string('ten_nguoi_dat')->nullable();
-
+        Schema::table('gia_tri_thuoc_tinhs', function (Blueprint $table) {
+            $table->softDeletes(); 
         });
     }
 
@@ -22,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('don_hangs', function (Blueprint $table) {
-            //
+        Schema::table('gia_tri_thuoc_tinhs', function (Blueprint $table) {
+            $table->dropSoftDeletes();
         });
     }
 };

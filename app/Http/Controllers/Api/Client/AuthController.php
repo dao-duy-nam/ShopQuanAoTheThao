@@ -67,7 +67,7 @@ class AuthController extends Controller
             return response()->json(['message' => 'Email hoặc mật khẩu không đúng.']);
         }
 
-         // Kiểm tra trạng thái tài khoản bị block
+        // Kiểm tra trạng thái tài khoản bị block
         if ($user->trang_thai === 'blocked') {
             if (is_null($user->block_den_ngay) || now()->lessThan($user->block_den_ngay)) {
                 return response()->json([
@@ -77,7 +77,7 @@ class AuthController extends Controller
                 ], 403);
             }
 
-           
+
             $user->update([
                 'trang_thai' => 'active',
                 'block_den_ngay' => null,
@@ -93,7 +93,11 @@ class AuthController extends Controller
             ]);
         }
 
-
+        if (!$user->isRoleUser('user')) {
+            return response()->json([
+                'message' => 'Bạn không có quyền truy cập.'
+            ], 403);
+        }
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -125,11 +129,11 @@ class AuthController extends Controller
 
         $now = Carbon::now('Asia/Ho_Chi_Minh');
 
-        $otpLockedUntil = $user->	otp_locked_until_verify ? Carbon::parse($user->	otp_locked_until_verify) : null;
+        $otpLockedUntil = $user->otp_locked_until_verify ? Carbon::parse($user->otp_locked_until_verify) : null;
 
         if (!$otpLockedUntil || $otpLockedUntil->toDateString() !== $now->toDateString()) {
             $user->otp_send_count = 0;
-            $user->	otp_locked_until_verify = $now;
+            $user->otp_locked_until_verify = $now;
             $user->save();
         }
         if ($user->otp_send_count >= 10) {
@@ -172,7 +176,7 @@ class AuthController extends Controller
 
         $permanentLockThreshold = now()->addYears(1);
 
-        $lockedUntil = $user->	otp_locked_until_verify ? Carbon::parse($user->	otp_locked_until_verify) : null;
+        $lockedUntil = $user->otp_locked_until_verify ? Carbon::parse($user->otp_locked_until_verify) : null;
 
         if ($lockedUntil && $lockedUntil->greaterThan($permanentLockThreshold)) {
             return response()->json([
@@ -191,29 +195,29 @@ class AuthController extends Controller
 
 
         if ($lockedUntil && now()->gt($lockedUntil)) {
-            $user->	otp_locked_until_verify = null;
+            $user->otp_locked_until_verify = null;
             $user->save();
         }
 
         $otpExpiredAt = $user->otp_expired_at ? Carbon::parse($user->otp_expired_at) : null;
 
         if ($user->otp !== $request->otp || !$otpExpiredAt || now()->gt($otpExpiredAt)) {
-            $user->	otp_attempts_verify += 1;
+            $user->otp_attempts_verify += 1;
 
-            if ($user->	otp_attempts_verify == 5) {
-                $user->	otp_locked_until_verify = now()->addMinutes(3);
+            if ($user->otp_attempts_verify == 5) {
+                $user->otp_locked_until_verify = now()->addMinutes(3);
             } elseif ($user->otp_attempts_verify == 6) {
-                $user->	otp_locked_until_verify = now()->addMinutes(15);
+                $user->otp_locked_until_verify = now()->addMinutes(15);
             } elseif ($user->otp_attempts_verify == 7) {
-                $user->	otp_locked_until_verify = now()->addMinutes(30);
+                $user->otp_locked_until_verify = now()->addMinutes(30);
             } elseif ($user->otp_attempts_verify >= 8) {
-                $user->	otp_locked_until_verify = now()->addYears(100);
+                $user->otp_locked_until_verify = now()->addYears(100);
             }
 
 
             $user->save();
 
-            $lockedUntil = $user->	otp_locked_until_verify ? Carbon::parse($user->	otp_locked_until_verify) : null;
+            $lockedUntil = $user->otp_locked_until_verify ? Carbon::parse($user->otp_locked_until_verify) : null;
 
             if ($lockedUntil && $lockedUntil->greaterThan($permanentLockThreshold)) {
                 return response()->json([
@@ -227,8 +231,8 @@ class AuthController extends Controller
         $user->email_verified_at = now();
         $user->otp = null;
         $user->otp_expired_at = null;
-        $user->	otp_attempts_verify = 0;
-        $user->	otp_locked_until_verify = null;
+        $user->otp_attempts_verify = 0;
+        $user->otp_locked_until_verify = null;
         $user->save();
 
         $token = $user->createToken('auth_token')->plainTextToken;

@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('don_hangs', function (Blueprint $table) {
-                $table->string('ten_nguoi_dat')->nullable();
-
+            $table->foreignId('ma_giam_gia_id')->nullable()->constrained('ma_giam_gias')->nullOnDelete();
+            $table->decimal('so_tien_duoc_giam', 10, 2)->default(0)->after('ma_giam_gia_id');
         });
     }
 
@@ -23,7 +23,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('don_hangs', function (Blueprint $table) {
-            //
+            $table->dropForeign(['ma_giam_gia_id']);
+            $table->dropColumn(['ma_giam_gia_id', 'so_tien_duoc_giam']);
         });
     }
 };
