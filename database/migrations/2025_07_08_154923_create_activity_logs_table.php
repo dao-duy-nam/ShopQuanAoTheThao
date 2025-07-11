@@ -11,13 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('thong_tin_nguoi_dungs', function (Blueprint $table) {
+        Schema::create('activity_logs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('nguoi_dung_id')->constrained('users')->onDelete('cascade');
-            $table->date('ngay_sinh');
-            $table->enum('gioi_tinh', ['nam', 'nu', 'khac']);
-            $table->string('dia_chi');
-            $table->string('anh_dai_dien')->nullable();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('action');       // Hành động
+            $table->string('status');       // thành công, lỗi, cảnh báo, v.v.
             $table->timestamps();
         });
     }
@@ -27,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('thong_tin_nguoi_dungs');
+        Schema::dropIfExists('activity_logs');
     }
 };

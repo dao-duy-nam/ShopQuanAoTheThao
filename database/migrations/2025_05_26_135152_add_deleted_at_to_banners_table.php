@@ -11,10 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('mau_sacs', function (Blueprint $table) {
-            $table->id();
-            $table->string('ten_mau_sac');
-            $table->timestamps();
+        Schema::table('banners', function (Blueprint $table) {
+            $table->softDeletes();
         });
     }
 
@@ -23,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('mau_sacs');
+        Schema::table('banners', function (Blueprint $table) {
+            //
+        });
     }
 };

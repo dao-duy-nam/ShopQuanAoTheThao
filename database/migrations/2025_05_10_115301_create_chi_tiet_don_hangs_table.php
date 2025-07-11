@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('don_hang_id')->constrained('don_hangs')->cascadeOnDelete();
             $table->foreignId('san_pham_id')->constrained('san_phams')->cascadeOnDelete();
             $table->foreignId('bien_the_id')->constrained('bien_thes')->cascadeOnDelete();
+            $table->json('thuoc_tinh_bien_the')->nullable(); 
             $table->integer('so_luong');
             $table->decimal('don_gia', 10, 2);
             $table->decimal('tong_tien', 10, 2);

@@ -11,10 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('kich_cos', function (Blueprint $table) {
-            $table->id();
-            $table->string('kich_co');
-            $table->timestamps();
+        Schema::table('san_phams', function (Blueprint $table) {
+             $table->unsignedBigInteger('id_danh_muc_cu')->nullable()->after('danh_muc_id');
         });
     }
 
@@ -23,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('kich_cos');
+        Schema::table('san_phams', function (Blueprint $table) {
+            $table->dropColumn('id_danh_muc_cu');
+        });
     }
 };

@@ -35,4 +35,22 @@ return [
         ],
     ],
 
+    'vnpay' => [
+        'tmn_code'    => env('VNPAY_TMN_CODE'),
+        'hash_secret' => env('VNPAY_HASH_SECRET'),
+        'url'         => env('VNPAY_URL'),
+        'return_url'  => env('VNPAY_RETURN_URL'),
+        'ipn_url'     => env('VNPAY_IPN_URL'),
+    ],
+
+    'zalopay' => [
+    'app_id' => env('ZALOPAY_APP_ID'),
+    'key1' => env('ZALOPAY_KEY1'),
+    'key2' => env('ZALOPAY_KEY2'),
+    'callback_url' => env('ZALOPAY_CALLBACK_URL'),
+    
+],
+
+
+
 ];

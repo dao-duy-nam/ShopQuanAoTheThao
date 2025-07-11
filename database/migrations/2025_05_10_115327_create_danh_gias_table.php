@@ -1,8 +1,9 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
 {
@@ -13,13 +14,20 @@ return new class extends Migration
     {
         Schema::create('danh_gias', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('nguoi_dung_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('san_pham_id')->constrained('san_phams')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('san_pham_id')->nullable()->constrained('san_phams')->onDelete('cascade');
+            $table->foreignId('bien_the_id')->nullable()->constrained('bien_thes')->onDelete('cascade');
+            $table->json('thuoc_tinh_bien_the')->nullable(); 
             $table->text('noi_dung');
             $table->unsignedTinyInteger('so_sao');
+            $table->string('hinh_anh')->nullable();
+             $table->boolean('is_hidden')->default(false);
             $table->timestamps();
+
+            
         });
     }
+    
 
     /**
      * Reverse the migrations.

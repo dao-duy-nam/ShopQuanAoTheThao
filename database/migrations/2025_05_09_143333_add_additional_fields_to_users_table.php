@@ -13,8 +13,12 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->string('so_dien_thoai')->nullable()->after('email');
+            $table->date('ngay_sinh')->nullable();
+            $table->enum('gioi_tinh', ['nam', 'nu', 'khac']);
+            $table->string('anh_dai_dien')->nullable();
             $table->foreignId('vai_tro_id')->nullable()->constrained('vai_tros')->after('so_dien_thoai');
-            $table->enum('trang_thai', ['active', 'inactive'])->default('active')->after('vai_tro_id');
+            $table->enum('trang_thai', ['active', 'inactive', 'blocked'])->default('active')->after('vai_tro_id');
+            
         });
     }
 
