@@ -42,5 +42,6 @@ return [
         'return_url'  => env('VNPAY_RETURN_URL'),
         'ipn_url'     => env('VNPAY_IPN_URL'),
     ],
+    
 
 ];
