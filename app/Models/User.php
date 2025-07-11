@@ -23,6 +23,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'anh_dai_dien',
         'vai_tro_id',
         'trang_thai',
+        'ly_do_block'
     ];
 
     protected $hidden = [
@@ -87,6 +88,10 @@ class User extends Authenticatable implements MustVerifyEmail
      public function cart()
     {
         return $this->hasOne(Cart::class, 'user_id');
+    }
+      public function diaChis()
+    {
+        return $this->hasMany(DiaChi::class, 'user_id');
     }
 }
 

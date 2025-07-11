@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Models\Variant;
-use Illuminate\Http\Request;
 use App\Models\AttributeValue;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\VariantResource;
@@ -48,21 +48,16 @@ class VariantController extends Controller
         if ($duplicateAttributeTypes->isNotEmpty()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Không thể chọn nhiều giá trị cho cùng một loại thuộc tính (ví dụ: nhiều kích cỡ, nhiều màu sắc).',
+                'message' => 'Không thể chọn nhiều giá trị cho cùng một loại thuộc tính.',
             ], 422);
         }
-        $inputAttributes = collect($validated['attributes'])->map(function ($attr) {
-            return $attr['thuoc_tinh_id'] . ':' . ($attr['gia_tri'] ?? 'id:' . $attr['attribute_value_id']);
-        })->sort()->values()->implode(',');
 
+        $inputKey = $this->buildAttributeKey($validated['attributes']);
         $existingVariants = Variant::where('san_pham_id', $productId)->with('attributeValues')->get();
 
         foreach ($existingVariants as $variant) {
-            $existingAttrs = $variant->attributeValues->map(function ($val) {
-                return $val->thuoc_tinh_id . ':' . $val->gia_tri;
-            })->sort()->values()->implode(',');
-
-            if ($existingAttrs === $inputAttributes) {
+            $existingKey = $this->buildAttributeKeyFromModel($variant);
+            if ($existingKey === $inputKey) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Biến thể với tổ hợp thuộc tính này đã tồn tại.',
@@ -74,11 +69,11 @@ class VariantController extends Controller
             $images = $this->uploadImages($request->file('images'));
 
             $variant = Variant::create([
-                'san_pham_id' => $productId,
-                'so_luong' => $validated['so_luong'],
-                'gia' => $validated['gia'],
-                'gia_khuyen_mai' => $validated['gia_khuyen_mai'] ?? null,
-                'hinh_anh' => $images,
+                'san_pham_id'     => $productId,
+                'so_luong'        => $validated['so_luong'],
+                'gia'             => $validated['gia'],
+                'gia_khuyen_mai'  => $validated['gia_khuyen_mai'] ?? null,
+                'hinh_anh'        => $images,
             ]);
 
             foreach ($validated['attributes'] as $attribute) {
@@ -86,8 +81,7 @@ class VariantController extends Controller
                 $variant->attributeValues()->attach($value->id);
             }
 
-            $variant->load('attributeValues.attribute');
-            return $variant;
+            return $variant->load('attributeValues.attribute');
         });
 
         return response()->json([
@@ -103,20 +97,15 @@ class VariantController extends Controller
         $validated = $request->validated();
 
         if (isset($validated['attributes'])) {
-            $inputAttributes = collect($validated['attributes'])->map(function ($attr) {
-                return $attr['thuoc_tinh_id'] . ':' . ($attr['gia_tri'] ?? 'id:' . $attr['attribute_value_id']);
-            })->sort()->values()->implode(',');
+            $inputKey = $this->buildAttributeKey($validated['attributes']);
 
             $existingVariants = Variant::where('san_pham_id', $variant->san_pham_id)
                 ->where('id', '!=', $variant->id)
                 ->with('attributeValues')->get();
 
             foreach ($existingVariants as $existingVariant) {
-                $existingAttrs = $existingVariant->attributeValues->map(function ($val) {
-                    return $val->thuoc_tinh_id . ':' . $val->gia_tri;
-                })->sort()->values()->implode(',');
-
-                if ($existingAttrs === $inputAttributes) {
+                $existingKey = $this->buildAttributeKeyFromModel($existingVariant);
+                if ($existingKey === $inputKey) {
                     return response()->json([
                         'status' => 'error',
                         'message' => 'Biến thể với tổ hợp thuộc tính này đã tồn tại.',
@@ -153,12 +142,10 @@ class VariantController extends Controller
             $variant->attributeValues()->sync($attributeValueIds);
         }
 
-        $variant->load('attributeValues.attribute');
-
         return response()->json([
             'status' => 'success',
             'message' => 'Cập nhật biến thể thành công.',
-            'data' => new VariantResource($variant)
+            'data' => new VariantResource($variant->load('attributeValues.attribute'))
         ]);
     }
 
@@ -170,7 +157,6 @@ class VariantController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Đã xóa mềm biến thể.',
-            'data' => null
         ]);
     }
 
@@ -181,7 +167,6 @@ class VariantController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Đã xóa mềm tất cả biến thể của sản phẩm.',
-            'data' => null
         ]);
     }
 
@@ -189,12 +174,11 @@ class VariantController extends Controller
     {
         $variant = Variant::onlyTrashed()->findOrFail($id);
         $variant->restore();
-        $variant->load('attributeValues.attribute');
 
         return response()->json([
             'status' => 'success',
             'message' => 'Khôi phục biến thể thành công.',
-            'data' => new VariantResource($variant)
+            'data' => new VariantResource($variant->load('attributeValues.attribute'))
         ]);
     }
 
@@ -205,7 +189,6 @@ class VariantController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Khôi phục tất cả biến thể đã xóa mềm của sản phẩm.',
-            'data' => null
         ]);
     }
 
@@ -239,7 +222,6 @@ class VariantController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Xóa vĩnh viễn biến thể thành công.',
-            'data' => null
         ]);
     }
 
@@ -250,17 +232,14 @@ class VariantController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Xóa vĩnh viễn tất cả biến thể đã xóa mềm của sản phẩm.',
-            'data' => null
         ]);
     }
+
 
     protected function uploadImages($images)
     {
         if (!$images) return [];
-
-        return array_map(function ($image) {
-            return $image->store('variants', 'public');
-        }, $images);
+        return array_map(fn($image) => $image->store('variants', 'public'), $images);
     }
 
     protected function resolveAttributeValue($attribute)
@@ -271,7 +250,27 @@ class VariantController extends Controller
 
         return AttributeValue::firstOrCreate([
             'thuoc_tinh_id' => $attribute['thuoc_tinh_id'],
-            'gia_tri' => $attribute['gia_tri'],
+            'gia_tri'       => trim($attribute['gia_tri']),
         ]);
+    }
+
+    protected function buildAttributeKey(array $attributes): string
+    {
+        return collect($attributes)->map(function ($attr) {
+            $value = !empty($attr['attribute_value_id'])
+                ? AttributeValue::findOrFail($attr['attribute_value_id'])
+                : AttributeValue::where('thuoc_tinh_id', $attr['thuoc_tinh_id'])
+                ->whereRaw('LOWER(gia_tri) = ?', [strtolower(trim($attr['gia_tri']))])
+                ->firstOrFail();
+
+            return $attr['thuoc_tinh_id'] . ':' . strtolower(trim($value->gia_tri));
+        })->sort()->values()->implode(',');
+    }
+
+    protected function buildAttributeKeyFromModel(Variant $variant): string
+    {
+        return $variant->attributeValues->map(function ($val) {
+            return $val->thuoc_tinh_id . ':' . strtolower(trim($val->gia_tri));
+        })->sort()->values()->implode(',');
     }
 }

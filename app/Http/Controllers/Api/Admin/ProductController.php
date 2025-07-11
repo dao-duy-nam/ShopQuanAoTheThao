@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Models\Product;
 use App\Models\Variant;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\AttributeValue;
 use Illuminate\Support\Facades\DB;
@@ -59,7 +60,6 @@ class ProductController extends Controller
                     ? $request->file('hinh_anh')->store('products', 'public')
                     : null;
 
-
                 $product = Product::create([
                     'ten'         => $data['ten'],
                     'mo_ta'       => $data['mo_ta'] ?? null,
@@ -69,35 +69,33 @@ class ProductController extends Controller
                 ]);
 
                 $tongSoLuong = 0;
-
+                $checkedCombinations = [];
 
                 foreach ($data['variants'] as $i => $variantData) {
+
                     $images = [];
                     if ($request->hasFile("variants.$i.hinh_anh")) {
                         foreach ($request->file("variants.$i.hinh_anh") as $imageFile) {
-                            $path = $imageFile->store('variants', 'public');
-                            $images[] = $path;
+                            $images[] = $imageFile->store('variants', 'public');
                         }
                     }
-                    $variant = Variant::create([
-                        'san_pham_id'    => $product->id,
-                        'so_luong'       => $variantData['so_luong'],
-                        'gia'            => $variantData['gia'],
-                        'gia_khuyen_mai' => $variantData['gia_khuyen_mai'] ?? null,
-                        'hinh_anh'       => json_encode($images),
-                    ]);
-                    $tongSoLuong += $variantData['so_luong'];
+
+                    $attributeCombination = [];
+                    $usedThuocTinh = [];
+                    $attachedValueIds = [];
+
                     if (!empty($variantData['attributes']) && is_array($variantData['attributes'])) {
-                        $usedThuocTinh = [];
                         foreach ($variantData['attributes'] as $attr) {
                             if (empty($attr['thuoc_tinh_id'])) {
                                 throw new \Exception("Thiếu thuộc tính ID ở biến thể #" . ($i + 1));
                             }
+
                             $thuocTinhId = $attr['thuoc_tinh_id'];
                             if (in_array($thuocTinhId, $usedThuocTinh)) {
                                 throw new \Exception("Biến thể " . ($i + 1) . " bị trùng thuộc tính ID {$thuocTinhId}");
                             }
                             $usedThuocTinh[] = $thuocTinhId;
+
                             $giaTri = null;
                             if (!empty($attr['gia_tri_thuoc_tinh_id'])) {
                                 $giaTri = AttributeValue::where('id', $attr['gia_tri_thuoc_tinh_id'])
@@ -116,10 +114,36 @@ class ProductController extends Controller
                                 throw new \Exception("Bạn phải chọn hoặc nhập giá trị cho thuộc tính ID {$thuocTinhId} ở biến thể #" . ($i + 1));
                             }
 
-                            $variant->attributeValues()->attach($giaTri->id);
+
+                            $attributeCombination[] = $thuocTinhId . ':' . Str::slug($giaTri->gia_tri);
+                            $attachedValueIds[] = $giaTri->id;
                         }
                     }
+
+
+                    sort($attributeCombination);
+                    $combinationKey = implode(',', $attributeCombination);
+                    if (in_array($combinationKey, $checkedCombinations)) {
+                        throw new \Exception("Biến thể " . ($i + 1) . " bị trùng tổ hợp thuộc tính với biến thể khác.");
+                    }
+                    $checkedCombinations[] = $combinationKey;
+
+                    $variant = Variant::create([
+                        'san_pham_id'    => $product->id,
+                        'so_luong'       => $variantData['so_luong'],
+                        'gia'            => $variantData['gia'],
+                        'gia_khuyen_mai' => $variantData['gia_khuyen_mai'] ?? null,
+                        'hinh_anh'       => json_encode($images),
+                    ]);
+
+                    $tongSoLuong += $variantData['so_luong'];
+
+
+                    if (!empty($attachedValueIds)) {
+                        $variant->attributeValues()->attach($attachedValueIds);
+                    }
                 }
+
 
                 $product->update(['so_luong' => $tongSoLuong]);
 
@@ -129,9 +153,7 @@ class ProductController extends Controller
             return response()->json([
                 'status'  => 'success',
                 'message' => 'Tạo sản phẩm & biến thể thành công.',
-                'data'    => new ProductResource(
-                    $product->load('variants.attributeValues.attribute')
-                ),
+                'data'    => new ProductResource($product->load('variants.attributeValues.attribute')),
             ]);
         } catch (\Exception $e) {
             return response()->json([
