@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\Admin\CategoryController;
 use App\Http\Controllers\Api\Admin\AttributeValueController;
 use App\Http\Controllers\Api\Admin\AdminAuthController;
 use App\Http\Controllers\Api\Admin\AttributeController;
+use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\DiscountCodeController;
 
 Route::prefix('admin')->group(function () {
@@ -25,7 +26,7 @@ Route::prefix('admin')->group(function () {
         // Quản lý tài khoản
         Route::prefix('users')->group(function () {
             Route::post('/', [UserController::class, 'store']);
-            Route::patch('/{id}/role', [UserController::class, 'updateRole']);
+            // Route::patch('/{id}/role', [UserController::class, 'updateRole']);
             Route::patch('/{id}/block', [UserController::class, 'block']);
             Route::post('/{id}/unblock', [UserController::class, 'unblock']);
         });
@@ -36,6 +37,8 @@ Route::prefix('admin')->group(function () {
         // Quản lý người dùng
         Route::prefix('users')->group(function () {
             Route::get('/ad', [UserController::class, 'listAdmins']);
+            Route::get('/staff', [UserController::class, 'listStaffs']);
+
             Route::get('/cus', [UserController::class, 'listCustomers']);
             Route::get('/{id}', [UserController::class, 'show']);
         });
@@ -120,6 +123,10 @@ Route::prefix('admin')->group(function () {
             Route::get('/trash/list', [DiscountCodeController::class, 'trash']);
             Route::post('/restore/{id}', [DiscountCodeController::class, 'restore']);
             Route::post('/{id}/send', [DiscountCodeController::class, 'sendToUsers']);
+        });
+
+        Route::prefix('dashboard')->group(function () {
+            Route::get('/', [DashboardController::class, 'index']);
         });
     });
 });

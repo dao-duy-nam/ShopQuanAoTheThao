@@ -9,22 +9,27 @@ use App\Mail\UserBlockedMail;
 use App\Mail\UserUnblockedMail;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use App\Http\Resources\UserAdminResource;
 
 class UserController extends Controller
 {
    public function listAdmins(Request $request)
 {
-    
-    return $this->getUsersByRoleNames(['admin', 'staff'], $request);
+    return $this->getUsersByRoleNames(['admin'], $request);
+}
+
+public function listStaffs(Request $request)
+{
+    return $this->getUsersByRoleNames(['staff'], $request);
 }
 
 public function listCustomers(Request $request)
 {
     return $this->getUsersByRoleNames(['user'], $request);
 }
-
 
 protected function getUsersByRoleNames(array $roleNames, Request $request)
 {
@@ -99,7 +104,6 @@ protected function getUsersByRoleNames(array $roleNames, Request $request)
 
         $data['vai_tro_id'] = $staffRole->id;
 
-        // Tạo user
         $user = User::create($data);
         $user->load('role');
 
@@ -124,10 +128,10 @@ protected function getUsersByRoleNames(array $roleNames, Request $request)
         $user->load('role');
 
         return response()->json([
-            'message' => 'Cập nhật quyền thành công',
-            'status' => 200,
-            'data' => $user->toArray()
-        ], 200);
+    'message' => 'Tài khoản đã bị khóa',
+    'status' => 200,
+    'data' => new UserAdminResource($user),
+]);
     }
 
    public function block(Request $request, $id)
@@ -148,18 +152,16 @@ protected function getUsersByRoleNames(array $roleNames, Request $request)
         'trang_thai' => 'blocked',
         'ly_do_block' => $request->ly_do_block,
         'block_den_ngay' => null,
-        'kieu_block' => $request->kieu_block ?: 'vinh_vien', // nếu không truyền thì gán mặc định
+        'kieu_block' => $request->kieu_block ?: 'đã khoá!!', // nếu không truyền thì gán mặc định
     ]);
 
-    Mail::to($user->email)->send(new UserBlockedMail($user, $request->ly_do_block));
+    Mail::to($user->email)->queue(new UserBlockedMail($user, $request->ly_do_block));
 
     return response()->json([
-        'message' => 'Tài khoản đã bị khóa ',
-        'status' => 200,
-        'data' => $user->only([
-            'id', 'name', 'email', 'trang_thai', 'kieu_block', 'block_den_ngay', 'ly_do_block'
-        ])
-    ]);
+    'message' => 'Tài khoản đã bị khóa',
+    'status' => 200,
+    'data' => new UserAdminResource($user),
+]);
 }
 
     public function unblock($id)
@@ -179,23 +181,38 @@ protected function getUsersByRoleNames(array $roleNames, Request $request)
         'kieu_block' => null,
     ]);
 
-    Mail::to($user->email)->send(new UserUnblockedMail($user));
+    Mail::to($user->email)->queue(new UserUnblockedMail($user));
 
-    return response()->json([
-        'message' => 'Tài khoản đã được mở khóa',
-        'data' => $user->only(['id', 'name', 'email', 'trang_thai']),
-    ]);
+   return response()->json([
+    'message' => 'Tài khoản đã mở',
+    'status' => 200,
+    'data' => new UserAdminResource($user),
+]);
 }
 
 
     public function show($id)
-    {
-        $user = User::with('role')->findOrFail($id);
+{
+    $authUser = Auth::user();
+    $user = User::with('role')->findOrFail($id);
 
+    if ($authUser && $authUser->role && $authUser->role->ten_vai_tro === 'staff' && $user->role && $user->role->ten_vai_tro === 'admin') {
         return response()->json([
-            'message' => 'Chi tiết người dùng',
-            'status' => 200,
-            'data' => $user->toArray()
-        ], 200);
+            'message' => 'Bạn không có quyền xem chi tiết tài khoản admin',
+        ], 403);
     }
+
+    if ($user->role && $user->role->ten_vai_tro === 'user') {
+        $user->load('diaChis');
+    }
+
+    $data = $user->toArray();
+    $data['gioi_tinh'] = $user->gioi_tinh;
+
+    return response()->json([
+        'message' => 'Chi tiết người dùng',
+        'status' => 200,
+        'data' => $data
+    ], 200);
+}
 }
