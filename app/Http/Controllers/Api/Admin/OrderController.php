@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\OrderStatusChangedMail;
+use App\Models\ActivityLog;
 use App\Models\Order;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class OrderController extends Controller
 {
@@ -46,9 +49,43 @@ public function show($id)
     return response()->json($order);
 }
 
-    /**
-     * Cập nhật trạng thái đơn hàng, trạng thái thanh toán và địa chỉ
-     */
+public function update(Request $request, $id)
+{
+    $validated = $request->validate([
+        'trang_thai_don_hang' => 'nullable|in:cho_xac_nhan,dang_chuan_bi,dang_van_chuyen,da_giao,yeu_cau_tra_hang,cho_xac_nhan_tra_hang,tra_hang_thanh_cong,yeu_cau_huy,cho_xac_nhan_huy,huy_thanh_cong',
+        'dia_chi' => 'nullable|string|max:255',
+    ]);
+
+    $order = Order::findOrFail($id);
+
+    // Luồng trạng thái đơn hàng
+    $orderStatusFlow = [
+        'cho_xac_nhan' => ['dang_chuan_bi', 'da_huy', 'yeu_cau_huy'],
+        'dang_chuan_bi' => ['dang_van_chuyen', 'da_huy', 'yeu_cau_huy'],
+        'dang_van_chuyen' => ['da_giao'],
+        'da_giao' => ['yeu_cau_tra_hang', 'yeu_cau_huy'],
+        'yeu_cau_tra_hang' => ['cho_xac_nhan_tra_hang'],
+        'cho_xac_nhan_tra_hang' => ['tra_hang_thanh_cong'],
+        'tra_hang_thanh_cong' => [],
+        
+        'yeu_cau_huy' => ['cho_xac_nhan_huy'],
+        'cho_xac_nhan_huy' => ['da_huy'],
+
+        'da_huy' => [],
+    ];
+
+    $currentOrderStatus = $order->trang_thai_don_hang;
+
+    if (isset($validated['trang_thai_don_hang'])) {
+        $nextOrderStatus = $validated['trang_thai_don_hang'];
+
+        // Luồng trả hàng
+        if ($currentOrderStatus === 'yeu_cau_tra_hang' && $nextOrderStatus !== 'cho_xac_nhan_tra_hang') {
+            return response()->json([
+                'message' => "Đơn hàng đang yêu cầu trả hàng, chỉ được xác nhận sang 'cho_xac_nhan_tra_hang'."
+            ], 400);
+=======
+
 public function update(Request $request, $id)
 {
     $validated = $request->validate([
@@ -136,7 +173,4 @@ public function update(Request $request, $id)
         'order' => $order
     ]);
 }
-
-
-
 }
