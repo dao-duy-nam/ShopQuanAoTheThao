@@ -49,65 +49,94 @@ public function show($id)
     /**
      * Cập nhật trạng thái đơn hàng, trạng thái thanh toán và địa chỉ
      */
-    public function update(Request $request, $id)
-    {
-        $validated = $request->validate([
-            'trang_thai_don_hang' => 'nullable|in:cho_xac_nhan,dang_chuan_bi,dang_van_chuyen,da_giao,da_huy,tra_hang',
-            'trang_thai_thanh_toan' => 'nullable|in:cho_xu_ly,da_thanh_toan,that_bai,hoan_tien,da_huy',
-            'dia_chi' => 'nullable|string|max:255',  // Cho phép cập nhật địa chỉ
-        ]);
+public function update(Request $request, $id)
+{
+    $validated = $request->validate([
+        'trang_thai_don_hang' => 'nullable|in:cho_xac_nhan,dang_chuan_bi,dang_van_chuyen,da_giao,yeu_cau_tra_hang,cho_xac_nhan_tra_hang,tra_hang_thanh_cong,yeu_cau_huy,cho_xac_nhan_huy,huy_thanh_cong',
+        'dia_chi' => 'nullable|string|max:255',
+    ]);
 
-        $order = Order::findOrFail($id);
+    $order = Order::findOrFail($id);
 
-        // Luồng hợp lệ của trạng thái đơn hàng
-        $orderStatusFlow = [
-            'cho_xac_nhan' => ['dang_chuan_bi', 'da_huy'],
-            'dang_chuan_bi' => ['dang_van_chuyen', 'da_huy'],
-            'dang_van_chuyen' => ['da_giao', 'tra_hang'],
-            'da_giao' => ['tra_hang'],
-            'da_huy' => [],
-            'tra_hang' => [],
-        ];
+    // Luồng trạng thái đơn hàng
+    $orderStatusFlow = [
+        'cho_xac_nhan' => ['dang_chuan_bi', 'da_huy', 'yeu_cau_huy'],
+        'dang_chuan_bi' => ['dang_van_chuyen', 'da_huy', 'yeu_cau_huy'],
+        'dang_van_chuyen' => ['da_giao'],
+        'da_giao' => ['yeu_cau_tra_hang', 'yeu_cau_huy'],
+        'yeu_cau_tra_hang' => ['cho_xac_nhan_tra_hang'],
+        'cho_xac_nhan_tra_hang' => ['tra_hang_thanh_cong'],
+        'tra_hang_thanh_cong' => [],
+        
+        'yeu_cau_huy' => ['cho_xac_nhan_huy'],
+        'cho_xac_nhan_huy' => ['da_huy'],
 
-        // Luồng hợp lệ của trạng thái thanh toán
-        $paymentStatusFlow = [
-            'cho_xu_ly' => ['da_thanh_toan', 'that_bai', 'da_huy'],
-            'da_thanh_toan' => ['hoan_tien'],
-            'that_bai' => [],
-            'hoan_tien' => [],
-            'da_huy' => [],
-        ];
+        'da_huy' => [],
+    ];
 
-        // Kiểm tra trạng thái đơn hàng nếu có gửi
-        if (isset($validated['trang_thai_don_hang'])) {
-            $current = $order->trang_thai_don_hang;
-            $next = $validated['trang_thai_don_hang'];
+    $currentOrderStatus = $order->trang_thai_don_hang;
 
-            if (!in_array($next, $orderStatusFlow[$current])) {
-                return response()->json([
-                    'message' => "Không thể chuyển trạng thái đơn hàng từ '$current' sang '$next'."
-                ], 400);
-            }
+    if (isset($validated['trang_thai_don_hang'])) {
+        $nextOrderStatus = $validated['trang_thai_don_hang'];
+
+        // Luồng trả hàng
+        if ($currentOrderStatus === 'yeu_cau_tra_hang' && $nextOrderStatus !== 'cho_xac_nhan_tra_hang') {
+            return response()->json([
+                'message' => "Đơn hàng đang yêu cầu trả hàng, chỉ được xác nhận sang 'cho_xac_nhan_tra_hang'."
+            ], 400);
         }
 
-        // Kiểm tra trạng thái thanh toán nếu có gửi
-        if (isset($validated['trang_thai_thanh_toan'])) {
-            $current = $order->trang_thai_thanh_toan;
-            $next = $validated['trang_thai_thanh_toan'];
-
-            if (!in_array($next, $paymentStatusFlow[$current])) {
-                return response()->json([
-                    'message' => "Không thể chuyển trạng thái thanh toán từ '$current' sang '$next'."
-                ], 400);
-            }
+        if ($currentOrderStatus === 'cho_xac_nhan_tra_hang' && $nextOrderStatus !== 'tra_hang_thanh_cong') {
+            return response()->json([
+                'message' => "Đơn hàng đang chờ xác nhận trả hàng, chỉ được xác nhận sang 'tra_hang_thanh_cong'."
+            ], 400);
         }
 
-        // Cập nhật các trường được gửi lên
-        $order->update($validated);
+        // Luồng hủy đơn
+        if ($currentOrderStatus === 'yeu_cau_huy' && $nextOrderStatus !== 'cho_xac_nhan_huy') {
+            return response()->json([
+                'message' => "Đơn hàng đang yêu cầu hủy, chỉ được xác nhận sang 'cho_xac_nhan_huy'."
+            ], 400);
+        }
 
-        return response()->json([
-            'message' => 'Cập nhật đơn hàng thành công',
-            'order' => $order
-        ]);
+        if ($currentOrderStatus === 'cho_xac_nhan_huy' && $nextOrderStatus !== 'da_huy') {
+            return response()->json([
+                'message' => "Đơn hàng đang chờ xác nhận hủy, chỉ được xác nhận sang 'huy_thanh_cong'."
+            ], 400);
+        }
+
+        if (!in_array($nextOrderStatus, $orderStatusFlow[$currentOrderStatus])) {
+            return response()->json([
+                'message' => "Không thể chuyển trạng thái đơn hàng từ '$currentOrderStatus' sang '$nextOrderStatus'."
+            ], 400);
+        }
+
+        // Auto set trạng thái thanh toán theo trạng thái đơn hàng
+        if ($nextOrderStatus === 'cho_xac_nhan') {
+            $validated['trang_thai_thanh_toan'] = 'cho_xu_ly';
+        } elseif ($nextOrderStatus === 'da_giao') {
+            $validated['trang_thai_thanh_toan'] = 'da_thanh_toan';
+        } elseif ($nextOrderStatus === 'yeu_cau_tra_hang') {
+            $validated['trang_thai_thanh_toan'] = 'cho_hoan_tien';
+        } elseif ($nextOrderStatus === 'tra_hang_thanh_cong') {
+            $validated['trang_thai_thanh_toan'] = 'hoan_tien';
+        } elseif ($nextOrderStatus === 'yeu_cau_huy') {
+            $validated['trang_thai_thanh_toan'] = 'da_huy';
+        } elseif ($nextOrderStatus === 'cho_xac_nhan_huy') {
+            $validated['trang_thai_thanh_toan'] = 'da_huy';
+        } elseif ($nextOrderStatus === 'da_huy') {
+            $validated['trang_thai_thanh_toan'] = 'da_huy';
+        }
     }
+
+    $order->update($validated);
+
+    return response()->json([
+        'message' => 'Cập nhật đơn hàng thành công',
+        'order' => $order
+    ]);
+}
+
+
+
 }
