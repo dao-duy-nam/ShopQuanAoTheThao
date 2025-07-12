@@ -299,71 +299,45 @@ public function show($id)
             return response()->json(['error' => 'Bạn không có quyền xem đơn hàng này.'], 403);
         }
 
-        $orderDetail = $order->orderDetail->map(function ($detail) {
-            $thuocTinhBienThe = [];
+        $chiTietSanPham = $order->orderDetail->map(function ($detail) {
+            $thuocTinhBienThe = null;
 
             if ($detail->bien_the_id && $detail->variant && $detail->variant->variantAttributes) {
-                $thuocTinhBienThe = $detail->variant->variantAttributes
-                    ->map(function ($attr) {
-                        if (!$attr->attributeValue || !$attr->attributeValue->attribute) {
-                            return null;
-                        }
-                        return [
-                            'thuoc_tinh_id' => $attr->attributeValue->attribute->id,
-                            'ten_thuoc_tinh' => $attr->attributeValue->attribute->ten,
-                            'gia_tri' => $attr->attributeValue->gia_tri,
-                        ];
-                    })
-                    ->filter()
-                    ->values()
-                    ->toArray();
-            }
-
-            // Xử lý lấy hinh_anh: trả thẳng base64 hoặc đường dẫn lưu trong DB
-            $hinhAnhData = null;
-            if ($detail->variant && $detail->variant->hinh_anh) {
-                $hinhAnh = $detail->variant->hinh_anh;
-                if (is_string($hinhAnh)) {
-                    $hinhAnhData = $hinhAnh; // Base64 hoặc đường dẫn trong DB
-                } elseif (is_array($hinhAnh) && count($hinhAnh) > 0) {
-                    $hinhAnhData = $hinhAnh[0]; // Lấy ảnh đầu tiên nếu là mảng
-                }
+                $thuocTinhBienThe = $detail->variant->variantAttributes->map(function ($attr) {
+                    return [
+                        'thuoc_tinh' => $attr->attributeValue->attribute->ten ?? '',
+                        'gia_tri' => $attr->attributeValue->gia_tri ?? ''
+                    ];
+                })->filter()->values();
             }
 
             return [
-                'san_pham_id' => $detail->san_pham_id,
                 'ten_san_pham' => optional($detail->product)->ten,
-                'hinh_anh' => $hinhAnhData,
-                'bien_the_id' => $detail->bien_the_id,
-                'thuoc_tinh_bien_the' => $thuocTinhBienThe,
                 'so_luong' => $detail->so_luong,
                 'don_gia' => $detail->don_gia,
                 'tong_tien' => $detail->tong_tien,
+                'thuoc_tinh_bien_the' => $thuocTinhBienThe
             ];
-        })->toArray();
+        });
 
         return response()->json([
-            'order' => [
-                'ma_don_hang' => $order->ma_don_hang,
-                'user' => [
-                    'id' => $order->user->id,
-                    'ten' => $order->user->name,
-                    'email' => $order->user->email,
-                ],
-                'email_nguoi_dat' => $order->email_nguoi_dat,
-                'sdt_nguoi_dat' => $order->sdt_nguoi_dat,
-                'dia_chi' => $order->dia_chi,
-                'thanh_pho' => $order->thanh_pho,
-                'huyen' => $order->huyen,
-                'xa' => $order->xa,
-                'phuong_thuc_thanh_toan' => optional($order->paymentMethod)->ten,
-                'trang_thai_don_hang' => $order->trang_thai_don_hang,
-                'trang_thai_thanh_toan' => $order->trang_thai_thanh_toan,
-                'so_tien_thanh_toan' => $order->so_tien_thanh_toan,
-                'created_at' => $order->created_at,
-                'items' => $orderDetail,
-            ]
+            'id' => $order->id,
+            'ma_don_hang' => $order->ma_don_hang,
+            'tong_tien' => $order->so_tien_thanh_toan,
+            'dia_chi' => $order->dia_chi,
+            'thanh_pho' => $order->thanh_pho,
+            'huyen' => $order->huyen,
+            'xa' => $order->xa,
+            'ten_nguoi_dat' => $order->ten_nguoi_dat,
+            'email_nguoi_dat' => $order->email_nguoi_dat,
+            'sdt_nguoi_dat' => $order->sdt_nguoi_dat,
+            'phuong_thuc_thanh_toan' => optional($order->paymentMethod)->ten,
+            'trang_thai_don_hang' => $order->trang_thai_don_hang,
+            'trang_thai_thanh_toan' => $order->trang_thai_thanh_toan,
+            'created_at' => $order->created_at,
+            'chi_tiet_san_pham' => $chiTietSanPham,
         ]);
+
     } catch (\Exception $e) {
         Log::error('Lỗi lấy chi tiết đơn hàng', [
             'error' => $e->getMessage(),
