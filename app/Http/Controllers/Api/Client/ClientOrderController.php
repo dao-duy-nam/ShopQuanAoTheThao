@@ -424,4 +424,3 @@ public function show($id)
             'order' => $order
         ]);
     }
-}
