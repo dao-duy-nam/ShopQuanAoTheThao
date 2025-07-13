@@ -79,6 +79,7 @@ class WalletController extends Controller
             'status' => 'pending',
             'bank_name' => $request->bank_name,
             'bank_account' => $request->bank_account,
+            'acc_name' => $request->acc_name,
             'description' => 'Yêu cầu rút tiền đang chờ admin duyệt',
         ]);
 
