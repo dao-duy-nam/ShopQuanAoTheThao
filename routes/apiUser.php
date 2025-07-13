@@ -80,7 +80,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('create', [VnpayController::class, 'createPayment'])->middleware('auth:sanctum');
         Route::get('return', [VnpayController::class, 'callback'])->name('payment.vnpay.callback');
         Route::match(['GET', 'POST'], 'ipn', [VnpayController::class, 'ipn'])->name('payment.vnpay.ipn');
-        Route::get('return', [VnpayController::class, 'vnpayReturn'])->name('vnpay.return');
+        // Route::get('return', [VnpayController::class, 'vnpayReturn'])->name('vnpay.return');
     });
     Route::post('/wallet/vnpay/return', [\App\Http\Controllers\Api\Payment\VnpayController::class, 'walletVnpayReturn']);
     Route::prefix('cart')->group(function () {
