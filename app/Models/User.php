@@ -94,10 +94,16 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(DiaChi::class, 'user_id');
     }
+
+    public function wallet()
+    {
+        return $this->hasOne(Wallet::class, 'user_id');
+
     public function discountCodes()
     {
         return $this->belongsToMany(DiscountCode::class, 'ma_giam_gia_nguoi_dung', 'nguoi_dung_id', 'ma_giam_gia_id')
             ->withPivot('so_lan_da_dung')
             ->withTimestamps();
+
     }
 }

@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\Client\ClientOrderController;
 use App\Http\Controllers\Api\Client\DiscountCodeController;
 use App\Http\Controllers\Api\Client\ClientAccountController;
 use App\Http\Controllers\Api\Client\ForgotPasswordController;
+use App\Http\Controllers\Api\Client\WalletController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
@@ -44,8 +45,18 @@ Route::middleware(['auth:sanctum', 'user'])->group(function () {
     Route::put('/client/change-password', [ClientAccountController::class, 'changePassword']);
     Route::post('/client/logout', [ClientAccountController::class, 'logout']);
 
+
+    // Wallet API
+    Route::get('/wallet', [WalletController::class, 'getBalance']);
+    Route::get('/wallet/transactions', [WalletController::class, 'getTransactions']);
+    Route::post('/wallet/deposit', [WalletController::class, 'deposit']);
+    Route::post('/wallet/withdraw', [WalletController::class, 'withdraw']);
+    Route::post('/wallet/pay', [WalletController::class, 'pay']);
+    Route::post('/wallet/refund', [WalletController::class, 'refund']);
+
     Route::post('/client/discount-code/check', [DiscountCodeController::class, 'check']);
     Route::get('/client/discount-codes', [DiscountCodeController::class, 'userDiscounts']);
+
 });
 
 
@@ -69,7 +80,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('create', [VnpayController::class, 'createPayment'])->middleware('auth:sanctum');
         Route::get('return', [VnpayController::class, 'callback'])->name('payment.vnpay.callback');
         Route::match(['GET', 'POST'], 'ipn', [VnpayController::class, 'ipn'])->name('payment.vnpay.ipn');
+        Route::get('return', [VnpayController::class, 'vnpayReturn'])->name('vnpay.return');
     });
+    Route::post('/wallet/vnpay/return', [\App\Http\Controllers\Api\Payment\VnpayController::class, 'walletVnpayReturn']);
     Route::prefix('cart')->group(function () {
         Route::get('/', [CartController::class, 'index']);
         Route::post('/add', [CartController::class, 'addToCart']);
