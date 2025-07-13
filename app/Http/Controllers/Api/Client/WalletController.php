@@ -51,16 +51,43 @@ class WalletController extends Controller
     // }
 
     // Rút tiền từ ví
-    public function withdraw(WithdrawRequest $request)
-    {
-        try {
-            $bank_info = $request->bank_name . ' - ' . $request->bank_account;
-            $transaction = $this->walletService->withdraw($request->user(), $request->amount, $bank_info);
-            return new WalletTransactionResource($transaction);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
-        }
+    public function withdraw(Request $request)
+{
+    $request->validate([
+        'amount' => 'required|numeric|min:50000',
+        'bank_name' => 'required|string|max:255',
+        'bank_account' => 'required|string|max:50',
+        'acc_name' => 'required|string|max:255',
+    ]);
+
+    $user = $request->user();
+    $wallet = $user->wallet;
+
+    if (!$wallet || $wallet->balance < $request->amount) {
+        return response()->json(['message' => 'Số dư không đủ để rút tiền'], 400);
     }
+
+    try {
+        
+        $wallet->decrement('balance', $request->amount);
+
+        
+        $transaction = $wallet->transactions()->create([
+            'user_id' => $user->id,
+            'type' => 'withdraw',
+            'amount' => $request->amount,
+            'status' => 'pending',
+            'bank_name' => $request->bank_name,
+            'bank_account' => $request->bank_account,
+            'description' => 'Yêu cầu rút tiền đang chờ admin duyệt',
+        ]);
+
+        return new WalletTransactionResource($transaction);
+    } catch (\Exception $e) {
+        return response()->json(['message' => 'Lỗi rút tiền: ' . $e->getMessage()], 500);
+    }
+}
+
 
     // Thanh toán đơn hàng bằng ví
     public function pay(PayRequest $request)

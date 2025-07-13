@@ -15,6 +15,9 @@ class WalletTransaction extends Model
         'type',
         'amount',
         'status',
+        'bank_name',
+        'acc_name',
+        'bank_account',
         'description',
         'related_order_id',
     ];
