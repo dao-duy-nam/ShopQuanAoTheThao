@@ -20,6 +20,8 @@ class Order extends Model
         'huyen',
         'xa',
         'email_nguoi_dat',
+        'ten_san_pham',
+        'gia_tri_bien_the',
         'sdt_nguoi_dat',
         'expires_at',     
         'payment_link',

@@ -22,7 +22,6 @@ return new class extends Migration
             'cho_xac_nhan_tra_hang',
             'tra_hang_thanh_cong',
             'yeu_cau_huy_hang',
-            'cho_xac_nhan_huy',
             'da_huy'
         )");
 

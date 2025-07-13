@@ -24,9 +24,9 @@ class OrderController extends Controller
 
             $query->where(function ($query) use ($search) {
                 $query->where('ma_don_hang', 'like', "%$search%")
-                      ->orWhere('user_id', 'like', "%$search%")
-                      ->orWhere('trang_thai_don_hang', 'like', "%$search%")
-                      ->orWhere('dia_chi', 'like', "%$search%");  // Cho phép search theo địa chỉ
+                    ->orWhere('user_id', 'like', "%$search%")
+                    ->orWhere('trang_thai_don_hang', 'like', "%$search%")
+                    ->orWhere('dia_chi', 'like', "%$search%");  // Cho phép search theo địa chỉ
             });
         }
 
@@ -38,94 +38,82 @@ class OrderController extends Controller
     /**
      * Chi tiết đơn hàng theo ID
      */
-public function show($id)
-{
-    $order = Order::with([
-        'orderDetail.product',    // Lấy toàn bộ cột của bảng san_phams
-        'orderDetail.variant',    // (nếu muốn lấy luôn biến thể)
-        'paymentMethod'           // Lấy phương thức thanh toán
-    ])->findOrFail($id);
+    public function show($id)
+    {
+        $order = Order::with([
+            'orderDetail.product',    // Lấy toàn bộ cột của bảng san_phams
+            'orderDetail.variant',    // (nếu muốn lấy luôn biến thể)
+            'paymentMethod'           // Lấy phương thức thanh toán
+        ])->findOrFail($id);
 
-    return response()->json($order);
-}
+        return response()->json($order);
+    }
 
 
 public function update(Request $request, $id)
 {
     $validated = $request->validate([
-        'trang_thai_don_hang' => 'nullable|in:cho_xac_nhan,dang_chuan_bi,dang_van_chuyen,da_giao,yeu_cau_tra_hang,cho_xac_nhan_tra_hang,tra_hang_thanh_cong,yeu_cau_huy_hang,cho_xac_nhan_huy,huy_thanh_cong',
+        'trang_thai_don_hang' => 'nullable|in:cho_xac_nhan,dang_chuan_bi,dang_van_chuyen,da_giao,yeu_cau_tra_hang,cho_xac_nhan_tra_hang,tra_hang_thanh_cong,yeu_cau_huy_hang,da_huy',
         'dia_chi' => 'nullable|string|max:255',
     ]);
 
     $order = Order::findOrFail($id);
-
-    // Luồng trạng thái đơn hàng
-    $orderStatusFlow = [
-        'cho_xac_nhan' => ['dang_chuan_bi', 'da_huy', 'yeu_cau_huy_hang'],
-        'dang_chuan_bi' => ['dang_van_chuyen', 'da_huy', 'yeu_cau_huy_hang'],
-        'dang_van_chuyen' => ['da_giao'],
-        'da_giao' => ['yeu_cau_tra_hang', 'yeu_cau_huy_hang'],
-        'yeu_cau_tra_hang' => ['cho_xac_nhan_tra_hang'],
-        'cho_xac_nhan_tra_hang' => ['tra_hang_thanh_cong'],
-        'tra_hang_thanh_cong' => [],
-        
-        'yeu_cau_huy_hang' => ['cho_xac_nhan_huy'],
-        'cho_xac_nhan_huy' => ['da_huy'],
-
-        'da_huy' => [],
-    ];
-
-    $currentOrderStatus = $order->trang_thai_don_hang;
+    $currentStatus = $order->trang_thai_don_hang;
 
     if (isset($validated['trang_thai_don_hang'])) {
-        $nextOrderStatus = $validated['trang_thai_don_hang'];
+        $nextStatus = $validated['trang_thai_don_hang'];
 
-        // Luồng trả hàng
-        if ($currentOrderStatus === 'yeu_cau_tra_hang' && $nextOrderStatus !== 'cho_xac_nhan_tra_hang') {
+        $userOnlyStatuses = ['da_giao', 'yeu_cau_tra_hang', 'yeu_cau_huy_hang'];
+        if (in_array($nextStatus, $userOnlyStatuses)) {
+            return response()->json([
+                'message' => "Trạng thái '$nextStatus' chỉ được cập nhật bởi người dùng."
+            ], 403);
+        }
+
+        if ($currentStatus === 'yeu_cau_tra_hang' && $nextStatus !== 'cho_xac_nhan_tra_hang') {
             return response()->json([
                 'message' => "Đơn hàng đang yêu cầu trả hàng, chỉ được xác nhận sang 'cho_xac_nhan_tra_hang'."
             ], 400);
         }
 
-        if ($currentOrderStatus === 'cho_xac_nhan_tra_hang' && $nextOrderStatus !== 'tra_hang_thanh_cong') {
+        if ($currentStatus === 'cho_xac_nhan_tra_hang' && $nextStatus !== 'tra_hang_thanh_cong') {
             return response()->json([
                 'message' => "Đơn hàng đang chờ xác nhận trả hàng, chỉ được xác nhận sang 'tra_hang_thanh_cong'."
             ], 400);
         }
 
-        // Luồng hủy đơn
-        if ($currentOrderStatus === 'yeu_cau_huy_hang' && $nextOrderStatus !== 'cho_xac_nhan_huy') {
+        if ($currentStatus === 'yeu_cau_huy_hang' && $nextStatus !== 'da_huy') {
             return response()->json([
-                'message' => "Đơn hàng đang yêu cầu hủy, chỉ được xác nhận sang 'cho_xac_nhan_huy'."
+                'message' => "Đơn hàng đang yêu cầu hủy, chỉ được xác nhận sang 'da_huy'."
             ], 400);
         }
 
-        if ($currentOrderStatus === 'cho_xac_nhan_huy' && $nextOrderStatus !== 'da_huy') {
+        $orderStatusFlow = [
+            'cho_xac_nhan' => ['dang_chuan_bi', 'da_huy'],
+            'dang_chuan_bi' => ['dang_van_chuyen', 'da_huy'],
+            'dang_van_chuyen' => [],
+            'da_giao' => [],
+            'yeu_cau_tra_hang' => ['cho_xac_nhan_tra_hang'],
+            'cho_xac_nhan_tra_hang' => ['tra_hang_thanh_cong'],
+            'tra_hang_thanh_cong' => [],
+            'yeu_cau_huy_hang' => ['da_huy'],
+            'da_huy' => [],
+        ];
+
+        if (!in_array($nextStatus, $orderStatusFlow[$currentStatus] ?? [])) {
             return response()->json([
-                'message' => "Đơn hàng đang chờ xác nhận hủy, chỉ được xác nhận sang 'huy_thanh_cong'."
+                'message' => "Không thể chuyển trạng thái từ '$currentStatus' sang '$nextStatus'."
             ], 400);
         }
 
-        if (!in_array($nextOrderStatus, $orderStatusFlow[$currentOrderStatus])) {
-            return response()->json([
-                'message' => "Không thể chuyển trạng thái đơn hàng từ '$currentOrderStatus' sang '$nextOrderStatus'."
-            ], 400);
-        }
-
-        // Auto set trạng thái thanh toán theo trạng thái đơn hàng
-        if ($nextOrderStatus === 'cho_xac_nhan') {
+        // ✅ Cập nhật trạng thái thanh toán phù hợp
+        if ($nextStatus === 'cho_xac_nhan') {
             $validated['trang_thai_thanh_toan'] = 'cho_xu_ly';
-        } elseif ($nextOrderStatus === 'da_giao') {
-            $validated['trang_thai_thanh_toan'] = 'da_thanh_toan';
-} elseif ($nextOrderStatus === 'yeu_cau_tra_hang') {
+        } else if ($nextStatus === 'cho_xac_nhan_tra_hang') {
             $validated['trang_thai_thanh_toan'] = 'cho_hoan_tien';
-        } elseif ($nextOrderStatus === 'tra_hang_thanh_cong') {
+        } else if ($nextStatus === 'tra_hang_thanh_cong') {
             $validated['trang_thai_thanh_toan'] = 'hoan_tien';
-        } elseif ($nextOrderStatus === 'yeu_cau_huy_hang') {
-            $validated['trang_thai_thanh_toan'] = 'da_huy';
-        } elseif ($nextOrderStatus === 'cho_xac_nhan_huy') {
-            $validated['trang_thai_thanh_toan'] = 'da_huy';
-        } elseif ($nextOrderStatus === 'da_huy') {
+        } else if ($nextStatus === 'da_huy') {
             $validated['trang_thai_thanh_toan'] = 'da_huy';
         }
     }
@@ -137,5 +125,6 @@ public function update(Request $request, $id)
         'order' => $order
     ]);
 }
+
 
 }

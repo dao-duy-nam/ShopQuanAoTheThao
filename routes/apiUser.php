@@ -61,6 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/client/orders/', [ClientOrderController::class, 'index']);
     Route::post('order/huy-don/{id}', [ClientOrderController::class, 'huyDon']);
     Route::post('order/tra-hang/{id}', [ClientOrderController::class, 'traHang']);
+    Route::post('order/da-giao/{id}', [ClientOrderController::class, 'daGiao']);
 
 
     
