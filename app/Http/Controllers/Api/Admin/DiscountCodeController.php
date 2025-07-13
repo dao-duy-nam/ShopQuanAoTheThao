@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\DiscountCode;
 use Illuminate\Http\Request;
 use App\Mail\DiscountCodeMail;
+use App\Models\UserDiscountCode;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Resources\DiscountCodeResource;
@@ -126,7 +127,6 @@ class DiscountCodeController extends Controller
                 ->whereNotNull('email')
                 ->get();
         } elseif ($request->kieu === 'ngau_nhien') {
-
             $tongUser = User::where('vai_tro_id', User::ROLE_USER)
                 ->whereNotNull('email')
                 ->count();
@@ -142,6 +142,16 @@ class DiscountCodeController extends Controller
 
         foreach ($users as $user) {
             Mail::to($user->email)->queue(new DiscountCodeMail($user, $code));
+
+            UserDiscountCode::updateOrCreate(
+                [
+                    'ma_giam_gia_id' => $code->id,
+                    'nguoi_dung_id' => $user->id,
+                ],
+                [
+                    'so_lan_da_dung' => 0,
+                ]
+            );
         }
 
         return response()->json([

@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class DiscountCode extends Model
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'ma_giam_gias';
 
@@ -36,5 +38,11 @@ class DiscountCode extends Model
     public function product()
     {
         return $this->belongsTo(Product::class, 'san_pham_id');
+    }
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'ma_giam_gia_nguoi_dung', 'ma_giam_gia_id', 'nguoi_dung_id')
+            ->withPivot('so_lan_da_dung')
+            ->withTimestamps();
     }
 }

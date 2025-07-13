@@ -7,6 +7,7 @@ use App\Http\Controllers\API\Client\ReviewController;
 use App\Http\Controllers\Api\Payment\VnpayController;
 use App\Http\Controllers\Api\Client\ProductController;
 use App\Http\Controllers\Api\Client\ClientOrderController;
+use App\Http\Controllers\Api\Client\DiscountCodeController;
 use App\Http\Controllers\Api\Client\ClientAccountController;
 use App\Http\Controllers\Api\Client\ForgotPasswordController;
 use App\Http\Controllers\Api\Client\WalletController;
@@ -44,6 +45,7 @@ Route::middleware(['auth:sanctum', 'user'])->group(function () {
     Route::put('/client/change-password', [ClientAccountController::class, 'changePassword']);
     Route::post('/client/logout', [ClientAccountController::class, 'logout']);
 
+
     // Wallet API
     Route::get('/wallet', [WalletController::class, 'getBalance']);
     Route::get('/wallet/transactions', [WalletController::class, 'getTransactions']);
@@ -51,6 +53,10 @@ Route::middleware(['auth:sanctum', 'user'])->group(function () {
     Route::post('/wallet/withdraw', [WalletController::class, 'withdraw']);
     Route::post('/wallet/pay', [WalletController::class, 'pay']);
     Route::post('/wallet/refund', [WalletController::class, 'refund']);
+
+    Route::post('/client/discount-code/check', [DiscountCodeController::class, 'check']);
+    Route::get('/client/discount-codes', [DiscountCodeController::class, 'userDiscounts']);
+
 });
 
 

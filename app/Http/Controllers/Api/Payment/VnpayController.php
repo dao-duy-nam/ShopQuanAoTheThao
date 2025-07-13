@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Payment;
 
 use App\Models\Order;
 use App\Mail\OrderPaidMail;
+use App\Models\DiscountCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -184,6 +185,21 @@ class VnpayController extends Controller
                 foreach ($order->orderDetail as $detail) {
                     $detail->product()->decrement('so_luong', $detail->so_luong);
                 }
+                if ($order->ma_giam_gia_id && $order->user_id) {
+                    DB::table('ma_giam_gia_nguoi_dung')->updateOrInsert(
+                        [
+                            'ma_giam_gia_id' => $order->ma_giam_gia_id,
+                            'nguoi_dung_id'  => $order->user_id,
+                        ],
+                        [
+                            'so_lan_da_dung' => DB::raw('IFNULL(so_lan_da_dung, 0) + 1'),
+                            'updated_at'     => now(),
+                            'created_at'     => now(),
+                        ]
+                    );
+
+                    DiscountCode::where('id', $order->ma_giam_gia_id)->decrement('so_luong');
+                }
                 if ($order->user && $order->user->email) {
                     Mail::to($order->user->email)->queue(new OrderPaidMail($order));
 
@@ -194,6 +210,13 @@ class VnpayController extends Controller
                     'trang_thai_don_hang'   => 'da_huy',
                     'payment_link'          => null,
                 ]);
+                if ($order->ma_giam_gia_id && $order->user_id) {
+                    DB::table('ma_giam_gia_nguoi_dung')
+                        ->where('ma_giam_gia_id', $order->ma_giam_gia_id)
+                        ->where('nguoi_dung_id', $order->user_id)
+                        ->decrement('so_lan_da_dung');
+                    DiscountCode::where('id', $order->ma_giam_gia_id)->increment('so_luong');
+                }
             }
         });
 

@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             VariantSeeder::class,
             OrderSeeder::class,
             BannerSeeder::class,
+            DiscountCodeSeeder::class,
         ]);
     }
 }
