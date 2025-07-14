@@ -516,16 +516,16 @@ class ClientOrderController extends Controller
     public function huyDon($id)
     {
         $order = Order::with('user')->findOrFail($id);
-        $order->trang_thai_don_hang = 'da_huy';
+        $order->trang_thai_don_hang = 'yeu_cau_huy_hang';
         $order->trang_thai_thanh_toan = 'da_huy';
         $order->save();
 
         // Gửi mail
-        $message = 'Đơn hàng của bạn đã bị hủy.';
+        $message = 'Đơn hàng của bạn đã bị hủy xin hãy chờ xác nhận từ người bán.';
         Mail::to($order->user->email)->send(new OrderStatusChangedMail($order, $message));
 
         return response()->json([
-            'message' => 'Đơn hàng đã được hủy thành công.',
+            'message' => 'Đơn hàng đã được hủy thành công xin hãy chờ xác nhận từ người bán.',
             'order' => $order
         ]);
     }
@@ -533,7 +533,7 @@ class ClientOrderController extends Controller
     public function traHang($id)
     {
         $order = Order::with('user')->findOrFail($id);
-        $order->trang_thai_don_hang = 'tra_hang';
+        $order->trang_thai_don_hang = 'yeu_cau_tra_hang';
         $order->trang_thai_thanh_toan = 'hoan_tien';
         $order->save();
 
