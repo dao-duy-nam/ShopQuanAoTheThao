@@ -16,6 +16,8 @@ class Order extends Model
         'trang_thai_don_hang',
         'trang_thai_thanh_toan',
         'so_tien_thanh_toan',
+        'ten_san_pham',
+        'gia_tri_bien_the',
         'thanh_pho',
         'huyen',
         'xa',
