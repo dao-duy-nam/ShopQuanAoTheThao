@@ -23,6 +23,9 @@ class Order extends Model
         'xa',
         'email_nguoi_dat',
         'sdt_nguoi_dat',
+        'ghi_chu_admin',       
+        'expires_at',          
+        'payment_link',
     ];
 
     public function user()
