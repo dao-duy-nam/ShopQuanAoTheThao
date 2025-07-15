@@ -26,6 +26,9 @@ class Order extends Model
         'ghi_chu_admin',       
         'expires_at',          
         'payment_link',
+        'ma_giam_gia_id',
+        'ma_giam_gia',
+        'so_tien_duoc_giam', 
     ];
 
     public function user()
