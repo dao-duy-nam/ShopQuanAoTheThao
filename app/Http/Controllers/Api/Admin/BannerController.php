@@ -10,7 +10,7 @@ class BannerController extends Controller
 {
     public function index()
     {
-        return Banner::all();
+        return Banner::orderBy('created_at', 'desc')->get();
     }
 
     public function store(Request $request)
