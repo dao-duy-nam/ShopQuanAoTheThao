@@ -1,2 +1,11 @@
 *
 !.gitignore
+!*.jpg
+!*.jpeg
+!*.png
+!*.gif
+!anh_dai_dien/
+!category/
+!products/
+!reviews/
+!variants/
