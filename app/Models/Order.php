@@ -22,6 +22,7 @@ class Order extends Model
         'huyen',
         'xa',
         'email_nguoi_dat',
+        'ten_nguoi_dat',
         'sdt_nguoi_dat',
         'ghi_chu_admin',       
         'expires_at',          
