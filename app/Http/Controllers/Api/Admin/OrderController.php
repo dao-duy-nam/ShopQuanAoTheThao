@@ -30,7 +30,7 @@ class OrderController extends Controller
             });
         }
 
-        $orders = $query->paginate(10); // 10 đơn hàng mỗi trang
+        $orders = $query->orderBy('created_at','desc')->paginate(10); // 10 đơn hàng mỗi trang
 
         return response()->json($orders);
     }

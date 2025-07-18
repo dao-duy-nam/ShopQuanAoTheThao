@@ -10,18 +10,20 @@ class BannerController extends Controller
 {
     public function index()
     {
-        return Banner::all();
+        return Banner::orderBy('created_at', 'desc')->get();
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
             'tieu_de' => 'required|string|max:255',
-            'hinh_anh' => 'required|string',
+            'hinh_anh' => 'required||image|mimes:jpeg,png,jpg,gif|max:2048',
             'link' => 'nullable|string',
             'trang_thai' => 'boolean',
         ]);
-
+        if ($request->hasFile('hinh_anh')) {
+            $validated['hinh_anh'] = $request->file('hinh_anh')->store('banner', 'public');
+        }
         $banner = Banner::create($validated);
 
         return response()->json($banner, 201);

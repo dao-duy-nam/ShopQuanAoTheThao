@@ -38,7 +38,7 @@ class ProductController extends Controller
         if (in_array($sortBy, ['gia', 'ten', 'created_at'])) {
             $query->orderBy($sortBy, $sortOrder);
         }
-        $perPage = $request->get('per_page', 10);
+        $perPage = $request->get('per_page', 12);
         $products = $query->paginate($perPage);
         return ProductResource::collection($products);
     }

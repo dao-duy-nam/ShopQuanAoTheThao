@@ -83,8 +83,12 @@ class ClientOrderController extends Controller
                 'so_tien_thanh_toan' => 0,
                 'email_nguoi_dat' => $emailNguoiDat,
                 'sdt_nguoi_dat' => $sdtNguoiDat,
+
                 'dia_chi_day_du' => $diaChiDayDu,
                 'phi_ship' => $phiShip,
+
+                'ma_giam_gia_id' => $discountId ?? null,
+                'ma_giam_gia' => $validated['ma_giam_gia'] ?? null,
 
             ]);
 
@@ -334,7 +338,6 @@ class ClientOrderController extends Controller
                     $tyLe = $sp['tong_tien'] / $tongTienDonHang;
                     $giamTru = round($tyLe * $giamGia);
 
-
                     if ($index === $soLuongSanPham - 1) {
                         $giamTru = $giamGia - $tongGiamDaPhanBo;
                     }
@@ -342,14 +345,26 @@ class ClientOrderController extends Controller
                     $tongGiamDaPhanBo += $giamTru;
                     $tongSauGiam = max(0, $sp['tong_tien'] - $giamTru);
 
+                    // Cập nhật vào bảng chi_tiet_don_hangs
+                    DB::table('chi_tiet_don_hangs')
+                        ->where('don_hang_id', $order->id)
+                        ->where('san_pham_id', $sp['san_pham_id'])
+                        ->where('so_luong', $sp['so_luong']) // Cần xác định rõ nếu có trùng sản phẩm
+                        ->update([
+                            'ma_giam_gia_id' => $discountId,
+                            'ma_giam_gia' => $validated['ma_giam_gia'] ?? null,
+                            'so_tien_duoc_giam' => $giamTru,
+                        ]);
 
                     $sp = [
                         'san_pham_id' => $sp['san_pham_id'],
                         'ten_san_pham' => $sp['ten_san_pham'],
                         'so_luong' => $sp['so_luong'],
+                        'ma_giam_gia_id' => $discountId,
+                        'ma_giam_gia' => $validated['ma_giam_gia'] ?? null,
                         'don_gia' => $sp['don_gia'],
                         'tong_tien' => $sp['tong_tien'],
-                        'tong_tien_sau_giam' => $tongSauGiam,
+                        'so_tien_duoc_giam' => $tongSauGiam,
                         'thuoc_tinh_bien_the' => $sp['thuoc_tinh_bien_the'],
                     ];
                 }
@@ -381,6 +396,8 @@ class ClientOrderController extends Controller
             $order->update([
                 'so_tien_thanh_toan' => $soTienPhaiTra,
                 'ma_giam_gia_id' => $discountId,
+                'ma_giam_gia' => $validated['ma_giam_gia'] ?? null,
+                'so_tien_duoc_giam' => $giamGia,
                 'ten_san_pham' => $tenSanPhamTongHop,
                 'gia_tri_bien_the' => $thuocTinhBienTheTongHop,
                  'dia_chi_day_du' => $diaChiDayDu,

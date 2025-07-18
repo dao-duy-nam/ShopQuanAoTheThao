@@ -29,6 +29,9 @@ class Order extends Model
         'expires_at',          
         'payment_link',
         'phi_ship',
+        'ma_giam_gia_id',
+        'ma_giam_gia',
+        'so_tien_duoc_giam', 
     ];
 
     public function user()

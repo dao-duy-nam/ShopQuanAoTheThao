@@ -17,18 +17,20 @@ class CategoryFactory extends Factory
     public function definition(): array
     {
         return [
-            //
             'ten' => $this->faker->randomElement([
-                'Điện thoại',
-                'Laptop',
-                'Tai nghe',
-                'Máy ảnh',
-                'Đồng hồ thông minh',
-                'Máy tính bảng',
-                'Phụ kiện',
+                'Áo thể thao nam',
+                'Áo thể thao nữ',
+                'Quần short nam',
+                'Quần legging nữ',
+                'Giày chạy bộ',
+                'Giày bóng rổ',
+                'Phụ kiện thể thao',
+                'Túi thể thao',
+                'Găng tay tập gym',
+                'Đồ tập yoga',
             ]),
-            'mo_ta' => $this->faker->sentence(10), // Description with 10 words
-            'image' => $this->faker->optional(0.8, null)->imageUrl(640, 480, 'categories'),
+            'mo_ta' => $this->faker->sentence(10),
+            'image' => $this->faker->optional(0.8, null)->imageUrl(640, 480, 'fashion', true, 'sportswear'),
         ];
     }
 }
