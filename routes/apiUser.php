@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Client\AuthController;
+use App\Http\Controllers\Api\Client\BannerController;
 use App\Http\Controllers\Api\Client\CartController;
 use App\Http\Controllers\API\Client\ReviewController;
 use App\Http\Controllers\Api\Payment\VnpayController;
@@ -31,6 +32,7 @@ Route::prefix('products')->group(function () {
     Route::get('/', [ProductController::class, 'index']);
     Route::get('{id}', [ProductController::class, 'show']);
 });
+Route::get('banner', [BannerController::class, 'index']);
 
 Route::middleware(['auth:sanctum', 'user'])->group(function () {
     // Product reviews
