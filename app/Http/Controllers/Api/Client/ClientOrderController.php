@@ -15,6 +15,8 @@ use App\Mail\OrderConfirmationMail;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Mail\OrderStatusChangedMail;
+use App\Models\PhiShip;
+use App\Models\Shipping;
 use Illuminate\Support\Facades\Mail;
 
 class ClientOrderController extends Controller
@@ -56,6 +58,13 @@ class ClientOrderController extends Controller
             $tenNguoiDat = trim($validated['ten_nguoi_dat'] ?? '') ?: $user->name;
             $emailNguoiDat = trim($validated['email_nguoi_dat'] ?? '') ?: $user->email;
             $sdtNguoiDat = trim($validated['sdt_nguoi_dat'] ?? '') ?: $user->so_dien_thoai;
+            $diaChiDayDu = trim(implode(', ', array_filter([
+                $diaChi,
+                $xa,
+                $huyen,
+                $thanhPho,
+            ])));
+            $phiShip = Shipping::where('tinh_thanh', $thanhPho)->value('phi') ?? 30000;
 
             $tongTienDonHang = 0;
             $chiTietSanPham = [];
@@ -74,8 +83,13 @@ class ClientOrderController extends Controller
                 'so_tien_thanh_toan' => 0,
                 'email_nguoi_dat' => $emailNguoiDat,
                 'sdt_nguoi_dat' => $sdtNguoiDat,
+
+                'dia_chi_day_du' => $diaChiDayDu,
+                'phi_ship' => $phiShip,
+
                 'ma_giam_gia_id' => $discountId ?? null,
                 'ma_giam_gia' => $validated['ma_giam_gia'] ?? null,
+
             ]);
 
             $items = $validated['items'] ?? null;
@@ -314,7 +328,7 @@ class ClientOrderController extends Controller
                 $discountId = $discount->id;
             }
 
-            $soTienPhaiTra = $tongTienDonHang - $giamGia;
+            $soTienPhaiTra = $tongTienDonHang - $giamGia + $phiShip;
 
             if ($giamGia > 0 && $tongTienDonHang > 0) {
                 $tongGiamDaPhanBo = 0;
@@ -386,6 +400,7 @@ class ClientOrderController extends Controller
                 'so_tien_duoc_giam' => $giamGia,
                 'ten_san_pham' => $tenSanPhamTongHop,
                 'gia_tri_bien_the' => $thuocTinhBienTheTongHop,
+                 'dia_chi_day_du' => $diaChiDayDu,
             ]);
 
             DB::commit();
@@ -398,6 +413,7 @@ class ClientOrderController extends Controller
                 'ma_giam_gia' => $validated['ma_giam_gia'] ?? null,
                 'tong_tien' => $tongTienDonHang,
                 'giam_gia' => $giamGia,
+                'phi_ship' => $order->phi_ship, 
                 'phai_tra' => $soTienPhaiTra,
                 'chi_tiet_san_pham' => $chiTietSanPham,
             ], 200);
