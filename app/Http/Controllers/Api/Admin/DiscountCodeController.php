@@ -120,24 +120,26 @@ class DiscountCodeController extends Controller
         ]);
 
         $code = DiscountCode::findOrFail($id);
-        $users = collect();
+        $gioiHan = max(1, $code->gioi_han);
+        $maxUsersCanSend = intval(floor($code->so_luong / $gioiHan));
+
+        $query = User::where('vai_tro_id', User::ROLE_USER)
+            ->whereNotNull('email');
 
         if ($request->kieu === 'tat_ca') {
-            $users = User::where('vai_tro_id', User::ROLE_USER)
-                ->whereNotNull('email')
-                ->get();
-        } elseif ($request->kieu === 'ngau_nhien') {
-            $tongUser = User::where('vai_tro_id', User::ROLE_USER)
-                ->whereNotNull('email')
-                ->count();
+            $users = $query->limit($maxUsersCanSend)->get();
+        } else {
+            $soLuongNhap = $request->input('so_luong');
 
-            $soLuong = $request->input('so_luong', rand(1, min(10, $tongUser)));
+            if ($soLuongNhap !== null && $soLuongNhap > $maxUsersCanSend) {
+                return response()->json([
+                    'message' => "Số lượng vượt quá giới hạn. Chỉ có thể gửi cho tối đa {$maxUsersCanSend} người dùng.",
+                ], 422);
+            }
 
-            $users = User::where('vai_tro_id', User::ROLE_USER)
-                ->whereNotNull('email')
-                ->inRandomOrder()
-                ->limit($soLuong)
-                ->get();
+            $soLuong = $soLuongNhap ?? rand(1, min(10, $maxUsersCanSend));
+
+            $users = $query->inRandomOrder()->limit($soLuong)->get();
         }
 
         foreach ($users as $user) {
