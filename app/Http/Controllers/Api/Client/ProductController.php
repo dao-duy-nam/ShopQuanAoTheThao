@@ -11,39 +11,12 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::with(['variants.attributeValues.attribute']);
+        $query = Product::with(['variants.attributeValues.attribute'])
+            ->orderBy('created_at', 'desc')
+            ->paginate($request->get('per_page', 12));
 
-        if ($request->filled('keyword')) {
-            $query->where('ten', 'like', '%' . $request->keyword . '%');
-        }
-
-        if ($request->has('attribute_filter') && is_array($request->attribute_filter)) {
-            foreach ($request->attribute_filter as $attrName => $attrValue) {
-                $query->whereHas('variants.attributeValues', function ($q) use ($attrName, $attrValue) {
-                    $q->whereRaw('LOWER(gia_tri) = ?', [mb_strtolower($attrValue)])
-                        ->whereHas('attribute', function ($q2) use ($attrName) {
-                            $q2->whereRaw('LOWER(ten) = ?', [mb_strtolower($attrName)]);
-                        });
-                });
-            }
-        }
-        if ($request->filled('gia_min')) {
-            $query->where('gia', '>=', $request->gia_min);
-        }
-        if ($request->filled('gia_max')) {
-            $query->where('gia', '<=', $request->gia_max);
-        }
-        $sortBy = $request->get('sort_by', 'created_at');
-        $sortOrder = $request->get('sort_order', 'desc');
-        if (in_array($sortBy, ['gia', 'ten', 'created_at'])) {
-            $query->orderBy($sortBy, $sortOrder);
-        }
-        $perPage = $request->get('per_page', 12);
-        $products = $query->paginate($perPage);
-        return ProductResource::collection($products);
+        return ProductResource::collection($query);
     }
-
-
 
     public function show($id)
     {
@@ -53,6 +26,64 @@ class ProductController extends Controller
                 'message' => 'Sản phẩm không tồn tại.',
             ], 404);
         }
-        return new ProductResource($product);
+
+        $relatedProducts = Product::with(['variants.attributeValues.attribute'])
+            ->where('danh_muc_id', $product->danh_muc_id)
+            ->where('id', '!=', $product->id)
+            ->latest()
+            ->limit(4)
+            ->get();
+
+        return response()->json([
+            'product' => new ProductResource($product),
+            'related_products' => ProductResource::collection($relatedProducts),
+        ]);
+    }
+
+
+    public function filter(Request $request)
+    {
+        $query = Product::query()
+            ->select('san_phams.*')
+            ->join('bien_thes', 'san_phams.id', '=', 'bien_thes.san_pham_id')
+            ->when(
+                $request->filled('keyword'),
+                fn($q) =>
+                $q->where('san_phams.ten', 'like', '%' . $request->keyword . '%')
+            )
+            ->when(
+                $request->filled('danh_muc_id'),
+                fn($q) =>
+                $q->where('san_phams.danh_muc_id', $request->danh_muc_id)
+            )
+            ->when(
+                $request->filled('gia_min'),
+                fn($q) =>
+                $q->where('bien_thes.gia', '>=', $request->gia_min)
+            )
+            ->when(
+                $request->filled('gia_max'),
+                fn($q) =>
+                $q->where('bien_thes.gia', '<=', $request->gia_max)
+            )
+            ->when(
+                $request->filled('size'),
+                fn($q) =>
+                $q->where('bien_thes.size', $request->size)
+            )
+            ->groupBy('san_phams.id')
+            ->selectRaw('MIN(bien_thes.gia) as min_gia');
+
+
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        if (in_array($sortBy, ['min_gia', 'san_phams.ten', 'san_phams.created_at'])) {
+            $query->orderBy($sortBy, $sortOrder);
+        }
+
+        $perPage = $request->get('per_page', 12);
+        $products = $query->paginate($perPage);
+
+        return ProductResource::collection($products);
     }
 }

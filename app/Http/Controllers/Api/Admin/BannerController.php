@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
-use App\Http\Controllers\Controller;
 use App\Models\Banner;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Storage;
 
 class BannerController extends Controller
 {
@@ -37,8 +38,27 @@ class BannerController extends Controller
     public function update(Request $request, $id)
     {
         $banner = Banner::findOrFail($id);
-        $banner->update($request->all());
-        return $banner;
+
+        $validated = $request->validate([
+            'tieu_de' => 'sometimes|required|string|max:255',
+            'hinh_anh' => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'link' => 'nullable|string',
+            'trang_thai' => 'boolean',
+        ]);
+
+        if ($request->hasFile('hinh_anh')) {
+
+            if ($banner->hinh_anh && Storage::disk('public')->exists($banner->hinh_anh)) {
+                Storage::disk('public')->delete($banner->hinh_anh);
+            }
+
+
+            $validated['hinh_anh'] = $request->file('hinh_anh')->store('banner', 'public');
+        }
+
+        $banner->update($validated);
+
+        return response()->json($banner);
     }
 
     // XÓA MỀM
