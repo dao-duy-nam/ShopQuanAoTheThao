@@ -102,19 +102,35 @@ class CartController extends Controller
                 ->where('bien_the_id', $validated['bien_the_id'])
                 ->first();
 
+            $tongSoLuongMuonThem = $validated['so_luong'];
             if ($existingItem) {
-                $existingItem->so_luong += $validated['so_luong'];
+                $tongSoLuongMuonThem += $existingItem->so_luong;
+            }
+
+            // Kiểm tra tồn kho
+            if ($validated['bien_the_id']) {
+                $bienThe = Variant::findOrFail($validated['bien_the_id']);
+                if ($tongSoLuongMuonThem > $bienThe->so_luong) {
+                    return response()->json([
+                        'error' => 'Số lượng vượt quá tồn kho của biến thể! Chỉ còn ' . $bienThe->so_luong
+                    ], 422);
+                }
+                $giaSanPham = $bienThe->gia_khuyen_mai ?? $bienThe->gia;
+            } else {
+                $sanPham = Product::findOrFail($validated['san_pham_id']);
+                if ($tongSoLuongMuonThem > $sanPham->so_luong) {
+                    return response()->json([
+                        'error' => 'Số lượng vượt quá tồn kho của sản phẩm! Chỉ còn ' . $sanPham->so_luong
+                    ], 422);
+                }
+                $giaSanPham = $sanPham->gia_khuyen_mai ?? $sanPham->gia;
+            }
+
+            if ($existingItem) {
+                $existingItem->so_luong = $tongSoLuongMuonThem;
                 $existingItem->updateThanhTien();
                 $existingItem->save();
             } else {
-                $giaSanPham = 0;
-                if ($validated['bien_the_id']) {
-                    $bienThe = Variant::findOrFail($validated['bien_the_id']);
-                    $giaSanPham = $bienThe->gia_khuyen_mai ?? $bienThe->gia;
-                } else {
-                    $sanPham = Product::findOrFail($validated['san_pham_id']);
-                    $giaSanPham = $sanPham->gia_khuyen_mai ?? $sanPham->gia;
-                }
                 CartItem::create([
                     'gio_hang_id' => $gioHang->id,
                     'san_pham_id' => $validated['san_pham_id'],
@@ -158,13 +174,29 @@ class CartController extends Controller
                 ->firstOrFail();
 
             $action = $validated['action'] ?? 'replace';
-            
+            $soLuongMoi = $validated['so_luong'];
             if ($action === 'add') {
-                $chiTietGioHang->so_luong += $validated['so_luong'];
-            } else {
-                $chiTietGioHang->so_luong = $validated['so_luong'];
+                $soLuongMoi += $chiTietGioHang->so_luong;
             }
 
+            // Kiểm tra tồn kho
+            if ($chiTietGioHang->bien_the_id) {
+                $bienThe = Variant::findOrFail($chiTietGioHang->bien_the_id);
+                if ($soLuongMoi > $bienThe->so_luong) {
+                    return response()->json([
+                        'error' => 'Số lượng vượt quá tồn kho của biến thể! Chỉ còn ' . $bienThe->so_luong
+                    ], 422);
+                }
+            } else {
+                $sanPham = Product::findOrFail($chiTietGioHang->san_pham_id);
+                if ($soLuongMoi > $sanPham->so_luong) {
+                    return response()->json([
+                        'error' => 'Số lượng vượt quá tồn kho của sản phẩm! Chỉ còn ' . $sanPham->so_luong
+                    ], 422);
+                }
+            }
+
+            $chiTietGioHang->so_luong = $soLuongMoi;
             $chiTietGioHang->updateThanhTien();
             $chiTietGioHang->save();
 
