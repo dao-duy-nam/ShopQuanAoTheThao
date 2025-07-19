@@ -26,7 +26,18 @@ class ProductController extends Controller
                 'message' => 'Sản phẩm không tồn tại.',
             ], 404);
         }
-        return new ProductResource($product);
+
+        $relatedProducts = Product::with(['variants.attributeValues.attribute'])
+            ->where('danh_muc_id', $product->danh_muc_id)
+            ->where('id', '!=', $product->id)
+            ->latest()
+            ->limit(4)
+            ->get();
+
+        return response()->json([
+            'product' => new ProductResource($product),
+            'related_products' => ProductResource::collection($relatedProducts),
+        ]);
     }
 
 
@@ -60,10 +71,10 @@ class ProductController extends Controller
                 fn($q) =>
                 $q->where('bien_thes.size', $request->size)
             )
-            ->groupBy('san_phams.id') 
+            ->groupBy('san_phams.id')
             ->selectRaw('MIN(bien_thes.gia) as min_gia');
 
-      
+
         $sortBy = $request->get('sort_by', 'created_at');
         $sortOrder = $request->get('sort_order', 'desc');
         if (in_array($sortBy, ['min_gia', 'san_phams.ten', 'san_phams.created_at'])) {
