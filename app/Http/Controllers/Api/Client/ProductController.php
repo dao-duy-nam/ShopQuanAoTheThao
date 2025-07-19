@@ -26,20 +26,8 @@ class ProductController extends Controller
                 'message' => 'Sản phẩm không tồn tại.',
             ], 404);
         }
-
-        $relatedProducts = Product::with(['variants.attributeValues.attribute'])
-            ->where('danh_muc_id', $product->danh_muc_id)
-            ->where('id', '!=', $product->id)
-            ->latest()
-            ->limit(4)
-            ->get();
-
-        return response()->json([
-            'product' => new ProductResource($product),
-            'related_products' => ProductResource::collection($relatedProducts),
-        ]);
+        return new ProductResource($product);
     }
-
 
     public function filter(Request $request)
     {
@@ -85,5 +73,24 @@ class ProductController extends Controller
         $products = $query->paginate($perPage);
 
         return ProductResource::collection($products);
+    }
+
+    public function related($id)
+    {
+        $product = Product::find($id);
+        if (!$product) {
+            return response()->json([
+                'message' => 'Sản phẩm không tồn tại.',
+            ], 404);
+        }
+
+        $relatedProducts = Product::with(['variants.attributeValues.attribute'])
+            ->where('danh_muc_id', $product->danh_muc_id)
+            ->where('id', '!=', $product->id)
+            ->latest()
+            ->limit(4)
+            ->get();
+
+        return ProductResource::collection($relatedProducts);
     }
 }
