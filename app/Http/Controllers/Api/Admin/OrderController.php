@@ -147,7 +147,7 @@ public function update(Request $request, $id)
             $message .= " Lý do từ chối trả hàng: " . $validated['ly_do_tu_choi_tra_hang'];
         }
 
-        Mail::to($order->email_nguoi_nhan)->send(new OrderStatusChangedMail($order, $message));
+        Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
     }
     
     return response()->json([

@@ -606,13 +606,40 @@ public function traHang(Request $request, $id)
     ]);
 
     $order = Order::with('user')->findOrFail($id);
+    $user = request()->user();
+
+    if ($order->user_id !== $user->id) {
+        return response()->json([
+            'message' => 'Bạn không có quyền trả đơn hàng này.'
+        ], 403);
+    }
+
+    if (!in_array($order->trang_thai_don_hang, ['da_giao', 'da_nhan'])) {
+        return response()->json([
+            'message' => 'Chỉ được trả khi đơn hàng đã giao hoặc đã nhận.'
+        ], 400);
+    }
+
+    // Nếu đã nhận thì check quá 3 ngày
+    if ($order->trang_thai_don_hang === 'da_nhan') {
+        if (!$order->thoi_gian_nhan) {
+            return response()->json([
+                'message' => 'Không xác định được thời gian nhận hàng.'
+            ], 400);
+        }
+
+        if ($order->thoi_gian_nhan->addDays(3)->lt(now())) {
+            return response()->json([
+                'message' => 'Đơn hàng đã nhận quá 3 ngày, không thể trả hàng.'
+            ], 400);
+        }
+    }
 
     $order->trang_thai_don_hang = 'yeu_cau_tra_hang';
     $order->trang_thai_thanh_toan = 'hoan_tien';
     $order->ly_do_tra_hang = $validated['ly_do_tra_hang'];
     $order->save();
 
-    // Gửi mail
     $message = 'Đơn hàng của bạn đã được yêu cầu trả hàng. Lý do: ' . $validated['ly_do_tra_hang'] . '. Chúng tôi sẽ xử lý hoàn tiền sớm nhất.';
     Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
 
@@ -623,7 +650,8 @@ public function traHang(Request $request, $id)
 }
 
 
-public function xacNhanDaNhan($id)
+
+public function daGiao($id)
 {
     $order = Order::with('user')->findOrFail($id);
     $user = request()->user();
@@ -641,6 +669,7 @@ public function xacNhanDaNhan($id)
     }
 
     $order->trang_thai_don_hang = 'da_nhan';
+    $order->thoi_gian_nhan = now();
     $order->save();
 
     $message = 'Cảm ơn bạn đã xác nhận đã nhận hàng. Chúc bạn hài lòng!';
@@ -651,5 +680,6 @@ public function xacNhanDaNhan($id)
         'order' => $order
     ]);
 }
+
 
 }

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('ly_do_huy')->nullable()->after('trang_thai_don_hang');
             $table->string('ly_do_tra_hang')->nullable()->after('trang_thai_don_hang');
             $table->string('ly_do_tu_choi_tra_hang')->nullable()->after('trang_thai_don_hang');
+            $table->dateTime('thoi_gian_nhan')->nullable();
 
         });
     }

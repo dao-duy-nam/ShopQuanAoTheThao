@@ -8,6 +8,10 @@ class Order extends Model
 {
     protected $table = 'don_hangs';
 
+    protected $casts = [
+    'thoi_gian_nhan' => 'datetime',
+    ];
+
     protected $fillable = [
         'ma_don_hang',
         'user_id',
