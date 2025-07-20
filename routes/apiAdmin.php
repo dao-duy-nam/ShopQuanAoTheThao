@@ -9,11 +9,12 @@ use App\Http\Controllers\Api\Admin\DanhGiaController;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\VariantController;
 use App\Http\Controllers\Api\Admin\CategoryController;
-use App\Http\Controllers\Api\Admin\AttributeValueController;
 use App\Http\Controllers\Api\Admin\AdminAuthController;
 use App\Http\Controllers\Api\Admin\AttributeController;
 use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\DiscountCodeController;
+use App\Http\Controllers\Api\Admin\AttributeValueController;
+use App\Http\Controllers\Api\Admin\WalletTransactionController;
 
 Route::prefix('admin')->group(function () {
 
@@ -124,6 +125,11 @@ Route::prefix('admin')->group(function () {
             Route::get('/trash/list', [DiscountCodeController::class, 'trash']);
             Route::post('/restore/{id}', [DiscountCodeController::class, 'restore']);
             Route::post('/{id}/send', [DiscountCodeController::class, 'sendToUsers']);
+        });
+        Route::prefix('wallet-transactions')->group(function () {
+            Route::get('/', [WalletTransactionController::class, 'index'])->name('wallet-transactions.index');
+            Route::get('/{id}', [WalletTransactionController::class, 'show'])->name('wallet-transactions.show');
+            Route::patch('/{id}', [WalletTransactionController::class, 'updateStatus'])->name('wallet-transactions.updateStatus');
         });
 
         Route::prefix('dashboard')->group(function () {

@@ -20,6 +20,7 @@ class WalletTransaction extends Model
         'bank_account',
         'description',
         'related_order_id',
+        'rejection_reason'
     ];
 
     public function wallet()
