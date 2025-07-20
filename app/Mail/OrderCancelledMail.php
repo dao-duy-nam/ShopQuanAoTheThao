@@ -40,11 +40,16 @@ class OrderCancelledMail extends Mailable implements ShouldQueue
      * Get the message content definition.
      */
     public function content(): Content
-    {
-        return new Content(
-            markdown: 'emails.orders.cancelled'
-        );
-    }
+{
+    return new Content(
+        markdown: 'emails.orders.cancelled',
+        with: [
+            'order' => $this->order,
+            'reason' => $this->reason,
+        ]
+    );
+}
+
 
     /**
      * Get the attachments for the message.
