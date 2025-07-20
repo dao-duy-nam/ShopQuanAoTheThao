@@ -134,6 +134,7 @@ class ClientOrderController extends Controller
                             'don_gia' => $donGia,
                             'tong_tien' => $tongTien,
                             'thuoc_tinh_bien_the' => $thuocTinhBienThe,
+                                    'hinh_anh' => $bienThe->hinh_anh ?? $bienThe->product->hinh_anh, // THÊM DÒNG NÀY
                         ];
                     } else {
                         $sanPham = Product::findOrFail($item['san_pham_id']);
@@ -163,6 +164,9 @@ class ClientOrderController extends Controller
                             'don_gia' => $donGia,
                             'tong_tien' => $tongTien,
                             'thuoc_tinh_bien_the' => null,
+                            'hinh_anh' => $bienTheId
+                                ? ($bienThe->hinh_anh ?? $sanPham->hinh_anh)
+                                : $sanPham->hinh_anh,    
                         ];
                     }
                 }
@@ -240,7 +244,10 @@ class ClientOrderController extends Controller
                             'don_gia' => $donGia,
                             'tong_tien' => $tongTien,
                             'thuoc_tinh_bien_the' => null,
-                        ];
+                            'hinh_anh' => $bienTheId
+                                ? ($bienThe->hinh_anh ?? $sanPham->hinh_anh)
+                                : $sanPham->hinh_anh,                        
+                            ];
                     }
                 }
 
@@ -366,6 +373,7 @@ class ClientOrderController extends Controller
                         'tong_tien' => $sp['tong_tien'],
                         'so_tien_duoc_giam' => $tongSauGiam,
                         'thuoc_tinh_bien_the' => $sp['thuoc_tinh_bien_the'],
+                                'hinh_anh' => $sp['hinh_anh'], // THÊM DÒNG NÀY
                     ];
                 }
                 unset($sp);
@@ -531,7 +539,9 @@ class ClientOrderController extends Controller
                 return [
                     'san_pham_id' => $detail->san_pham_id,
                     'ten_san_pham' => optional($detail->product)->ten,
-                    'hinh_anh' => optional($detail->product)->hinh_anh,
+                    'hinh_anh' => $detail->variant && $detail->variant->hinh_anh
+                        ? $detail->variant->hinh_anh
+                        : optional($detail->product)->hinh_anh,
                     'bien_the_id' => $detail->bien_the_id,
                     'thuoc_tinh_bien_the' => $thuocTinhBienThe,
                     'so_luong' => $detail->so_luong,
