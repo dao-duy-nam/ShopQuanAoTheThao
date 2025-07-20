@@ -4,11 +4,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Client\AuthController;
-use App\Http\Controllers\Api\Client\BannerController;
 use App\Http\Controllers\Api\Client\CartController;
+use App\Http\Controllers\Api\Client\BannerController;
 use App\Http\Controllers\API\Client\ReviewController;
 use App\Http\Controllers\Api\Client\WalletController;
 use App\Http\Controllers\Api\Payment\VnpayController;
+use App\Http\Controllers\Api\Client\PostApiController;
 use App\Http\Controllers\Api\Client\ProductController;
 use App\Http\Controllers\Api\Payment\ZaloPayController;
 use App\Http\Controllers\Api\Client\ClientOrderController;
@@ -38,6 +39,9 @@ Route::prefix('products')->group(function () {
     Route::get('/{id}/related', [ProductController::class, 'related']);
 });
 Route::get('banner', [BannerController::class, 'index']);
+
+Route::get('/posts', [PostApiController::class, 'index']);
+Route::get('/posts/{id}', [PostApiController::class, 'show']);
 
 Route::middleware(['auth:sanctum', 'user'])->group(function () {
     // Product reviews
@@ -103,4 +107,3 @@ Route::prefix('payment/zalopay')->group(function () {
     Route::post('create', [ZaloPayController::class, 'createPayment'])->middleware('auth:sanctum');
     Route::match(['GET', 'POST'], 'callback', [ZaloPayController::class, 'callback'])->name('payment.zalopay.callback');
 });
-
