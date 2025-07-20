@@ -32,6 +32,10 @@ class Order extends Model
         'ma_giam_gia_id',
         'ma_giam_gia',
         'so_tien_duoc_giam', 
+        'ly_do_huy', 
+        'tu_choi_tra_hang', 
+        'ly_do_tu_choi_tra_hang', 
+        'xac_nhan_da_giao',
     ];
 
     public function user()

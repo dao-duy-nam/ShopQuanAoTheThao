@@ -53,8 +53,10 @@ class OrderController extends Controller
 public function update(Request $request, $id)
 {
     $validated = $request->validate([
-        'trang_thai_don_hang' => 'nullable|in:cho_xac_nhan,dang_chuan_bi,dang_van_chuyen,da_giao,yeu_cau_tra_hang,cho_xac_nhan_tra_hang,tra_hang_thanh_cong,yeu_cau_huy_hang,da_huy',
+        'trang_thai_don_hang' => 'nullable|in:cho_xac_nhan,dang_chuan_bi,dang_van_chuyen,da_giao,yeu_cau_tra_hang,cho_xac_nhan_tra_hang,tra_hang_thanh_cong,yeu_cau_huy_hang,da_huy,tu_choi_tra_hang',
         'dia_chi' => 'nullable|string|max:255',
+        'ly_do_huy' => 'nullable|string|max:255',
+        'ly_do_tu_choi_tra_hang' => 'nullable|string|max:255',
     ]);
 
     $order = Order::findOrFail($id);
@@ -63,16 +65,16 @@ public function update(Request $request, $id)
     if (isset($validated['trang_thai_don_hang'])) {
         $nextStatus = $validated['trang_thai_don_hang'];
 
-        $userOnlyStatuses = ['da_giao', 'yeu_cau_tra_hang', 'yeu_cau_huy_hang'];
+        $userOnlyStatuses = ['yeu_cau_tra_hang', 'yeu_cau_huy_hang'];
         if (in_array($nextStatus, $userOnlyStatuses)) {
             return response()->json([
                 'message' => "Trạng thái '$nextStatus' chỉ được cập nhật bởi người dùng."
             ], 403);
         }
 
-        if ($currentStatus === 'yeu_cau_tra_hang' && $nextStatus !== 'cho_xac_nhan_tra_hang') {
+        if ($currentStatus === 'yeu_cau_tra_hang' && !in_array($nextStatus, ['cho_xac_nhan_tra_hang', 'tu_choi_tra_hang'])) {
             return response()->json([
-                'message' => "Đơn hàng đang yêu cầu trả hàng, chỉ được xác nhận sang 'cho_xac_nhan_tra_hang'."
+                'message' => "Đơn hàng đang yêu cầu trả hàng, chỉ được xác nhận sang 'cho_xac_nhan_tra_hang' hoặc từ chối sang 'tu_choi_tra_hang'."
             ], 400);
         }
 
@@ -91,13 +93,14 @@ public function update(Request $request, $id)
         $orderStatusFlow = [
             'cho_xac_nhan' => ['dang_chuan_bi', 'da_huy'],
             'dang_chuan_bi' => ['dang_van_chuyen', 'da_huy'],
-            'dang_van_chuyen' => [],
+            'dang_van_chuyen' => ['da_giao'],
             'da_giao' => [],
-            'yeu_cau_tra_hang' => ['cho_xac_nhan_tra_hang'],
+            'yeu_cau_tra_hang' => ['cho_xac_nhan_tra_hang', 'tu_choi_tra_hang'], // ✅ cho phép từ chối
             'cho_xac_nhan_tra_hang' => ['tra_hang_thanh_cong'],
             'tra_hang_thanh_cong' => [],
             'yeu_cau_huy_hang' => ['da_huy'],
             'da_huy' => [],
+            'tu_choi_tra_hang' => [], // kết thúc
         ];
 
         if (!in_array($nextStatus, $orderStatusFlow[$currentStatus] ?? [])) {
@@ -106,6 +109,19 @@ public function update(Request $request, $id)
             ], 400);
         }
 
+        if ($nextStatus === 'da_huy' && empty($validated['ly_do_huy'])) {
+            return response()->json([
+                'message' => 'Vui lòng nhập lý do hủy đơn hàng.'
+            ], 422);
+        }
+
+        if ($nextStatus === 'tu_choi_tra_hang' && empty($validated['ly_do_tu_choi_tra_hang'])) {
+            return response()->json([
+                'message' => 'Vui lòng nhập lý do từ chối trả hàng.'
+            ], 422);
+        }
+
+        // Cập nhật trạng thái thanh toán tương ứng
         if ($nextStatus === 'cho_xac_nhan') {
             $validated['trang_thai_thanh_toan'] = 'cho_xu_ly';
         } else if ($nextStatus === 'cho_xac_nhan_tra_hang') {
@@ -124,6 +140,4 @@ public function update(Request $request, $id)
         'order' => $order
     ]);
 }
-
-
 }
