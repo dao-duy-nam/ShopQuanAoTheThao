@@ -17,6 +17,7 @@ class DiscountCode extends Model
         'ma',
         'ten',
         'loai',
+        'mo_ta',
         'ap_dung_cho',
         'san_pham_id',
         'gia_tri',
