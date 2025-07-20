@@ -575,69 +575,81 @@ class ClientOrderController extends Controller
     }
 
 
-    public function huyDon($id)
-    {
-        $order = Order::with('user')->findOrFail($id);
-        $order->trang_thai_don_hang = 'yeu_cau_huy_hang';
-        $order->trang_thai_thanh_toan = 'da_huy';
-        $order->save();
+public function huyDon(Request $request, $id)
+{
+    $validated = $request->validate([
+        'ly_do_huy' => 'required|string|max:255',
+    ]);
 
-        // Gửi mail
-        $message = 'Đơn hàng của bạn đã bị hủy xin hãy chờ xác nhận từ người bán.';
-        Mail::to($order->user->email)->send(new OrderStatusChangedMail($order, $message));
+    $order = Order::with('user')->findOrFail($id);
 
+    $order->trang_thai_don_hang = 'yeu_cau_huy_hang';
+    $order->trang_thai_thanh_toan = 'da_huy';
+    $order->ly_do_huy = $validated['ly_do_huy'];
+    $order->save();
+
+    // Gửi mail
+    $message = 'Đơn hàng của bạn đã bị hủy. Lý do: ' . $validated['ly_do_huy'];
+    Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
+
+    return response()->json([
+        'message' => 'Đơn hàng đã được hủy thành công. Lý do: ' . $validated['ly_do_huy'] . '. Vui lòng chờ xác nhận từ người bán.',
+        'order' => $order
+    ]);
+}
+
+
+public function traHang(Request $request, $id)
+{
+    $validated = $request->validate([
+        'ly_do_tra_hang' => 'required|string|max:255',
+    ]);
+
+    $order = Order::with('user')->findOrFail($id);
+
+    $order->trang_thai_don_hang = 'yeu_cau_tra_hang';
+    $order->trang_thai_thanh_toan = 'hoan_tien';
+    $order->ly_do_tra_hang = $validated['ly_do_tra_hang'];
+    $order->save();
+
+    // Gửi mail
+    $message = 'Đơn hàng của bạn đã được yêu cầu trả hàng. Lý do: ' . $validated['ly_do_tra_hang'] . '. Chúng tôi sẽ xử lý hoàn tiền sớm nhất.';
+    Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
+
+    return response()->json([
+        'message' => 'Yêu cầu trả hàng đã được gửi. Lý do: ' . $validated['ly_do_tra_hang'] . '. Vui lòng chờ xử lý.',
+        'order' => $order
+    ]);
+}
+
+
+public function xacNhanDaNhan($id)
+{
+    $order = Order::with('user')->findOrFail($id);
+    $user = request()->user();
+
+    if ($order->user_id !== $user->id) {
         return response()->json([
-            'message' => 'Đơn hàng đã được hủy thành công xin hãy chờ xác nhận từ người bán.',
-            'order' => $order
-        ]);
+            'message' => 'Bạn không có quyền xác nhận đơn hàng này.'
+        ], 403);
     }
 
-    public function traHang($id)
-    {
-        $order = Order::with('user')->findOrFail($id);
-        $order->trang_thai_don_hang = 'yeu_cau_tra_hang';
-        $order->trang_thai_thanh_toan = 'hoan_tien';
-        $order->save();
-
-        // Gửi mail
-        $message = 'Đơn hàng của bạn đã được xử lý trả hàng. Chúng tôi sẽ hoàn tiền sớm nhất.';
-        Mail::to($order->user->email)->send(new OrderStatusChangedMail($order, $message));
-
+    if ($order->trang_thai_don_hang !== 'da_giao') {
         return response()->json([
-            'message' => 'Đơn hàng đã được trả hàng thành công.',
-            'order' => $order
-        ]);
+            'message' => 'Chỉ xác nhận khi đơn hàng đã được giao.'
+        ], 400);
     }
 
-    public function daGiao($id)
-    {
-        $order = Order::with('user')->findOrFail($id);
-        $user = request()->user();
+    $order->trang_thai_don_hang = 'da_nhan';
+    $order->save();
 
-        // Kiểm tra quyền: chỉ chủ đơn hàng mới được xác nhận
-        if ($order->user_id !== $user->id) {
-            return response()->json([
-                'message' => 'Bạn không có quyền xác nhận đơn hàng này.'
-            ], 403);
-        }
+    $message = 'Cảm ơn bạn đã xác nhận đã nhận hàng. Chúc bạn hài lòng!';
+    Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
 
-        // Chỉ cho phép xác nhận nếu đang vận chuyển
-        if ($order->trang_thai_don_hang !== 'dang_van_chuyen') {
-            return response()->json([
-                'message' => 'Chỉ có thể xác nhận khi đơn hàng đang được giao.'
-            ], 400);
-        }
+    return response()->json([
+        'message' => 'Bạn đã xác nhận đã nhận hàng thành công.',
+        'order' => $order
+    ]);
+}
 
-        $order->trang_thai_don_hang = 'da_giao';
-        $order->save();
-
-        // Gửi mail thông báo
-        $message = 'Bạn đã xác nhận đã nhận hàng thành công.';
-        Mail::to($order->user->email)->send(new OrderStatusChangedMail($order, $message));
-
-        return response()->json([
-            'message' => 'Đã xác nhận đơn hàng đã được giao thành công.',
-            'order' => $order
-        ]);
-    }
 }

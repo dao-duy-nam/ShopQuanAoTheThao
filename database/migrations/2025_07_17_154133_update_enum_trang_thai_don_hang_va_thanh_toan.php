@@ -18,7 +18,7 @@ return new class extends Migration
             'dang_chuan_bi',
             'dang_van_chuyen',
             'da_giao',
-            'xac_nhan_da_giao',
+            'da_nhan',
             'yeu_cau_tra_hang',
             'cho_xac_nhan_tra_hang',
             'tu_choi_tra_hang',

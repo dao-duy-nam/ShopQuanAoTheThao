@@ -135,9 +135,26 @@ public function update(Request $request, $id)
 
     $order->update($validated);
 
+
+      if (isset($nextStatus)) {
+        $message = "Đơn hàng của bạn đã được cập nhật trạng thái: $nextStatus.";
+
+        if ($nextStatus === 'da_huy') {
+            $message .= " Lý do hủy: " . $validated['ly_do_huy'];
+        }
+
+        if ($nextStatus === 'tu_choi_tra_hang') {
+            $message .= " Lý do từ chối trả hàng: " . $validated['ly_do_tu_choi_tra_hang'];
+        }
+
+        Mail::to($order->email_nguoi_nhan)->send(new OrderStatusChangedMail($order, $message));
+    }
+    
     return response()->json([
         'message' => 'Cập nhật đơn hàng thành công',
         'order' => $order
     ]);
 }
+
+
 }
