@@ -1,17 +1,20 @@
 <?php
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Client\AuthController;
 use App\Http\Controllers\Api\Client\BannerController;
 use App\Http\Controllers\Api\Client\CartController;
 use App\Http\Controllers\API\Client\ReviewController;
+use App\Http\Controllers\Api\Client\WalletController;
 use App\Http\Controllers\Api\Payment\VnpayController;
 use App\Http\Controllers\Api\Client\ProductController;
+use App\Http\Controllers\Api\Payment\ZaloPayController;
 use App\Http\Controllers\Api\Client\ClientOrderController;
 use App\Http\Controllers\Api\Client\DiscountCodeController;
 use App\Http\Controllers\Api\Client\ClientAccountController;
 use App\Http\Controllers\Api\Client\ForgotPasswordController;
-use App\Http\Controllers\Api\Client\WalletController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
@@ -60,7 +63,6 @@ Route::middleware(['auth:sanctum', 'user'])->group(function () {
 
     Route::post('/client/discount-code/check', [DiscountCodeController::class, 'check']);
     Route::get('/client/discount-codes', [DiscountCodeController::class, 'userDiscounts']);
-
 });
 
 
@@ -81,7 +83,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('order/da-giao/{id}', [ClientOrderController::class, 'daGiao']);
 
 
-    
+
     Route::post('/wallet/vnpay/return', [\App\Http\Controllers\Api\Payment\VnpayController::class, 'walletVnpayReturn']);
     Route::prefix('cart')->group(function () {
         Route::get('/', [CartController::class, 'index']);
@@ -93,8 +95,12 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 });
 Route::prefix('payment/vnpay')->group(function () {
-        Route::post('create', [VnpayController::class, 'createPayment'])->middleware('auth:sanctum');
-        Route::get('return', [VnpayController::class, 'callback'])->name('payment.vnpay.callback');
-        Route::match(['GET', 'POST'], 'ipn', [VnpayController::class, 'ipn'])->name('payment.vnpay.ipn');
-        
-    });
+    Route::post('create', [VnpayController::class, 'createPayment'])->middleware('auth:sanctum');
+    Route::get('return', [VnpayController::class, 'callback'])->name('payment.vnpay.callback');
+    Route::match(['GET', 'POST'], 'ipn', [VnpayController::class, 'ipn'])->name('payment.vnpay.ipn');
+});
+Route::prefix('payment/zalopay')->group(function () {
+    Route::post('create', [ZaloPayController::class, 'createPayment'])->middleware('auth:sanctum');
+    Route::match(['GET', 'POST'], 'callback', [ZaloPayController::class, 'callback'])->name('payment.zalopay.callback');
+});
+

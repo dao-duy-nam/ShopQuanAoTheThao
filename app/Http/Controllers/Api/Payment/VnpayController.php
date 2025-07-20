@@ -28,7 +28,11 @@ class VnpayController extends Controller
 
         $order = Order::where('id', $data['don_hang_id'])
             ->where('user_id', $request->user()->id)
-            ->firstOrFail();
+            ->first();
+
+        if (!$order) {
+            return response()->json(['message' => 'Đơn hàng không tồn tại '], 404);
+        }
 
         if ($order->trang_thai_thanh_toan !== 'cho_xu_ly') {
             return response()->json(['message' => 'Đơn hàng không hợp lệ để thanh toán'], 409);
@@ -221,9 +225,10 @@ class VnpayController extends Controller
 
                     $order->update([
                         'trang_thai_thanh_toan' => 'da_thanh_toan',
-                        'trang_thai_don_hang'   => 'dang_chuan_bi',
+                        'trang_thai_don_hang'   => 'cho_xac_nhan',
                         'payment_link'          => null,
                         'expires_at'            => null,
+                        'ngay_thanh_toan'       => now(),
                     ]);
                     $order->refresh();
 
@@ -239,6 +244,7 @@ class VnpayController extends Controller
                         'ghi_chu_admin'         => $ghiChuAdmin,
                         'payment_link'          => null,
                         'expires_at'            => null,
+                        'ngay_thanh_toan'       => now(),
                     ]);
                     $order->refresh();
 
@@ -248,7 +254,7 @@ class VnpayController extends Controller
                         );
                     }
                 }
-            } 
+            }
         });
 
         if ($respCode !== '00') {

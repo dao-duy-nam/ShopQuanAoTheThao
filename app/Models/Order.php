@@ -36,6 +36,7 @@ class Order extends Model
         'tu_choi_tra_hang', 
         'ly_do_tu_choi_tra_hang', 
         'xac_nhan_da_giao',
+        'ngay_thanh_toan',
     ];
 
     public function user()
