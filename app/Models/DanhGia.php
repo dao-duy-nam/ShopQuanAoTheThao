@@ -19,8 +19,8 @@ class DanhGia extends Model
         'is_hidden'
     ];
     protected $casts = [
-        'hinh_anh' => 'array',
-    ];
+    'hinh_anh' => 'string',
+];
 
     public function user()
     {
