@@ -113,6 +113,8 @@ Route::prefix('admin')->group(function () {
             Route::get('/{id}', [OrderController::class, 'show']);
             // Route::post('/', [OrderController::class, 'store']);
             Route::put('/{id}', [OrderController::class, 'update']);
+            Route::post('/cancel/{id}', [OrderController::class, 'cancel']);
+
             // Route::delete('/{id}', [OrderController::class, 'destroy']);
         });
         Route::prefix('discount-codes')->group(function () {

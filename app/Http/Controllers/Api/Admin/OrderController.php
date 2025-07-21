@@ -53,9 +53,8 @@ class OrderController extends Controller
 public function update(Request $request, $id)
 {
     $validated = $request->validate([
-        'trang_thai_don_hang' => 'nullable|in:cho_xac_nhan,dang_chuan_bi,dang_van_chuyen,da_giao,yeu_cau_tra_hang,cho_xac_nhan_tra_hang,tra_hang_thanh_cong,yeu_cau_huy_hang,da_huy,tu_choi_tra_hang',
+        'trang_thai_don_hang' => 'nullable|in:cho_xac_nhan,dang_chuan_bi,dang_van_chuyen,da_giao,yeu_cau_tra_hang,cho_xac_nhan_tra_hang,tra_hang_thanh_cong,yeu_cau_huy_hang,tu_choi_tra_hang',
         'dia_chi' => 'nullable|string|max:255',
-        'ly_do_huy' => 'nullable|string|max:255',
         'ly_do_tu_choi_tra_hang' => 'nullable|string|max:255',
     ]);
 
@@ -74,7 +73,7 @@ public function update(Request $request, $id)
 
         if ($currentStatus === 'yeu_cau_tra_hang' && !in_array($nextStatus, ['cho_xac_nhan_tra_hang', 'tu_choi_tra_hang'])) {
             return response()->json([
-                'message' => "Đơn hàng đang yêu cầu trả hàng, chỉ được xác nhận sang 'cho_xac_nhan_tra_hang' hoặc từ chối sang 'tu_choi_tra_hang'."
+                'message' => "Đơn hàng đang yêu cầu trả hàng, chỉ được xác nhận sang 'cho_xac_nhan_tra_hang' hoặc 'tu_choi_tra_hang'."
             ], 400);
         }
 
@@ -84,23 +83,16 @@ public function update(Request $request, $id)
             ], 400);
         }
 
-        if ($currentStatus === 'yeu_cau_huy_hang' && $nextStatus !== 'da_huy') {
-            return response()->json([
-                'message' => "Đơn hàng đang yêu cầu hủy, chỉ được xác nhận sang 'da_huy'."
-            ], 400);
-        }
-
         $orderStatusFlow = [
-            'cho_xac_nhan' => ['dang_chuan_bi', 'da_huy'],
-            'dang_chuan_bi' => ['dang_van_chuyen', 'da_huy'],
+            'cho_xac_nhan' => ['dang_chuan_bi'],
+            'dang_chuan_bi' => ['dang_van_chuyen'],
             'dang_van_chuyen' => ['da_giao'],
             'da_giao' => [],
-            'yeu_cau_tra_hang' => ['cho_xac_nhan_tra_hang', 'tu_choi_tra_hang'], // ✅ cho phép từ chối
+            'yeu_cau_tra_hang' => ['cho_xac_nhan_tra_hang', 'tu_choi_tra_hang'],
             'cho_xac_nhan_tra_hang' => ['tra_hang_thanh_cong'],
             'tra_hang_thanh_cong' => [],
-            'yeu_cau_huy_hang' => ['da_huy'],
-            'da_huy' => [],
-            'tu_choi_tra_hang' => [], // kết thúc
+            'yeu_cau_huy_hang' => [], // hủy thì xử lý riêng
+            'tu_choi_tra_hang' => [],
         ];
 
         if (!in_array($nextStatus, $orderStatusFlow[$currentStatus] ?? [])) {
@@ -109,49 +101,67 @@ public function update(Request $request, $id)
             ], 400);
         }
 
-        if ($nextStatus === 'da_huy' && empty($validated['ly_do_huy'])) {
-            return response()->json([
-                'message' => 'Vui lòng nhập lý do hủy đơn hàng.'
-            ], 422);
-        }
-
         if ($nextStatus === 'tu_choi_tra_hang' && empty($validated['ly_do_tu_choi_tra_hang'])) {
             return response()->json([
                 'message' => 'Vui lòng nhập lý do từ chối trả hàng.'
             ], 422);
         }
 
-        // Cập nhật trạng thái thanh toán tương ứng
+        // Xử lý trạng thái thanh toán nếu cần
         if ($nextStatus === 'cho_xac_nhan') {
             $validated['trang_thai_thanh_toan'] = 'cho_xu_ly';
         } else if ($nextStatus === 'cho_xac_nhan_tra_hang') {
             $validated['trang_thai_thanh_toan'] = 'cho_hoan_tien';
         } else if ($nextStatus === 'tra_hang_thanh_cong') {
             $validated['trang_thai_thanh_toan'] = 'hoan_tien';
-        } else if ($nextStatus === 'da_huy') {
-            $validated['trang_thai_thanh_toan'] = 'da_huy';
         }
     }
 
     $order->update($validated);
 
-
-      if (isset($nextStatus)) {
-        $message = "Đơn hàng của bạn đã được cập nhật trạng thái: $nextStatus.";
-
-        if ($nextStatus === 'da_huy') {
-            $message .= " Lý do hủy: " . $validated['ly_do_huy'];
-        }
+    if (isset($nextStatus)) {
+        $message = "Đơn hàng đã được cập nhật trạng thái: $nextStatus.";
 
         if ($nextStatus === 'tu_choi_tra_hang') {
-            $message .= " Lý do từ chối trả hàng: " . $validated['ly_do_tu_choi_tra_hang'];
+            $message .= " Lý do: " . $validated['ly_do_tu_choi_tra_hang'];
         }
 
         Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
     }
-    
+
     return response()->json([
         'message' => 'Cập nhật đơn hàng thành công',
+        'order' => $order
+    ]);
+}
+
+public function cancel(Request $request, $id)
+{
+    $validated = $request->validate([
+        'ly_do_huy' => 'required|string|max:255',
+    ]);
+
+    $order = Order::findOrFail($id);
+    $currentStatus = $order->trang_thai_don_hang;
+
+    if (!in_array($currentStatus, ['cho_xac_nhan', 'dang_chuan_bi', 'yeu_cau_huy_hang'])) {
+        return response()->json([
+            'message' => "Không thể hủy đơn hàng ở trạng thái '$currentStatus'."
+        ], 400);
+    }
+
+    $order->update([
+        'trang_thai_don_hang' => 'da_huy',
+        'ly_do_huy' => $validated['ly_do_huy'],
+        'trang_thai_thanh_toan' => 'da_huy',
+    ]);
+
+    $message = "Đơn hàng đã bị hủy. Lý do: " . $validated['ly_do_huy'];
+
+    Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
+
+    return response()->json([
+        'message' => 'Đơn hàng đã được hủy thành công.',
         'order' => $order
     ]);
 }
