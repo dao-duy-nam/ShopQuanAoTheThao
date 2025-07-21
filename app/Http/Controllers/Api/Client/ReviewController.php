@@ -24,7 +24,7 @@ class ReviewController extends Controller
         if ($request->filled('sao')) {
             $query->where('so_sao', $request->sao);
         } elseif ($request->boolean('co_hinh_anh')) {
-            $query->whereNotNull('hinh_anh')->where('hinh_anh', '!=', '[]');
+            $query->whereNotNull('hinh_anh')->where('hinh_anh', '!=', '');
         }
 
 
@@ -71,31 +71,31 @@ class ReviewController extends Controller
     public function store(Request $request)
     {
         $dataValidate = $request->validate([
-            'san_pham_id' => 'required|exists:san_phams,id',
-            'bien_the_id' => 'nullable|exists:bien_thes,id',
-            'noi_dung'    => 'required|string',
-            'so_sao'      => 'required|integer|min:1|max:5',
-            'hinh_anh.*'  => 'nullable|image|mimes:jpeg,png,jpg,gif,svg',
-        ], [
-            'san_pham_id.required' => 'Vui lòng chọn sản phẩm để đánh giá.',
-            'san_pham_id.exists'   => 'Sản phẩm không tồn tại trong hệ thống.',
+        'san_pham_id' => 'required|exists:san_phams,id',
+        'bien_the_id' => 'required|exists:bien_thes,id', 
+        'noi_dung'    => 'required|string',
+        'so_sao'      => 'required|integer|min:1|max:5',
+        'hinh_anh'    => 'nullable|image|mimes:jpeg,png,jpg,gif,svg',
+    ], [
+        'san_pham_id.required' => 'Vui lòng chọn sản phẩm để đánh giá.',
+        'san_pham_id.exists'   => 'Sản phẩm không tồn tại trong hệ thống.',
 
-            'bien_the_id.exists'   => 'Biến thể không hợp lệ.',
+        'bien_the_id.required' => 'Vui lòng chọn biến thể để đánh giá.',
+        'bien_the_id.exists'   => 'Biến thể không hợp lệ.',
 
-            'noi_dung.required'    => 'Vui lòng nhập nội dung đánh giá.',
-            'noi_dung.string'      => 'Nội dung đánh giá phải là văn bản.',
+        'noi_dung.required'    => 'Vui lòng nhập nội dung đánh giá.',
+        'noi_dung.string'      => 'Nội dung đánh giá phải là văn bản.',
 
-            'so_sao.required'      => 'Vui lòng chọn số sao.',
-            'so_sao.integer'       => 'Số sao phải là một số nguyên.',
-            'so_sao.min'           => 'Số sao tối thiểu là 1.',
-            'so_sao.max'           => 'Số sao tối đa là 5.',
+        'so_sao.required'      => 'Vui lòng chọn số sao.',
+        'so_sao.integer'       => 'Số sao phải là một số nguyên.',
+        'so_sao.min'           => 'Số sao tối thiểu là 1.',
+        'so_sao.max'           => 'Số sao tối đa là 5.',
 
-            'hinh_anh.*.image'     => 'Tệp tải lên phải là hình ảnh.',
-            'hinh_anh.*.mimes'     => 'Ảnh phải có định dạng jpeg, png, jpg, gif hoặc svg.',
-        ]);
+        'hinh_anh.image'       => 'Tệp tải lên phải là hình ảnh.',
+        'hinh_anh.mimes'       => 'Ảnh phải có định dạng jpeg, png, jpg, gif hoặc svg.',
+    ]);
 
         $userId = Auth::id();
-
 
         $hasPurchased = OrderDetail::whereHas('order', function ($query) use ($userId) {
             $query->where('user_id', $userId)
@@ -126,29 +126,18 @@ class ReviewController extends Controller
             ], 409);
         }
 
-
-        $imagePaths = [];
-
+        $imagePath = null;
         if ($request->hasFile('hinh_anh')) {
-            $files = is_array($request->file('hinh_anh'))
-                ? $request->file('hinh_anh')
-                : [$request->file('hinh_anh')];
-
-            foreach ($files as $image) {
-                $path = $image->store('reviews', 'public');
-                $imagePaths[] = $path;
-            }
+            $imagePath = $request->file('hinh_anh')->store('reviews', 'public');
         }
-
-
 
         $review = DanhGia::create([
             'user_id'     => $userId,
             'san_pham_id' => $dataValidate['san_pham_id'],
-            'bien_the_id' => $dataValidate['bien_the_id'] ?? null,
+            'bien_the_id' => $dataValidate['bien_the_id'] ,
             'noi_dung'    => $dataValidate['noi_dung'],
             'so_sao'      => $dataValidate['so_sao'],
-            'hinh_anh'    => $imagePaths,
+            'hinh_anh'    => $imagePath,
         ]);
 
         return response()->json([
@@ -157,86 +146,55 @@ class ReviewController extends Controller
         ], 201);
     }
 
+
     public function update(Request $request, $id)
     {
+        $review = DanhGia::findOrFail($id);
+
         $data = $request->validate([
             'noi_dung'    => 'required|string',
             'so_sao'      => 'required|integer|min:1|max:5',
-            'hinh_anh.*'  => 'nullable|image|mimes:jpeg,png,jpg,gif,svg',
+            'hinh_anh'    => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ], [
             'noi_dung.required'    => 'Vui lòng nhập nội dung đánh giá.',
-            'noi_dung.string'      => 'Nội dung đánh giá phải là văn bản.',
+            'noi_dung.string'      => 'Nội dung phải là văn bản.',
             'so_sao.required'      => 'Vui lòng chọn số sao.',
             'so_sao.integer'       => 'Số sao phải là một số nguyên.',
             'so_sao.min'           => 'Số sao tối thiểu là 1.',
             'so_sao.max'           => 'Số sao tối đa là 5.',
-            'hinh_anh.*.image'     => 'Tệp tải lên phải là hình ảnh.',
-            'hinh_anh.*.mimes'     => 'Ảnh phải có định dạng jpeg, png, jpg, gif hoặc svg.',
-
+            'hinh_anh.image'       => 'Tệp phải là hình ảnh.',
+            'hinh_anh.mimes'       => 'Ảnh phải thuộc định dạng jpeg, png, jpg, gif, svg.',
         ]);
-
-        $userId = Auth::id();
-
-        $review = DanhGia::where('id', $id)->where('user_id', $userId)->first();
-
-        if (!$review) {
-            return response()->json([
-                'message' => 'Không tìm thấy đánh giá hoặc bạn không có quyền chỉnh sửa.'
-            ], 404);
-        }
-
-        $hasPurchased = OrderDetail::whereHas('order', function ($query) use ($userId) {
-            $query->where('user_id', $userId)
-                ->where('trang_thai_don_hang', 'da_giao');
-        })
-            ->where('san_pham_id', $review->san_pham_id)
-            ->when($review->bien_the_id, function ($query) use ($review) {
-                $query->where('bien_the_id', $review->bien_the_id);
-            })
-            ->exists();
-
-        if (!$hasPurchased) {
-            return response()->json([
-                'message' => 'Bạn chỉ có thể chỉnh sửa đánh giá sau khi đã mua và nhận hàng.'
-            ], 403);
-        }
-
 
 
         if ($request->hasFile('hinh_anh')) {
+
             if ($review->hinh_anh) {
-                foreach ($review->hinh_anh as $oldImage) {
-                    Storage::disk('public')->delete($oldImage);
-                }
+                Storage::disk('public')->delete($review->hinh_anh);
             }
 
-            $imagePaths = [];
-            foreach ($request->file('hinh_anh') as $file) {
-                $imagePaths[] = $file->store('reviews', 'public');
-            }
+            $imagePath = $request->file('hinh_anh')->store('reviews', 'public');
         } else {
-
-            $imagePaths = $review->hinh_anh ?? [];
+            $imagePath = $review->hinh_anh;
         }
-
 
         $review->update([
             'noi_dung'  => $data['noi_dung'],
             'so_sao'    => $data['so_sao'],
-            'hinh_anh'  => $imagePaths,
+            'hinh_anh'  => $imagePath,
         ]);
 
         return response()->json([
-            'message' => 'Cập nhật đánh giá thành công!',
-            'data' => $review
+            'message' => 'Cập nhật đánh giá thành công',
+            'data'    => $review,
         ]);
     }
+
 
 
     public function destroy($id)
     {
         $userId = Auth::id();
-
 
         $review = DanhGia::where('id', $id)->where('user_id', $userId)->first();
 
@@ -247,10 +205,8 @@ class ReviewController extends Controller
         }
 
 
-        if ($review->hinh_anh && is_array($review->hinh_anh)) {
-            foreach ($review->hinh_anh as $imagePath) {
-                Storage::disk('public')->delete($imagePath);
-            }
+        if (!empty($review->hinh_anh)) {
+            Storage::disk('public')->delete($review->hinh_anh);
         }
 
         $review->delete();

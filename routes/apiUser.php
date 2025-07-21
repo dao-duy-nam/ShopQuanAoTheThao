@@ -46,10 +46,14 @@ Route::get('/posts/{id}', [PostApiController::class, 'show']);
 Route::get('/phi-ship', [ShippingApiController::class, 'getPhiShip']);
 Route::middleware(['auth:sanctum', 'user'])->group(function () {
     // Product reviews
-    Route::get('/reviews', [ReviewController::class, 'index']);
-    Route::post('/reviews', [ReviewController::class, 'store']);
-    Route::put('/reviews/{id}', [ReviewController::class, 'update']);
-    Route::delete('/reviews/{id}', [ReviewController::class, 'destroy']);
+    Route::prefix('review')->group(function () {
+        Route::delete('/{id}', [ReviewController::class, 'destroy']);
+        Route::post('/', [ReviewController::class, 'store']);
+        Route::put('/{id}', [ReviewController::class, 'update']);
+    });
+
+    Route::get('/products/{id}/review', [ReviewController::class, 'index']);
+
 
 
     Route::get('/client/profile', [ClientAccountController::class, 'profile']);
