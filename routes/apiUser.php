@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\Client\PostApiController;
 use App\Http\Controllers\Api\Client\ProductController;
 use App\Http\Controllers\Api\Payment\ZaloPayController;
 use App\Http\Controllers\Api\Client\ClientOrderController;
+use App\Http\Controllers\Api\Client\ShippingApiController;
 use App\Http\Controllers\Api\Client\DiscountCodeController;
 use App\Http\Controllers\Api\Client\ClientAccountController;
 use App\Http\Controllers\Api\Client\ForgotPasswordController;
@@ -42,7 +43,7 @@ Route::get('banner', [BannerController::class, 'index']);
 
 Route::get('/posts', [PostApiController::class, 'index']);
 Route::get('/posts/{id}', [PostApiController::class, 'show']);
-
+Route::get('/phi-ship', [ShippingApiController::class, 'getPhiShip']);
 Route::middleware(['auth:sanctum', 'user'])->group(function () {
     // Product reviews
     Route::get('/reviews', [ReviewController::class, 'index']);
