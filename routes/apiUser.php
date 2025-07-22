@@ -60,7 +60,7 @@ Route::middleware(['auth:sanctum', 'user'])->group(function () {
     Route::post('/client/profile', [ClientAccountController::class, 'updateProfile']);
     Route::put('/client/change-password', [ClientAccountController::class, 'changePassword']);
     Route::post('/client/logout', [ClientAccountController::class, 'logout']);
-
+    Route::get('/client/overview', [ClientAccountController::class, 'getUserOverview']);
 
     // Wallet API
     Route::get('/wallet', [WalletController::class, 'getBalance']);
