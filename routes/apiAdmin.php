@@ -1,18 +1,21 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\Admin\PostController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\Admin\OrderController;
 use App\Http\Controllers\Api\Admin\BannerController;
 use App\Http\Controllers\Api\Admin\DanhGiaController;
+use App\Http\Controllers\Api\Admin\MessageController;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\VariantController;
 use App\Http\Controllers\Api\Admin\CategoryController;
-use App\Http\Controllers\Api\Admin\AttributeValueController;
 use App\Http\Controllers\Api\Admin\AdminAuthController;
 use App\Http\Controllers\Api\Admin\AttributeController;
 use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\DiscountCodeController;
+use App\Http\Controllers\Api\Admin\AttributeValueController;
+use App\Http\Controllers\Api\Admin\WalletTransactionController;
 
 Route::prefix('admin')->group(function () {
 
@@ -111,6 +114,8 @@ Route::prefix('admin')->group(function () {
             Route::get('/{id}', [OrderController::class, 'show']);
             // Route::post('/', [OrderController::class, 'store']);
             Route::put('/{id}', [OrderController::class, 'update']);
+            Route::post('/cancel/{id}', [OrderController::class, 'cancel']);
+
             // Route::delete('/{id}', [OrderController::class, 'destroy']);
         });
         Route::prefix('discount-codes')->group(function () {
@@ -124,9 +129,32 @@ Route::prefix('admin')->group(function () {
             Route::post('/restore/{id}', [DiscountCodeController::class, 'restore']);
             Route::post('/{id}/send', [DiscountCodeController::class, 'sendToUsers']);
         });
+        Route::prefix('wallet-transactions')->group(function () {
+            Route::get('/', [WalletTransactionController::class, 'index'])->name('wallet-transactions.index');
+            Route::get('/{id}', [WalletTransactionController::class, 'show'])->name('wallet-transactions.show');
+            Route::patch('/{id}', [WalletTransactionController::class, 'updateStatus'])->name('wallet-transactions.updateStatus');
+        });
 
         Route::prefix('dashboard')->group(function () {
             Route::get('/', [DashboardController::class, 'index']);
         });
+
+        Route::prefix('posts')->group(function () {
+            Route::get('/listtrash', [PostController::class, 'trash'])->name('trash');
+            Route::post('/restore/{id}', [PostController::class, 'restore'])->name('restore');
+            Route::post('/upload-image', [PostController::class, 'uploadImage'])->name('uploadImage');
+
+            Route::get('/', [PostController::class, 'index'])->name('index');
+            Route::post('/', [PostController::class, 'store'])->name('store');
+            Route::get('/{id}', [PostController::class, 'show'])->name('show');
+            Route::post('/{id}', [PostController::class, 'update'])->name('update');
+            Route::delete('/{id}', [PostController::class, 'destroy'])->name('destroy');
+        });
+
+        Route::prefix('tin-nhans')->group(function () {
+        Route::get('/', [MessageController::class, 'getUserList']); 
+        Route::get('{userId}', [MessageController::class, 'getMessagesWithUser']); 
+        Route::post('/', [MessageController::class, 'sendMessageToUser']); 
+    });
     });
 });

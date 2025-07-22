@@ -93,11 +93,7 @@ class AuthController extends Controller
             ]);
         }
 
-        if (!$user->isRoleUser('user')) {
-            return response()->json([
-                'message' => 'Bạn không có quyền truy cập.'
-            ], 403);
-        }
+        
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([

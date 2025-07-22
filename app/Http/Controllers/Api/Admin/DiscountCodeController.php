@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\DiscountCode;
 use Illuminate\Http\Request;
 use App\Mail\DiscountCodeMail;
+use App\Models\UserDiscountCode;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Resources\DiscountCodeResource;
@@ -119,29 +120,40 @@ class DiscountCodeController extends Controller
         ]);
 
         $code = DiscountCode::findOrFail($id);
-        $users = collect();
+        $gioiHan = max(1, $code->gioi_han);
+        $maxUsersCanSend = intval(floor($code->so_luong / $gioiHan));
+
+        $query = User::where('vai_tro_id', User::ROLE_USER)
+            ->whereNotNull('email');
 
         if ($request->kieu === 'tat_ca') {
-            $users = User::where('vai_tro_id', User::ROLE_USER)
-                ->whereNotNull('email')
-                ->get();
-        } elseif ($request->kieu === 'ngau_nhien') {
+            $users = $query->limit($maxUsersCanSend)->get();
+        } else {
+            $soLuongNhap = $request->input('so_luong');
 
-            $tongUser = User::where('vai_tro_id', User::ROLE_USER)
-                ->whereNotNull('email')
-                ->count();
+            if ($soLuongNhap !== null && $soLuongNhap > $maxUsersCanSend) {
+                return response()->json([
+                    'message' => "Số lượng vượt quá giới hạn. Chỉ có thể gửi cho tối đa {$maxUsersCanSend} người dùng.",
+                ], 422);
+            }
 
-            $soLuong = $request->input('so_luong', rand(1, min(10, $tongUser)));
+            $soLuong = $soLuongNhap ?? rand(1, min(10, $maxUsersCanSend));
 
-            $users = User::where('vai_tro_id', User::ROLE_USER)
-                ->whereNotNull('email')
-                ->inRandomOrder()
-                ->limit($soLuong)
-                ->get();
+            $users = $query->inRandomOrder()->limit($soLuong)->get();
         }
 
         foreach ($users as $user) {
             Mail::to($user->email)->queue(new DiscountCodeMail($user, $code));
+
+            UserDiscountCode::updateOrCreate(
+                [
+                    'ma_giam_gia_id' => $code->id,
+                    'nguoi_dung_id' => $user->id,
+                ],
+                [
+                    'so_lan_da_dung' => 0,
+                ]
+            );
         }
 
         return response()->json([

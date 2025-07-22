@@ -36,4 +36,5 @@ class Product extends Model
     {
         return $this->hasMany(Variant::class, 'san_pham_id');
     }
+    
 }

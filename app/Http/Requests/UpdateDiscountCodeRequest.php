@@ -17,6 +17,7 @@ class UpdateDiscountCodeRequest extends FormRequest
             'ma' => 'required|string|unique:ma_giam_gias,ma,' . $this->route('id'),
             'ten' => 'nullable|string',
             'loai' => 'required|in:phan_tram,tien',
+            'mo_ta' => 'nullable|string',
             'ap_dung_cho' => 'required|in:toan_don,san_pham',
             'san_pham_id' => 'nullable|exists:san_phams,id',
             'gia_tri' => 'required|integer|min:1',

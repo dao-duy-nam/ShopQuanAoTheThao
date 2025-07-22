@@ -12,6 +12,7 @@ class DiscountCodeResource extends JsonResource
             'id' => $this->id,
             'ma' => $this->ma,
             'ten' => $this->ten,
+            'mo_ta' => $this->mo_ta,
             'loai' => $this->loai,
             'ap_dung_cho' => $this->ap_dung_cho,
             'san_pham_id' => $this->san_pham_id,

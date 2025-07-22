@@ -14,12 +14,12 @@ class ReviewResource extends JsonResource
             'bien_the_id'   => $this->bien_the_id,
             'noi_dung'      => $this->noi_dung,
             'so_sao'        => $this->so_sao,
-            'hinh_anh'      => is_array($this->hinh_anh) ? $this->hinh_anh : json_decode($this->hinh_anh, true),
+            'hinh_anh'      => $this->hinh_anh,
             'is_hidden'     => $this->is_hidden,
             'created_at'    => $this->created_at->format('Y-m-d H:i:s'),
             'updated_at'    => $this->updated_at->format('Y-m-d H:i:s'),
             
-            // Thông tin người dùng viết đánh giá
+            
             'user' => [
                 'id'     => $this->user->id ?? null,
                 'name'   => $this->user->name ?? null,

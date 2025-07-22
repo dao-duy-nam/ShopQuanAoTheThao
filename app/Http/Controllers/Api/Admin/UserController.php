@@ -57,7 +57,7 @@ protected function getUsersByRoleNames(array $roleNames, Request $request)
         });
     }
 
-    $users = $query->paginate(10);
+    $users = $query->orderBy('created_at', 'desc')->paginate(10);
 
     return response()->json([
         'message' => 'Danh sách người dùng theo vai trò: ' . implode(', ', $roleNames),
