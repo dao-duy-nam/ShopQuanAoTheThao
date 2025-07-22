@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\Client\WishlistController;
 use App\Http\Controllers\Api\Client\AuthController;
 use App\Http\Controllers\Api\Client\CartController;
 use App\Http\Controllers\Api\Client\BannerController;
@@ -116,3 +117,10 @@ Route::prefix('payment/zalopay')->group(function () {
     Route::post('create', [ZaloPayController::class, 'createPayment'])->middleware('auth:sanctum');
     Route::match(['GET', 'POST'], 'callback', [ZaloPayController::class, 'callback'])->name('payment.zalopay.callback');
 });
+
+Route::prefix('wishlists')->middleware('auth:sanctum')->group(function () {
+    Route::get('/', [WishlistController::class, 'index']);
+    Route::post('/', [WishlistController::class, 'store']);
+    Route::delete('/{id}', [WishlistController::class, 'destroy']);
+});
+
