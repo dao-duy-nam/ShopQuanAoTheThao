@@ -71,41 +71,43 @@ class ReviewController extends Controller
     public function store(Request $request)
     {
         $dataValidate = $request->validate([
-        'san_pham_id' => 'required|exists:san_phams,id',
-        'bien_the_id' => 'required|exists:bien_thes,id', 
-        'noi_dung'    => 'required|string',
-        'so_sao'      => 'required|integer|min:1|max:5',
-        'hinh_anh'    => 'nullable|image|mimes:jpeg,png,jpg,gif,svg',
-    ], [
-        'san_pham_id.required' => 'Vui lòng chọn sản phẩm để đánh giá.',
-        'san_pham_id.exists'   => 'Sản phẩm không tồn tại trong hệ thống.',
+            'san_pham_id' => 'required|exists:san_phams,id',
+            'bien_the_id' => 'required|exists:bien_thes,id',
+            'noi_dung'    => 'required|string',
+            'so_sao'      => 'required|integer|min:1|max:5',
+            'hinh_anh'    => 'nullable|image|mimes:jpeg,png,jpg,gif,svg',
+        ], [
+            'san_pham_id.required' => 'Vui lòng chọn sản phẩm để đánh giá.',
+            'san_pham_id.exists'   => 'Sản phẩm không tồn tại trong hệ thống.',
 
-        'bien_the_id.required' => 'Vui lòng chọn biến thể để đánh giá.',
-        'bien_the_id.exists'   => 'Biến thể không hợp lệ.',
+            'bien_the_id.required' => 'Vui lòng chọn biến thể để đánh giá.',
+            'bien_the_id.exists'   => 'Biến thể không hợp lệ.',
 
-        'noi_dung.required'    => 'Vui lòng nhập nội dung đánh giá.',
-        'noi_dung.string'      => 'Nội dung đánh giá phải là văn bản.',
+            'noi_dung.required'    => 'Vui lòng nhập nội dung đánh giá.',
+            'noi_dung.string'      => 'Nội dung đánh giá phải là văn bản.',
 
-        'so_sao.required'      => 'Vui lòng chọn số sao.',
-        'so_sao.integer'       => 'Số sao phải là một số nguyên.',
-        'so_sao.min'           => 'Số sao tối thiểu là 1.',
-        'so_sao.max'           => 'Số sao tối đa là 5.',
+            'so_sao.required'      => 'Vui lòng chọn số sao.',
+            'so_sao.integer'       => 'Số sao phải là một số nguyên.',
+            'so_sao.min'           => 'Số sao tối thiểu là 1.',
+            'so_sao.max'           => 'Số sao tối đa là 5.',
 
-        'hinh_anh.image'       => 'Tệp tải lên phải là hình ảnh.',
-        'hinh_anh.mimes'       => 'Ảnh phải có định dạng jpeg, png, jpg, gif hoặc svg.',
-    ]);
+            'hinh_anh.image'       => 'Tệp tải lên phải là hình ảnh.',
+            'hinh_anh.mimes'       => 'Ảnh phải có định dạng jpeg, png, jpg, gif hoặc svg.',
+        ]);
 
         $userId = Auth::id();
 
         $hasPurchased = OrderDetail::whereHas('order', function ($query) use ($userId) {
             $query->where('user_id', $userId)
-                ->where('trang_thai_don_hang', 'da_giao');
+                ->where('trang_thai_don_hang', 'da_giao')
+                ->where('updated_at', '>=', now()->subDays(7));
         })
             ->where('san_pham_id', $request->san_pham_id)
             ->when($request->bien_the_id, function ($query) use ($request) {
                 $query->where('bien_the_id', $request->bien_the_id);
             })
-            ->exists();
+            ->latest()
+            ->first();
 
         if (!$hasPurchased) {
             return response()->json([
@@ -134,7 +136,7 @@ class ReviewController extends Controller
         $review = DanhGia::create([
             'user_id'     => $userId,
             'san_pham_id' => $dataValidate['san_pham_id'],
-            'bien_the_id' => $dataValidate['bien_the_id'] ,
+            'bien_the_id' => $dataValidate['bien_the_id'],
             'noi_dung'    => $dataValidate['noi_dung'],
             'so_sao'      => $dataValidate['so_sao'],
             'hinh_anh'    => $imagePath,
