@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement('UPDATE wallets SET balance = 0 WHERE balance IS NULL');
-        Schema::table('wallets', function (Blueprint $table) {
-            $table->decimal('balance', 15, 2)->default(0)->change();
+        Schema::table('don_hangs', function (Blueprint $table) {
+            $table->boolean('refund_done')->default(false)->after('trang_thai_thanh_toan');
         });
     }
 
@@ -22,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('wallets', function (Blueprint $table) {
-            $table->decimal('balance', 15, 2)->nullable()->default(null)->change();
+        Schema::table('don_hangs', function (Blueprint $table) {
+            $table->dropColumn('refund_done');
         });
     }
 };
