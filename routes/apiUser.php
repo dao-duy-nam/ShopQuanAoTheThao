@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\Client\ClientOrderController;
 use App\Http\Controllers\Api\Client\ShippingApiController;
 use App\Http\Controllers\Api\Client\DiscountCodeController;
 use App\Http\Controllers\Api\Client\ClientAccountController;
+use App\Http\Controllers\Api\Client\ClientMessageController;
 use App\Http\Controllers\Api\Client\ForgotPasswordController;
 
 Route::prefix('auth')->group(function () {
@@ -92,7 +93,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('order/tra-hang/{id}', [ClientOrderController::class, 'traHang']);
     Route::post('order/da-giao/{id}', [ClientOrderController::class, 'daGiao']);
 
-
+    Route::prefix('/tin-nhans')->group(function () {
+        Route::get('/', [ClientMessageController::class, 'getMessagesWithAdmin']);
+        Route::post('/', [ClientMessageController::class, 'sendMessageToAdmin']);
+    });
 
     Route::post('/wallet/vnpay/return', [\App\Http\Controllers\Api\Payment\VnpayController::class, 'walletVnpayReturn']);
     Route::prefix('cart')->group(function () {

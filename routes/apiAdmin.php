@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\Admin\OrderController;
 use App\Http\Controllers\Api\Admin\BannerController;
 use App\Http\Controllers\Api\Admin\DanhGiaController;
+use App\Http\Controllers\Api\Admin\MessageController;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\VariantController;
 use App\Http\Controllers\Api\Admin\CategoryController;
@@ -149,5 +150,11 @@ Route::prefix('admin')->group(function () {
             Route::post('/{id}', [PostController::class, 'update'])->name('update');
             Route::delete('/{id}', [PostController::class, 'destroy'])->name('destroy');
         });
+
+        Route::prefix('tin-nhans')->group(function () {
+        Route::get('/', [MessageController::class, 'getUserList']); 
+        Route::get('{userId}', [MessageController::class, 'getMessagesWithUser']); 
+        Route::post('/', [MessageController::class, 'sendMessageToUser']); 
+    });
     });
 });

@@ -24,7 +24,7 @@ class UserSeeder extends Seeder
             'email_verified_at' => Carbon::now(),
         ]);
 
-        
+
         User::create([
             'name' => 'NGoc',
             'email' => 'ngocnxph50224@gmail.com',
@@ -35,7 +35,16 @@ class UserSeeder extends Seeder
             'ngay_sinh' => '1990-01-01',
             'email_verified_at' => Carbon::now(),
         ]);
-
+        User::create([
+            'name' => 'Chat Support',
+            'email' => 'chat@gmail.com',
+            'password' => bcrypt('123456'), 
+            'so_dien_thoai' => '0977777777',
+            'vai_tro_id' => 3, 
+            'trang_thai' => 'active',
+            'ngay_sinh' => '1995-09-15',
+            'email_verified_at' => Carbon::now(),
+        ]);
         User::create([
             'name' => 'Duy Nam',
             'email' => 'namddph50247@gmail.com',
@@ -58,7 +67,7 @@ class UserSeeder extends Seeder
             'email_verified_at' => Carbon::now(),
         ]);
 
-   
+
         for ($i = 1; $i <= 20; $i++) {
             User::create([
                 'name' => 'User ' . $i,
@@ -84,7 +93,7 @@ class UserSeeder extends Seeder
             ]);
         }
 
-        
+
         for ($i = 1; $i <= 15; $i++) {
             User::create([
                 'name' => 'Nhân viên ' . $i,
