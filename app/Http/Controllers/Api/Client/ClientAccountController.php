@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Client;
 
 use App\Models\Order;
 use App\Models\DanhGia;
+use App\Models\Wishlist;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
@@ -106,7 +107,7 @@ class ClientAccountController extends Controller
             ->count();
 
         $reviewCount = DanhGia::where('user_id', $user->id)->count();
-        // $Wishlist = Wishlist::where('user_id', $user->id)->count();
+        $Wishlist = Wishlist::where('user_id', $user->id)->count();
 
         if ($orderCount >= 30) {
             $rank = 'KIM CƯƠNG';
@@ -123,7 +124,7 @@ class ClientAccountController extends Controller
         return response()->json([
             'orders' => $orderCount,
             'reviews' => $reviewCount,
-            // 'Wishlist' => $Wishlist,
+            'Wishlist' => $Wishlist,
             'rank' => $rank,
         ]);
     }
