@@ -9,12 +9,10 @@ use App\Http\Controllers\Controller;
 
 class MessageController extends Controller
 {
-    
     public function getUserList(Request $request)
     {
         $adminId = $request->user()->id;
 
-        
         $userIds = Message::where('nguoi_gui_id', $adminId)
             ->orWhere('nguoi_nhan_id', $adminId)
             ->get()
@@ -26,7 +24,7 @@ class MessageController extends Controller
             ->unique()
             ->values();
 
-       
+
         $users = User::whereIn('id', $userIds)->get();
 
         return response()->json([
@@ -34,27 +32,43 @@ class MessageController extends Controller
         ]);
     }
 
-   
+
     public function getMessagesWithUser(Request $request, $userId)
     {
-        $adminId = $request->user()->id;
+        $currentUser = $request->user();
+        if (!in_array($currentUser->vai_tro_id, [1, 3])) {
+            return response()->json([
+                'message' => 'Bạn không có quyền xem đoạn chat này.'
+            ], 403);
+        }
 
-        $messages = Message::where(function ($q) use ($adminId, $userId) {
-            $q->where('nguoi_gui_id', $adminId)
-                ->where('nguoi_nhan_id', $userId);
-        })->orWhere(function ($q) use ($adminId, $userId) {
-            $q->where('nguoi_gui_id', $userId)
-                ->where('nguoi_nhan_id', $adminId);
-        })
+        $messages = Message::with(['sender', 'receiver'])
+            ->where(function ($query) use ($userId) {
+                $query->where('nguoi_gui_id', $userId)
+                    ->orWhere('nguoi_nhan_id', $userId);
+            })
             ->orderBy('created_at', 'asc')
-            ->get();
+            ->get()
+            ->map(function ($message) {
+                return [
+                    'id' => $message->id,
+                    'noi_dung' => $message->noi_dung,
+                    'nguoi_gui_id' => $message->nguoi_gui_id,
+                    'nguoi_gui_name' => $message->sender->name ?? null,
+                    'nguoi_nhan_id' => $message->nguoi_nhan_id,
+                    'nguoi_nhan_name' => $message->receiver->name ?? null,
+                    'created_at' => $message->created_at,
+                ];
+            });
 
         return response()->json([
             'data' => $messages,
         ]);
     }
 
-    
+
+
+
     public function sendMessageToUser(Request $request)
     {
         $data = $request->validate([
