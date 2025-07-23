@@ -70,7 +70,6 @@ class CartController extends Controller
                     'tong_so_luong' => $gioHang->tong_so_luong
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('Lỗi xem giỏ hàng', [
                 'error' => $e->getMessage(),
@@ -146,7 +145,6 @@ class CartController extends Controller
             return response()->json([
                 'message' => 'Thêm vào giỏ hàng thành công!'
             ], 201);
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Lỗi thêm vào giỏ hàng', [
@@ -179,7 +177,6 @@ class CartController extends Controller
                 $soLuongMoi += $chiTietGioHang->so_luong;
             }
 
-            // Kiểm tra tồn kho
             if ($chiTietGioHang->bien_the_id) {
                 $bienThe = Variant::findOrFail($chiTietGioHang->bien_the_id);
                 if ($soLuongMoi > $bienThe->so_luong) {
@@ -208,7 +205,6 @@ class CartController extends Controller
                     'action' => $action
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('Lỗi cập nhật số lượng', [
                 'error' => $e->getMessage(),
@@ -234,7 +230,6 @@ class CartController extends Controller
             return response()->json([
                 'message' => 'Xóa sản phẩm khỏi giỏ hàng thành công!'
             ]);
-
         } catch (\Exception $e) {
             Log::error('Lỗi xóa sản phẩm khỏi giỏ hàng', [
                 'error' => $e->getMessage(),
@@ -258,7 +253,6 @@ class CartController extends Controller
             return response()->json([
                 'message' => 'Đã xóa tất cả sản phẩm trong giỏ hàng!'
             ]);
-
         } catch (\Exception $e) {
             Log::error('Lỗi xóa tất cả giỏ hàng', [
                 'error' => $e->getMessage(),
@@ -267,6 +261,4 @@ class CartController extends Controller
             return response()->json(['error' => 'Lỗi: ' . $e->getMessage()], 500);
         }
     }
-
-   
-} 
+}

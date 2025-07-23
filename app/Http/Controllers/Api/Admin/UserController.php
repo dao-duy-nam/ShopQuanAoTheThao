@@ -16,61 +16,61 @@ use App\Http\Resources\UserAdminResource;
 
 class UserController extends Controller
 {
-   public function listAdmins(Request $request)
-{
-    return $this->getUsersByRoleNames(['admin'], $request);
-}
-
-public function listStaffs(Request $request)
-{
-    return $this->getUsersByRoleNames(['staff'], $request);
-}
-
-public function listCustomers(Request $request)
-{
-    return $this->getUsersByRoleNames(['user'], $request);
-}
-
-protected function getUsersByRoleNames(array $roleNames, Request $request)
-{
-    $query = DB::table('users')
-        ->leftJoin('vai_tros', 'users.vai_tro_id', '=', 'vai_tros.id')
-        ->select(
-            'users.id',
-            'users.name',
-            'users.email',
-            'users.so_dien_thoai',
-            'users.anh_dai_dien',
-            'users.trang_thai',
-            'users.vai_tro_id',
-            'vai_tros.ten_vai_tro',
-            'users.created_at',
-            'users.updated_at'
-        )
-        ->whereIn('vai_tros.ten_vai_tro', $roleNames);
-
-    if ($request->filled('keyword')) {
-        $keyword = $request->keyword;
-        $query->where(function ($q) use ($keyword) {
-            $q->where('users.name', 'like', "%$keyword%")
-                ->orWhere('users.email', 'like', "%$keyword%");
-        });
+    public function listAdmins(Request $request)
+    {
+        return $this->getUsersByRoleNames(['admin'], $request);
     }
 
-    $users = $query->orderBy('created_at', 'desc')->paginate(10);
+    public function listStaffs(Request $request)
+    {
+        return $this->getUsersByRoleNames(['staff'], $request);
+    }
 
-    return response()->json([
-        'message' => 'Danh sách người dùng theo vai trò: ' . implode(', ', $roleNames),
-        'status' => 200,
-        'data' => $users->items(),
-        'pagination' => [
-            'total' => $users->total(),
-            'per_page' => $users->perPage(),
-            'current_page' => $users->currentPage(),
-            'last_page' => $users->lastPage(),
-        ],
-    ]);
-}
+    public function listCustomers(Request $request)
+    {
+        return $this->getUsersByRoleNames(['user'], $request);
+    }
+
+    protected function getUsersByRoleNames(array $roleNames, Request $request)
+    {
+        $query = DB::table('users')
+            ->leftJoin('vai_tros', 'users.vai_tro_id', '=', 'vai_tros.id')
+            ->select(
+                'users.id',
+                'users.name',
+                'users.email',
+                'users.so_dien_thoai',
+                'users.anh_dai_dien',
+                'users.trang_thai',
+                'users.vai_tro_id',
+                'vai_tros.ten_vai_tro',
+                'users.created_at',
+                'users.updated_at'
+            )
+            ->whereIn('vai_tros.ten_vai_tro', $roleNames);
+
+        if ($request->filled('keyword')) {
+            $keyword = $request->keyword;
+            $query->where(function ($q) use ($keyword) {
+                $q->where('users.name', 'like', "%$keyword%")
+                    ->orWhere('users.email', 'like', "%$keyword%");
+            });
+        }
+
+        $users = $query->orderBy('created_at', 'desc')->paginate(10);
+
+        return response()->json([
+            'message' => 'Danh sách người dùng theo vai trò: ' . implode(', ', $roleNames),
+            'status' => 200,
+            'data' => $users->items(),
+            'pagination' => [
+                'total' => $users->total(),
+                'per_page' => $users->perPage(),
+                'current_page' => $users->currentPage(),
+                'last_page' => $users->lastPage(),
+            ],
+        ]);
+    }
 
 
     public function store(Request $request)
@@ -128,91 +128,91 @@ protected function getUsersByRoleNames(array $roleNames, Request $request)
         $user->load('role');
 
         return response()->json([
-    'message' => 'Tài khoản đã bị khóa',
-    'status' => 200,
-    'data' => new UserAdminResource($user),
-]);
+            'message' => 'Tài khoản đã bị khóa',
+            'status' => 200,
+            'data' => new UserAdminResource($user),
+        ]);
     }
 
-   public function block(Request $request, $id)
-{
-    $request->validate([
-        'ly_do_block' => 'required|string',
-    ]);
+    public function block(Request $request, $id)
+    {
+        $request->validate([
+            'ly_do_block' => 'required|string',
+        ]);
 
-    $user = User::with('role')->findOrFail($id);
+        $user = User::with('role')->findOrFail($id);
 
-    if ($user->role && $user->role->ten_vai_tro === 'admin') {
+        if ($user->role && $user->role->ten_vai_tro === 'admin') {
+            return response()->json([
+                'message' => 'Không thể khóa tài khoản admin',
+            ], 403);
+        }
+
+        $user->update([
+            'trang_thai' => 'blocked',
+            'ly_do_block' => $request->ly_do_block,
+            'block_den_ngay' => null,
+            'kieu_block' => $request->kieu_block ?: 'đã khoá!!', // nếu không truyền thì gán mặc định
+        ]);
+
+        Mail::to($user->email)->queue(new UserBlockedMail($user, $request->ly_do_block));
+
         return response()->json([
-            'message' => 'Không thể khóa tài khoản admin',
-        ], 403);
+            'message' => 'Tài khoản đã bị khóa',
+            'status' => 200,
+            'data' => new UserAdminResource($user),
+        ]);
     }
-
-    $user->update([
-        'trang_thai' => 'blocked',
-        'ly_do_block' => $request->ly_do_block,
-        'block_den_ngay' => null,
-        'kieu_block' => $request->kieu_block ?: 'đã khoá!!', // nếu không truyền thì gán mặc định
-    ]);
-
-    Mail::to($user->email)->queue(new UserBlockedMail($user, $request->ly_do_block));
-
-    return response()->json([
-    'message' => 'Tài khoản đã bị khóa',
-    'status' => 200,
-    'data' => new UserAdminResource($user),
-]);
-}
 
     public function unblock($id)
-{
-    $user = User::findOrFail($id);
+    {
+        $user = User::findOrFail($id);
 
-    if ($user->trang_thai !== 'blocked') {
+        if ($user->trang_thai !== 'blocked') {
+            return response()->json([
+                'message' => 'Tài khoản không bị khóa',
+            ], 400);
+        }
+
+        $user->update([
+            'trang_thai' => 'active',
+            'ly_do_block' => null,
+            'block_den_ngay' => null,
+            'kieu_block' => null,
+        ]);
+
+        Mail::to($user->email)->queue(new UserUnblockedMail($user));
+
         return response()->json([
-            'message' => 'Tài khoản không bị khóa',
-        ], 400);
+            'message' => 'Tài khoản đã mở',
+            'status' => 200,
+            'data' => new UserAdminResource($user),
+        ]);
     }
-
-    $user->update([
-        'trang_thai' => 'active',
-        'ly_do_block' => null,
-        'block_den_ngay' => null,
-        'kieu_block' => null,
-    ]);
-
-    Mail::to($user->email)->queue(new UserUnblockedMail($user));
-
-   return response()->json([
-    'message' => 'Tài khoản đã mở',
-    'status' => 200,
-    'data' => new UserAdminResource($user),
-]);
-}
 
 
     public function show($id)
-{
-    $authUser = Auth::user();
-    $user = User::with('role')->findOrFail($id);
+    {
+        $authUser = Auth::user();
+        $user = User::with('role')->findOrFail($id);
 
-    if ($authUser && $authUser->role && $authUser->role->ten_vai_tro === 'staff' && $user->role && $user->role->ten_vai_tro === 'admin') {
+        if ($authUser && $authUser->role && $authUser->role->ten_vai_tro === 'staff' && $user->role && $user->role->ten_vai_tro === 'admin') {
+            return response()->json([
+                'message' => 'Bạn không có quyền xem chi tiết tài khoản admin',
+            ], 403);
+        }
+
+        if ($user->role && $user->role->ten_vai_tro === 'user') {
+            $user->load('diaChis');
+        }
+
+        $data = $user->toArray();
+        $data['gioi_tinh'] = $user->gioi_tinh;
+
         return response()->json([
-            'message' => 'Bạn không có quyền xem chi tiết tài khoản admin',
-        ], 403);
+            'message' => 'Chi tiết người dùng',
+            'status' => 200,
+            'data' => $data
+        ], 200);
     }
-
-    if ($user->role && $user->role->ten_vai_tro === 'user') {
-        $user->load('diaChis');
-    }
-
-    $data = $user->toArray();
-    $data['gioi_tinh'] = $user->gioi_tinh;
-
-    return response()->json([
-        'message' => 'Chi tiết người dùng',
-        'status' => 200,
-        'data' => $data
-    ], 200);
-}
 }
