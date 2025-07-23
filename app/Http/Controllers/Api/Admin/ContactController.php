@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
-use App\Http\Controllers\Controller;
 use App\Models\Contact;
 use Illuminate\Http\Request;
+use App\Mail\ContactReplyMail;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Mail;
 
 
 class ContactController extends Controller
@@ -57,7 +59,7 @@ class ContactController extends Controller
         $validated = $request->validate([
             'reply_content' => 'required|string',
         ]);
-
+        Mail::to($contact->email)->send(new ContactReplyMail($contact, $validated['reply_content']));
         $contact->update([
             'reply_content' => $validated['reply_content'],
             'status' => 'da_tra_loi',
