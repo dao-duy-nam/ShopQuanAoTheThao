@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('email');
             $table->string('phone')->nullable();
+            $table->text('reply_content')->nullable()->after('message');
             $table->string('subject'); // tiêu đề
             $table->text('message'); // nội dung liên hệ
             $table->string('attachment')->nullable(); // tệp đính kèm

@@ -45,4 +45,25 @@ class ContactController extends Controller
 
         return response()->json($query->orderBy('created_at', 'desc')->paginate(10));
     }
+    public function show($id)
+    {
+        $contact = Contact::findOrFail($id);
+        return response()->json($contact);
+    }
+    public function reply(Request $request, $id)
+    {
+        $contact = Contact::findOrFail($id);
+
+        $validated = $request->validate([
+            'reply_content' => 'required|string',
+        ]);
+
+        $contact->update([
+            'reply_content' => $validated['reply_content'],
+            'status' => 'da_tra_loi',
+            'replied_at' => now(),
+        ]);
+
+        return response()->json(['message' => 'Đã phản hồi liên hệ.']);
+    }
 }

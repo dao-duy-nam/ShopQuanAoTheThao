@@ -20,7 +20,9 @@ class Contact extends Model
         'type',
         'status',
         'replied_at',
-        'attachment'
+        'attachment',
+        'reply_content'
+
     ];
 
     protected $casts = [

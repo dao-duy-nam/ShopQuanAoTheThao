@@ -166,6 +166,8 @@ Route::prefix('admin')->group(function () {
         Route::prefix('contacts')->group(function () {
             Route::get('/', [ContactController::class, 'index']);
             Route::get('/search', [ContactController::class, 'search']);
+            Route::get('/{id}', [ContactController::class, 'show']);
+            Route::post('/reply/{id}', [ContactController::class, 'reply']);
         });
     });
 });
