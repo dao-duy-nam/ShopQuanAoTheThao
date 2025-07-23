@@ -27,6 +27,7 @@ class Contact extends Model
 
     protected $casts = [
         'replied_at' => 'datetime',
+        
     ];
 
 }

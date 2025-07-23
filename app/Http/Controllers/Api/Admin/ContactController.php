@@ -68,4 +68,22 @@ class ContactController extends Controller
 
         return response()->json(['message' => 'Đã phản hồi liên hệ.']);
     }
+    public function updateStatus(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:chua_xu_ly,dang_xu_ly,da_tra_loi',
+        ]);
+
+        $contact = Contact::findOrFail($id);
+        $contact->update(['status' => $validated['status']]);
+
+        return response()->json(['message' => 'Cập nhật trạng thái thành công.']);
+    }
+     public function destroy($id)
+    {
+        $contact = Contact::findOrFail($id);
+        $contact->delete();
+
+        return response()->json(['message' => 'Đã xoá liên hệ.']);
+    } 
 }
