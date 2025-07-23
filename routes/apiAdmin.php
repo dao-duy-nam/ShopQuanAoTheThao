@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\DiscountCodeController;
 use App\Http\Controllers\Api\Admin\AttributeValueController;
 use App\Http\Controllers\Api\Admin\WalletTransactionController;
+use App\Http\Controllers\Api\Admin\ShippingFeeController;
 
 Route::prefix('admin')->group(function () {
 
@@ -156,5 +157,14 @@ Route::prefix('admin')->group(function () {
         Route::get('{userId}', [MessageController::class, 'getMessagesWithUser']); 
         Route::post('/', [MessageController::class, 'sendMessageToUser']); 
     });
+        Route::prefix('shipping-fees')->group(function () {
+            Route::get('/', [ShippingFeeController::class, 'index']);
+            Route::get('/{id}', [ShippingFeeController::class, 'show']);
+            Route::put('/{id}', [ShippingFeeController::class, 'update']);
+
+    });
+
+
+
     });
 });
