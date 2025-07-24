@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Admin\PostController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\Admin\OrderController;
 use App\Http\Controllers\Api\Admin\BannerController;
+use App\Http\Controllers\Api\Admin\ContactController;
 use App\Http\Controllers\Api\Admin\DanhGiaController;
 use App\Http\Controllers\Api\Admin\MessageController;
 use App\Http\Controllers\Api\Admin\ProductController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\Api\Admin\CategoryController;
 use App\Http\Controllers\Api\Admin\AdminAuthController;
 use App\Http\Controllers\Api\Admin\AttributeController;
 use App\Http\Controllers\Api\Admin\DashboardController;
+use App\Http\Controllers\Api\Admin\ShippingFeeController;
 use App\Http\Controllers\Api\Admin\DiscountCodeController;
 use App\Http\Controllers\Api\Admin\AttributeValueController;
 use App\Http\Controllers\Api\Admin\WalletTransactionController;
@@ -50,7 +52,8 @@ Route::prefix('admin')->group(function () {
         Route::get('products/trash', [ProductController::class, 'trashed']);
         Route::patch('products/restore/{id}', [ProductController::class, 'restore']);
         Route::delete('products/force-delete/{id}', [ProductController::class, 'forceDelete']);
-        Route::apiResource('products', ProductController::class)->except(['index', 'show']);
+        Route::get('products', [ProductController::class, 'index']);
+        Route::get('products/{id}', [ProductController::class, 'show']);
         Route::post('products/{id}', [ProductController::class, 'update'])->name('products.update');
 
         // Quản lý danh mục
@@ -152,9 +155,20 @@ Route::prefix('admin')->group(function () {
         });
 
         Route::prefix('tin-nhans')->group(function () {
-        Route::get('/', [MessageController::class, 'getUserList']); 
-        Route::get('{userId}', [MessageController::class, 'getMessagesWithUser']); 
-        Route::post('/', [MessageController::class, 'sendMessageToUser']); 
-    });
+            Route::get('/', [MessageController::class, 'getUserList']);
+            Route::get('{userId}', [MessageController::class, 'getMessagesWithUser']);
+            Route::post('/', [MessageController::class, 'sendMessageToUser']);
+        });
+        Route::prefix('shipping-fees')->group(function () {
+            Route::get('/', [ShippingFeeController::class, 'index']);
+            Route::get('/{id}', [ShippingFeeController::class, 'show']);
+            Route::put('/{id}', [ShippingFeeController::class, 'update']);
+        });
+        Route::prefix('contacts')->group(function () {
+            Route::get('/', [ContactController::class, 'index']);
+            Route::get('/search', [ContactController::class, 'search']);
+            Route::get('/{id}', [ContactController::class, 'show']);
+            Route::post('/reply/{id}', [ContactController::class, 'reply']);
+        });
     });
 });

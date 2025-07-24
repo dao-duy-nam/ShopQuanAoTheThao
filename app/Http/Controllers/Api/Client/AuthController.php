@@ -64,10 +64,10 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json(['message' => 'Email hoặc mật khẩu không đúng.']);
+            return response()->json(['message' => 'Email hoặc mật khẩu không đúng.'],401);
         }
 
-        // Kiểm tra trạng thái tài khoản bị block
+        
         if ($user->trang_thai === 'blocked') {
             if (is_null($user->block_den_ngay) || now()->lessThan($user->block_den_ngay)) {
                 return response()->json([
@@ -93,7 +93,6 @@ class AuthController extends Controller
             ]);
         }
 
-        
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -116,7 +115,7 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
-            return response()->json(['message' => 'Không tìm thấy người dùng.']);
+            return response()->json(['message' => 'Không tìm thấy người dùng.'],404);
         }
 
         if ($user->hasVerifiedEmail()) {
@@ -167,7 +166,7 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
-            return response()->json(['message' => 'Người dùng không tồn tại.']);
+            return response()->json(['message' => 'Người dùng không tồn tại.'],404);
         }
 
         $permanentLockThreshold = now()->addYears(1);

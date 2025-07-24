@@ -6,8 +6,10 @@ use App\Models\Order;
 use App\Models\DanhGia;
 use App\Models\Wishlist;
 use Illuminate\Http\Request;
+use App\Mail\PasswordChangedMail;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use App\Http\Resources\UserProfileResource;
 
 class ClientAccountController extends Controller
@@ -89,6 +91,7 @@ class ClientAccountController extends Controller
         $user->update([
             'password' => Hash::make($request->new_password),
         ]);
+        Mail::to($user->email)->queue(new PasswordChangedMail($user));
 
         return response()->json(['message' => 'Đổi mật khẩu thành công']);
     }

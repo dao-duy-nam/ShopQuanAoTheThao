@@ -29,6 +29,8 @@ class DatabaseSeeder extends Seeder
             BannerSeeder::class,
             DiscountCodeSeeder::class,
             PhiShipSeeder::class,
+            ContactSeeder::class
         ]);
+    
     }
 }
