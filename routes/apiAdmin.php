@@ -54,6 +54,7 @@ Route::prefix('admin')->group(function () {
         Route::delete('products/force-delete/{id}', [ProductController::class, 'forceDelete']);
         Route::get('products', [ProductController::class, 'index']);
         Route::get('products/{id}', [ProductController::class, 'show']);
+        Route::apiResource('products', ProductController::class)->except(['index', 'show']);
         Route::post('products/{id}', [ProductController::class, 'update'])->name('products.update');
 
         // Quản lý danh mục
