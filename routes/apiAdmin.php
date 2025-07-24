@@ -52,7 +52,8 @@ Route::prefix('admin')->group(function () {
         Route::get('products/trash', [ProductController::class, 'trashed']);
         Route::patch('products/restore/{id}', [ProductController::class, 'restore']);
         Route::delete('products/force-delete/{id}', [ProductController::class, 'forceDelete']);
-        Route::apiResource('products', ProductController::class)->except(['index', 'show']);
+        Route::get('products', [ProductController::class, 'index']);
+        Route::get('products/{id}', [ProductController::class, 'show']);
         Route::post('products/{id}', [ProductController::class, 'update'])->name('products.update');
 
         // Quản lý danh mục

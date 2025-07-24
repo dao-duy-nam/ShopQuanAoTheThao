@@ -3,15 +3,16 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\Client\WishlistController;
 use App\Http\Controllers\Api\Client\AuthController;
 use App\Http\Controllers\Api\Client\CartController;
 use App\Http\Controllers\Api\Client\BannerController;
 use App\Http\Controllers\API\Client\ReviewController;
 use App\Http\Controllers\Api\Client\WalletController;
 use App\Http\Controllers\Api\Payment\VnpayController;
+use App\Http\Controllers\Api\Client\CategoryController;
 use App\Http\Controllers\Api\Client\PostApiController;
 use App\Http\Controllers\Api\Client\ProductController;
+use App\Http\Controllers\Api\Client\WishlistController;
 use App\Http\Controllers\Api\Payment\ZaloPayController;
 use App\Http\Controllers\Api\Client\ClientOrderController;
 use App\Http\Controllers\Api\Client\ShippingApiController;
@@ -42,6 +43,7 @@ Route::prefix('products')->group(function () {
     Route::get('/{id}/related', [ProductController::class, 'related']);
 });
 Route::get('banner', [BannerController::class, 'index']);
+Route::get('categories', [CategoryController::class, 'index']);
 
 Route::get('/posts', [PostApiController::class, 'index']);
 Route::get('/posts/{id}', [PostApiController::class, 'show']);
