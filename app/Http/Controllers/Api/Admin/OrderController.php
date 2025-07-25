@@ -11,14 +11,11 @@ use Illuminate\Support\Facades\Mail;
 
 class OrderController extends Controller
 {
-    /**
-     * Danh sách đơn hàng với tìm kiếm và phân trang
-     */
+
     public function index(Request $request)
     {
         $query = Order::query();
 
-        // Tìm kiếm nếu có
         if ($request->has('search')) {
             $search = $request->input('search');
 
@@ -26,24 +23,30 @@ class OrderController extends Controller
                 $query->where('ma_don_hang', 'like', "%$search%")
                     ->orWhere('user_id', 'like', "%$search%")
                     ->orWhere('trang_thai_don_hang', 'like', "%$search%")
-                    ->orWhere('dia_chi', 'like', "%$search%");  // Cho phép search theo địa chỉ
+                    ->orWhere('dia_chi', 'like', "%$search%");  
             });
         }
+        if ($request->filled('trang_thai')) {
+            $query->where('trang_thai_don_hang', $request->trang_thai);
+        }
 
-        $orders = $query->orderBy('created_at','desc')->paginate(10); // 10 đơn hàng mỗi trang
+        if ($request->filled('date')) {
+            $date = $request->date;
+            $query->whereDate('created_at', $date);
+        }
+
+        $orders = $query->orderBy('created_at','desc')->paginate(10);
 
         return response()->json($orders);
     }
 
-    /**
-     * Chi tiết đơn hàng theo ID
-     */
+
     public function show($id)
     {
         $order = Order::with([
-            'orderDetail.product',    // Lấy toàn bộ cột của bảng san_phams
-            'orderDetail.variant',    // (nếu muốn lấy luôn biến thể)
-            'paymentMethod'           // Lấy phương thức thanh toán
+            'orderDetail.product',    
+            'orderDetail.variant',    
+            'paymentMethod'           
         ])->findOrFail($id);
 
         return response()->json($order);
@@ -91,7 +94,7 @@ public function update(Request $request, $id)
             'yeu_cau_tra_hang' => ['cho_xac_nhan_tra_hang', 'tu_choi_tra_hang'],
             'cho_xac_nhan_tra_hang' => ['tra_hang_thanh_cong'],
             'tra_hang_thanh_cong' => [],
-            'yeu_cau_huy_hang' => [], // hủy thì xử lý riêng
+            'yeu_cau_huy_hang' => [], 
             'tu_choi_tra_hang' => [],
         ];
 
@@ -107,7 +110,6 @@ public function update(Request $request, $id)
             ], 422);
         }
 
-        // Xử lý trạng thái thanh toán nếu cần
         if ($nextStatus === 'cho_xac_nhan') {
             $validated['trang_thai_thanh_toan'] = 'cho_xu_ly';
         } else if ($nextStatus === 'cho_xac_nhan_tra_hang') {
