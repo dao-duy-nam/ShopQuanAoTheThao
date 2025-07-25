@@ -16,6 +16,49 @@ use App\Http\Resources\UserAdminResource;
 
 class UserController extends Controller
 {
+    public function filterAllUsers(Request $request)
+    {
+        $query = User::with('role');
+
+        if ($request->filled('name')) {
+            $query->where('name', 'like', '%' . $request->name . '%');
+        }
+
+        if ($request->filled('email')) {
+            $query->where('email', 'like', '%' . $request->email . '%');
+        }
+
+        if ($request->filled('so_dien_thoai')) {
+            $query->where('so_dien_thoai', 'like', '%' . $request->so_dien_thoai . '%');
+        }
+
+        if ($request->filled('gioi_tinh')) {
+            $query->where('gioi_tinh', $request->gioi_tinh);
+        }
+
+        if ($request->filled('ngay_sinh')) {
+            $query->whereDate('ngay_sinh', $request->ngay_sinh);
+        }
+
+        if ($request->filled('from_date') && $request->filled('to_date')) {
+            $query->whereBetween('ngay_sinh', [$request->from_date, $request->to_date]);
+        }
+
+        $users = $query->orderBy('created_at', 'desc')->paginate(10);
+
+        return response()->json([
+            'message' => 'Danh sách người dùng lọc chung',
+            'status' => 200,
+            'data' => $users->items(),
+            'pagination' => [
+                'total' => $users->total(),
+                'per_page' => $users->perPage(),
+                'current_page' => $users->currentPage(),
+                'last_page' => $users->lastPage(),
+            ],
+        ]);
+    }
+
     public function listAdmins(Request $request)
     {
         return $this->getUsersByRoleNames(['admin'], $request);
