@@ -9,11 +9,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Product extends Model
 {
     use HasFactory, SoftDeletes;
-    protected $table = 'san_phams'; // Khai báo lại table gốc
+    protected $table = 'san_phams'; 
 
     protected $fillable = [
         'ten',
         'so_luong',
+        'so_luong_da_ban',
         'mo_ta',
         'hinh_anh',
         'danh_muc_id',
