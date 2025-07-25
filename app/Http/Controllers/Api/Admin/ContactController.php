@@ -79,12 +79,13 @@ class ContactController extends Controller
 
         return response()->json(['message' => 'Cập nhật trạng thái thành công.']);
     }
-     public function destroy($id)
-    {
-        $contact = Contact::findOrFail($id);
-        $contact->delete();
+    public function destroy($id)
+{
+    $contact = Contact::findOrFail($id);
+    $contact->delete(); // Không còn xoá vĩnh viễn, chỉ ẩn
 
-        return response()->json(['message' => 'Đã xoá liên hệ.']);
-    } 
+    return response()->json(['message' => 'Liên hệ đã được ẩn (soft delete).']);
+}
+
     //
 }
