@@ -8,10 +8,19 @@ use Illuminate\Http\Request;
 
 class ShippingFeeController 
 {
-    public function index()
+    public function index(Request $request)
     {
-        return ShippingFeeResource::collection(ShippingFee::all());
+        $query = ShippingFee::query();
+
+        if ($request->filled('search')) {
+            $query->where('tinh_thanh', 'like', '%' . $request->search . '%');
+        }
+
+        return ShippingFeeResource::collection(
+            $query->orderBy('gia_phi_ship', 'asc')->paginate(15)
+        );
     }
+
     public function show($id)
     {
         $fee = ShippingFee::findOrFail($id);

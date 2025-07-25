@@ -583,17 +583,16 @@ public function huyDon(Request $request, $id)
 
     $order = Order::with('user')->findOrFail($id);
 
-    $order->trang_thai_don_hang = 'yeu_cau_huy_hang';
+    $order->trang_thai_don_hang = 'da_huy'; 
     $order->trang_thai_thanh_toan = 'da_huy';
     $order->ly_do_huy = $validated['ly_do_huy'];
     $order->save();
 
-    // Gửi mail
     $message = 'Đơn hàng của bạn đã bị hủy. Lý do: ' . $validated['ly_do_huy'];
     Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
 
     return response()->json([
-        'message' => 'Đơn hàng đã được hủy thành công. Lý do: ' . $validated['ly_do_huy'] . '. Vui lòng chờ xác nhận từ người bán.',
+        'message' => 'Đơn hàng đã được hủy thành công. Lý do: ' . $validated['ly_do_huy'],
         'order' => $order
     ]);
 }
