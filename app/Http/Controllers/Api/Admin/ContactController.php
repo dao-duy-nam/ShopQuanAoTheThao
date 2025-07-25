@@ -59,7 +59,7 @@ class ContactController extends Controller
         $validated = $request->validate([
             'reply_content' => 'required|string',
         ]);
-        Mail::to($contact->email)->send(new ContactReplyMail($contact, $validated['reply_content']));
+        Mail::to($contact->email)->queue(new ContactReplyMail($contact, $validated['reply_content']));
         $contact->update([
             'reply_content' => $validated['reply_content'],
             'status' => 'da_tra_loi',
