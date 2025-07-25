@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Models\Order;
+use App\Models\ActivityLog;
+use Illuminate\Http\Request;
+use App\Services\WalletService;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Mail\OrderStatusChangedMail;
-use App\Models\ActivityLog;
-use App\Models\Order;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
 class OrderController extends Controller
@@ -137,7 +139,7 @@ public function update(Request $request, $id)
     ]);
 }
 
-public function cancel(Request $request, $id)
+public function cancel(Request $request, $id, WalletService $walletService)
 {
     $validated = $request->validate([
         'ly_do_huy' => 'required|string|max:255',
@@ -152,20 +154,53 @@ public function cancel(Request $request, $id)
         ], 400);
     }
 
-    $order->update([
-        'trang_thai_don_hang' => 'da_huy',
-        'ly_do_huy' => $validated['ly_do_huy'],
-        'trang_thai_thanh_toan' => 'da_huy',
-    ]);
+    // $order->update([
+    //     'trang_thai_don_hang' => 'da_huy',
+    //     'ly_do_huy' => $validated['ly_do_huy'],
+    //     'trang_thai_thanh_toan' => 'da_huy',
+    // ]);
 
-    $message = "Đơn hàng đã bị hủy. Lý do: " . $validated['ly_do_huy'];
+    // $message = "Đơn hàng đã bị hủy. Lý do: " . $validated['ly_do_huy'];
 
-    Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
+    // Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
 
-    return response()->json([
-        'message' => 'Đơn hàng đã được hủy thành công.',
-        'order' => $order
-    ]);
+    // return response()->json([
+    //     'message' => 'Đơn hàng đã được hủy thành công.',
+    //     'order' => $order
+    // ]);
+     DB::beginTransaction();
+    try {
+        $order->update([
+            'trang_thai_don_hang' => 'da_huy',
+            'ly_do_huy' => $validated['ly_do_huy'],
+            'trang_thai_thanh_toan' => 'da_huy',
+        ]);
+
+        // Bổ sung: Hoàn tiền vào ví nếu đã thanh toán online và chưa hoàn tiền
+        $onlineMethods = ['vnpay', 'zalopay']; // tuỳ hệ thống bạn
+        if (
+            in_array(optional($order->paymentMethod)->code, $onlineMethods) && // code hoặc tên phương thức
+            $order->trang_thai_thanh_toan === 'da_thanh_toan' &&
+            !$order->refund_done
+        ) {
+            $walletService->refund($order->user, $order->id, $order->so_tien_thanh_toan);
+            $order->update(['refund_done' => true]);
+        }
+
+        $message = "Đơn hàng đã bị hủy. Lý do: " . $validated['ly_do_huy'];
+        Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
+
+        DB::commit();
+        $order->refresh();
+
+        return response()->json([
+            'message' => 'Đơn hàng đã được hủy thành công.',
+            'order' => $order
+        ]);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json(['message' => 'Lỗi khi hủy đơn hàng: ' . $e->getMessage()], 500);
+    }
 }
 
 

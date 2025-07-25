@@ -69,11 +69,11 @@ Route::middleware(['auth:sanctum', 'user'])->group(function () {
 
     // Wallet API
     Route::get('/wallet', [WalletController::class, 'getBalance']);
-    Route::get('/wallet/transactions', [WalletController::class, 'getTransactions']);
+    // Route::get('/wallet/transactions', [WalletController::class, 'getTransactions']);
     Route::post('/wallet/deposit', [WalletController::class, 'deposit']);
     Route::post('/wallet/withdraw', [WalletController::class, 'withdraw']);
-    Route::post('/wallet/pay', [WalletController::class, 'pay']);
-    Route::post('/wallet/refund', [WalletController::class, 'refund']);
+    // Route::post('/wallet/pay', [WalletController::class, 'pay']);
+    // Route::post('/wallet/refund', [WalletController::class, 'refund']);
 
     Route::post('/client/discount-code/check', [DiscountCodeController::class, 'check']);
     Route::get('/client/discount-codes', [DiscountCodeController::class, 'userDiscounts']);
