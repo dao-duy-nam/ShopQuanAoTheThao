@@ -23,6 +23,7 @@ return new class extends Migration
             $table->enum('type', ['gop_y', 'khieu_nai', 'hop_tac', 'ho_tro'])->default('ho_tro'); // loại phản hồi
             $table->enum('status', ['chua_xu_ly', 'da_phan_hoi'])->default('chua_xu_ly'); // trạng thái xử lý
             $table->timestamp('replied_at')->nullable(); // thời gian phản hồi (nếu có)
+            $table->softDeletes();
             $table->timestamps();
         });
     }
