@@ -9,15 +9,16 @@ use App\Http\Controllers\Api\Client\BannerController;
 use App\Http\Controllers\API\Client\ReviewController;
 use App\Http\Controllers\Api\Client\WalletController;
 use App\Http\Controllers\Api\Payment\VnpayController;
-use App\Http\Controllers\Api\Client\CategoryController;
 use App\Http\Controllers\Api\Client\PostApiController;
 use App\Http\Controllers\Api\Client\ProductController;
+use App\Http\Controllers\Api\Client\CategoryController;
 use App\Http\Controllers\Api\Client\WishlistController;
 use App\Http\Controllers\Api\Payment\ZaloPayController;
 use App\Http\Controllers\Api\Client\ClientOrderController;
 use App\Http\Controllers\Api\Client\ShippingApiController;
 use App\Http\Controllers\Api\Client\DiscountCodeController;
 use App\Http\Controllers\Api\Client\ClientAccountController;
+use App\Http\Controllers\Api\Client\ClientContactController;
 use App\Http\Controllers\Api\Client\ClientMessageController;
 use App\Http\Controllers\Api\Client\ForgotPasswordController;
 
@@ -124,5 +125,9 @@ Route::prefix('wishlists')->middleware('auth:sanctum')->group(function () {
     Route::get('/', [WishlistController::class, 'index']);
     Route::post('/', [WishlistController::class, 'store']);
     Route::delete('/{id}', [WishlistController::class, 'destroy']);
+});
+Route::prefix('contact')->group(function () {
+    Route::post('/', [ClientContactController::class, 'store']);
+    Route::get('/types', [ClientContactController::class, 'contactTypes']);
 });
 
