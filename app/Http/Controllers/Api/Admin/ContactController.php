@@ -86,4 +86,5 @@ class ContactController extends Controller
 
         return response()->json(['message' => 'Đã xoá liên hệ.']);
     } 
+    //
 }
