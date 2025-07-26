@@ -130,4 +130,3 @@ Route::prefix('contact')->group(function () {
     Route::post('/', [ClientContactController::class, 'store']);
     Route::get('/types', [ClientContactController::class, 'contactTypes']);
 });
-

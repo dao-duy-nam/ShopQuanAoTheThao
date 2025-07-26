@@ -53,6 +53,7 @@ class MessageController extends Controller
                 return [
                     'id' => $message->id,
                     'noi_dung' => $message->noi_dung,
+                    'tep_dinh_kem' => $message->tep_dinh_kem,
                     'nguoi_gui_id' => $message->nguoi_gui_id,
                     'nguoi_gui_name' => $message->sender->name ?? null,
                     'nguoi_nhan_id' => $message->nguoi_nhan_id,
@@ -88,7 +89,14 @@ class MessageController extends Controller
 
         return response()->json([
             'message' => 'Gửi tin nhắn thành công',
-            'data'    => $message,
-        ], 201);
+            'data'    => [
+                'id' => $message->id,
+                'noi_dung' => $message->noi_dung,
+                'tep_dinh_kem' => $message->tep_dinh_kem,
+                'nguoi_gui_id' => $message->nguoi_gui_id,
+                'nguoi_nhan_id' => $message->nguoi_nhan_id,
+                'created_at' => $message->created_at,
+            ],
+        ], 200);
     }
 }

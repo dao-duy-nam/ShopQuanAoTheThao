@@ -45,7 +45,7 @@ Route::prefix('admin')->group(function () {
             Route::get('/staff', [UserController::class, 'listStaffs']);
 
             Route::get('/cus', [UserController::class, 'listCustomers']);
-            
+
             Route::get('/filter', [UserController::class, 'filterAllUsers']);
             Route::get('/{id}', [UserController::class, 'show']);
         });
