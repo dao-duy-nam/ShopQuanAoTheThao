@@ -17,7 +17,7 @@ class ShippingFeeController
         }
 
         return ShippingFeeResource::collection(
-            $query->orderBy('gia_phi_ship', 'asc')->paginate(15)
+            $query->orderBy('phi', 'asc')->paginate(15)
         );
     }
 
