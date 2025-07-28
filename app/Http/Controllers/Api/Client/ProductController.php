@@ -31,41 +31,32 @@ class ProductController extends Controller
 
     public function filter(Request $request)
     {
-        $query = Product::query()
-            ->select('san_phams.*')
-            ->join('bien_thes', 'san_phams.id', '=', 'bien_thes.san_pham_id')
+        $query = Product::with(['variants.attributeValues.attribute'])
             ->when(
                 $request->filled('keyword'),
-                fn($q) =>
-                $q->where('san_phams.ten', 'like', '%' . $request->keyword . '%')
+                fn($q) => $q->where('ten', 'like', '%' . $request->keyword . '%')
             )
             ->when(
                 $request->filled('danh_muc_id'),
-                fn($q) =>
-                $q->where('san_phams.danh_muc_id', $request->danh_muc_id)
+                fn($q) => $q->where('danh_muc_id', $request->danh_muc_id)
             )
-            ->when(
-                $request->filled('gia_min'),
-                fn($q) =>
-                $q->where('bien_thes.gia', '>=', $request->gia_min)
-            )
-            ->when(
-                $request->filled('gia_max'),
-                fn($q) =>
-                $q->where('bien_thes.gia', '<=', $request->gia_max)
-            )
-            ->when(
-                $request->filled('size'),
-                fn($q) =>
-                $q->where('bien_thes.size', $request->size)
-            )
-            ->groupBy('san_phams.id')
-            ->selectRaw('MIN(bien_thes.gia) as min_gia');
-
+            ->whereHas('variants', function ($q) use ($request) {
+                if ($request->filled('gia_min')) {
+                    $q->where('gia', '>=', $request->gia_min);
+                }
+                if ($request->filled('gia_max')) {
+                    $q->where('gia', '<=', $request->gia_max);
+                }
+                if ($request->filled('size')) {
+                    $q->where('size', $request->size);
+                }
+            })
+            ->withMin('variants', 'gia');
 
         $sortBy = $request->get('sort_by', 'created_at');
         $sortOrder = $request->get('sort_order', 'desc');
-        if (in_array($sortBy, ['min_gia', 'san_phams.ten', 'san_phams.created_at'])) {
+        
+        if (in_array($sortBy, ['variants_min_gia', 'ten', 'created_at'])) {
             $query->orderBy($sortBy, $sortOrder);
         }
 
