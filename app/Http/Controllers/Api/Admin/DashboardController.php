@@ -28,8 +28,8 @@ class DashboardController extends Controller
             $now->copy()->subMonth()->startOfMonth(),
             $now->copy()->subMonth()->endOfMonth()
         ])
-        ->where('trang_thai_don_hang', '!=', 'da_huy')
-        ->sum('so_tien_thanh_toan');
+            ->where('trang_thai_don_hang', '!=', 'da_huy')
+            ->sum('so_tien_thanh_toan');
 
         $revenueChange = $lastMonthRevenue == 0 ? null : (($revenue - $lastMonthRevenue) / $lastMonthRevenue) * 100;
 
@@ -60,7 +60,7 @@ class DashboardController extends Controller
         // Sản phẩm đã bán
         $soldProducts = OrderDetail::whereHas('order', function ($q) use ($startOfMonth, $endOfMonth) {
             $q->whereBetween('created_at', [$startOfMonth, $endOfMonth])
-              ->where('trang_thai_don_hang', '!=', 'da_huy');
+                ->where('trang_thai_don_hang', '!=', 'da_huy');
         })->sum('so_luong');
 
         $soldProductsLastMonth = OrderDetail::whereHas('order', function ($q) use ($now) {
@@ -68,7 +68,7 @@ class DashboardController extends Controller
                 $now->copy()->subMonth()->startOfMonth(),
                 $now->copy()->subMonth()->endOfMonth()
             ])
-            ->where('trang_thai_don_hang', '!=', 'da_huy');
+                ->where('trang_thai_don_hang', '!=', 'da_huy');
         })->sum('so_luong');
 
         $productChange = $soldProductsLastMonth == 0 ? null : (($soldProducts - $soldProductsLastMonth) / $soldProductsLastMonth) * 100;
@@ -77,13 +77,14 @@ class DashboardController extends Controller
         $monthlyRevenue = [];
         for ($i = 5; $i >= 0; $i--) {
             $month = $now->copy()->subMonths($i);
+            $start = $month->copy()->startOfMonth();
+            $end = $month->copy()->endOfMonth();
+
             $monthlyRevenue[] = [
                 'month' => 'Tháng ' . $month->month,
-                'revenue' => Order::whereBetween('created_at', [
-                    $month->startOfMonth(),
-                    $month->endOfMonth()
-                ])->where('trang_thai_don_hang', '!=', 'da_huy')
-                ->sum('so_tien_thanh_toan')
+                'revenue' => Order::whereBetween('created_at', [$start, $end])
+                    ->where('trang_thai_don_hang', '!=', 'da_huy')
+                    ->sum('so_tien_thanh_toan')
             ];
         }
 
@@ -106,7 +107,7 @@ class DashboardController extends Controller
 
             $soldProducts = OrderDetail::whereHas('order', function ($q) use ($start, $end) {
                 $q->whereBetween('created_at', [$start, $end])
-                  ->where('trang_thai_don_hang', '!=', 'da_huy');
+                    ->where('trang_thai_don_hang', '!=', 'da_huy');
             })->sum('so_luong');
 
             $thongKeTheoThang[] = [
