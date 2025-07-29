@@ -22,6 +22,33 @@ use Illuminate\Support\Facades\Mail;
 class ClientOrderController extends Controller
 {
 
+    public function checkPendingPayment(Request $request)
+    {
+        $user = $request->user();
+
+        $order = Order::where('user_id', $user->id)
+            ->where('trang_thai_thanh_toan', 'cho_xu_ly')
+            ->where('expires_at', '>', now())
+            ->latest()
+            ->first();
+
+        if ($order) {
+            return response()->json([
+                'status'       => 'need_payment',
+                'message'      => 'Bạn có một đơn hàng còn hiệu lực chưa thanh toán.',
+                'ma_don_hang'  => $order->ma_don_hang, 
+                'payment_link' => $order->payment_link,
+                'expires_at'   => $order->expires_at,
+                'amount'       => $order->tong_tien,
+            ]);
+        }
+
+        return response()->json([
+            'status'  => 'ok',
+            'message' => 'Không có đơn hàng nào cần thanh toán lại.'
+        ]);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -134,7 +161,7 @@ class ClientOrderController extends Controller
                             'don_gia' => $donGia,
                             'tong_tien' => $tongTien,
                             'thuoc_tinh_bien_the' => $thuocTinhBienThe,
-                                    'hinh_anh' => $bienThe->hinh_anh ?? $bienThe->product->hinh_anh, // THÊM DÒNG NÀY
+                            'hinh_anh' => $bienThe->hinh_anh ?? $bienThe->product->hinh_anh, // THÊM DÒNG NÀY
                         ];
                     } else {
                         $sanPham = Product::findOrFail($item['san_pham_id']);
@@ -166,7 +193,7 @@ class ClientOrderController extends Controller
                             'thuoc_tinh_bien_the' => null,
                             'hinh_anh' => $bienTheId
                                 ? ($bienThe->hinh_anh ?? $sanPham->hinh_anh)
-                                : $sanPham->hinh_anh,    
+                                : $sanPham->hinh_anh,
                         ];
                     }
                 }
@@ -246,8 +273,8 @@ class ClientOrderController extends Controller
                             'thuoc_tinh_bien_the' => null,
                             'hinh_anh' => $bienTheId
                                 ? ($bienThe->hinh_anh ?? $sanPham->hinh_anh)
-                                : $sanPham->hinh_anh,                        
-                            ];
+                                : $sanPham->hinh_anh,
+                        ];
                     }
                 }
 
@@ -373,7 +400,7 @@ class ClientOrderController extends Controller
                         'tong_tien' => $sp['tong_tien'],
                         'so_tien_duoc_giam' => $tongSauGiam,
                         'thuoc_tinh_bien_the' => $sp['thuoc_tinh_bien_the'],
-                                'hinh_anh' => $sp['hinh_anh'], // THÊM DÒNG NÀY
+                        'hinh_anh' => $sp['hinh_anh'], // THÊM DÒNG NÀY
                     ];
                 }
                 unset($sp);
@@ -408,7 +435,7 @@ class ClientOrderController extends Controller
                 'so_tien_duoc_giam' => $giamGia,
                 'ten_san_pham' => $tenSanPhamTongHop,
                 'gia_tri_bien_the' => $thuocTinhBienTheTongHop,
-                 'dia_chi_day_du' => $diaChiDayDu,
+                'dia_chi_day_du' => $diaChiDayDu,
             ]);
 
             DB::commit();
@@ -421,7 +448,7 @@ class ClientOrderController extends Controller
                 'ma_giam_gia' => $validated['ma_giam_gia'] ?? null,
                 'tong_tien' => $tongTienDonHang,
                 'giam_gia' => $giamGia,
-                'phi_ship' => $order->phi_ship, 
+                'phi_ship' => $order->phi_ship,
                 'phai_tra' => $soTienPhaiTra,
                 'chi_tiet_san_pham' => $chiTietSanPham,
             ], 200);
@@ -575,110 +602,108 @@ class ClientOrderController extends Controller
     }
 
 
-public function huyDon(Request $request, $id)
-{
-    $validated = $request->validate([
-        'ly_do_huy' => 'required|string|max:255',
-    ]);
+    public function huyDon(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'ly_do_huy' => 'required|string|max:255',
+        ]);
 
-    $order = Order::with('user')->findOrFail($id);
+        $order = Order::with('user')->findOrFail($id);
 
-    $order->trang_thai_don_hang = 'da_huy'; 
-    $order->trang_thai_thanh_toan = 'da_huy';
-    $order->ly_do_huy = $validated['ly_do_huy'];
-    $order->save();
+        $order->trang_thai_don_hang = 'da_huy';
+        $order->trang_thai_thanh_toan = 'da_huy';
+        $order->ly_do_huy = $validated['ly_do_huy'];
+        $order->save();
 
-    $message = 'Đơn hàng của bạn đã bị hủy. Lý do: ' . $validated['ly_do_huy'];
-    Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
+        $message = 'Đơn hàng của bạn đã bị hủy. Lý do: ' . $validated['ly_do_huy'];
+        Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
 
-    return response()->json([
-        'message' => 'Đơn hàng đã được hủy thành công. Lý do: ' . $validated['ly_do_huy'],
-        'order' => $order
-    ]);
-}
-
-
-public function traHang(Request $request, $id)
-{
-    $validated = $request->validate([
-        'ly_do_tra_hang' => 'required|string|max:255',
-    ]);
-
-    $order = Order::with('user')->findOrFail($id);
-    $user = request()->user();
-
-    if ($order->user_id !== $user->id) {
         return response()->json([
-            'message' => 'Bạn không có quyền trả đơn hàng này.'
-        ], 403);
+            'message' => 'Đơn hàng đã được hủy thành công. Lý do: ' . $validated['ly_do_huy'],
+            'order' => $order
+        ]);
     }
 
-    if (!in_array($order->trang_thai_don_hang, ['da_giao', 'da_nhan'])) {
-        return response()->json([
-            'message' => 'Chỉ được trả khi đơn hàng đã giao hoặc đã nhận.'
-        ], 400);
-    }
 
-    // Nếu đã nhận thì check quá 3 ngày
-    if ($order->trang_thai_don_hang === 'da_nhan') {
-        if (!$order->thoi_gian_nhan) {
+    public function traHang(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'ly_do_tra_hang' => 'required|string|max:255',
+        ]);
+
+        $order = Order::with('user')->findOrFail($id);
+        $user = request()->user();
+
+        if ($order->user_id !== $user->id) {
             return response()->json([
-                'message' => 'Không xác định được thời gian nhận hàng.'
+                'message' => 'Bạn không có quyền trả đơn hàng này.'
+            ], 403);
+        }
+
+        if (!in_array($order->trang_thai_don_hang, ['da_giao', 'da_nhan'])) {
+            return response()->json([
+                'message' => 'Chỉ được trả khi đơn hàng đã giao hoặc đã nhận.'
             ], 400);
         }
 
-        if ($order->thoi_gian_nhan->addDays(3)->lt(now())) {
+        // Nếu đã nhận thì check quá 3 ngày
+        if ($order->trang_thai_don_hang === 'da_nhan') {
+            if (!$order->thoi_gian_nhan) {
+                return response()->json([
+                    'message' => 'Không xác định được thời gian nhận hàng.'
+                ], 400);
+            }
+
+            if ($order->thoi_gian_nhan->addDays(3)->lt(now())) {
+                return response()->json([
+                    'message' => 'Đơn hàng đã nhận quá 3 ngày, không thể trả hàng.'
+                ], 400);
+            }
+        }
+
+        $order->trang_thai_don_hang = 'yeu_cau_tra_hang';
+        $order->trang_thai_thanh_toan = 'hoan_tien';
+        $order->ly_do_tra_hang = $validated['ly_do_tra_hang'];
+        $order->save();
+
+        $message = 'Đơn hàng của bạn đã được yêu cầu trả hàng. Lý do: ' . $validated['ly_do_tra_hang'] . '. Chúng tôi sẽ xử lý hoàn tiền sớm nhất.';
+        Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
+
+        return response()->json([
+            'message' => 'Yêu cầu trả hàng đã được gửi. Lý do: ' . $validated['ly_do_tra_hang'] . '. Vui lòng chờ xử lý.',
+            'order' => $order
+        ]);
+    }
+
+
+
+    public function daGiao($id)
+    {
+        $order = Order::with('user')->findOrFail($id);
+        $user = request()->user();
+
+        if ($order->user_id !== $user->id) {
             return response()->json([
-                'message' => 'Đơn hàng đã nhận quá 3 ngày, không thể trả hàng.'
+                'message' => 'Bạn không có quyền xác nhận đơn hàng này.'
+            ], 403);
+        }
+
+        if ($order->trang_thai_don_hang !== 'da_giao') {
+            return response()->json([
+                'message' => 'Chỉ xác nhận khi đơn hàng đã được giao.'
             ], 400);
         }
-    }
 
-    $order->trang_thai_don_hang = 'yeu_cau_tra_hang';
-    $order->trang_thai_thanh_toan = 'hoan_tien';
-    $order->ly_do_tra_hang = $validated['ly_do_tra_hang'];
-    $order->save();
+        $order->trang_thai_don_hang = 'da_nhan';
+        $order->thoi_gian_nhan = now();
+        $order->save();
 
-    $message = 'Đơn hàng của bạn đã được yêu cầu trả hàng. Lý do: ' . $validated['ly_do_tra_hang'] . '. Chúng tôi sẽ xử lý hoàn tiền sớm nhất.';
-    Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
+        $message = 'Cảm ơn bạn đã xác nhận đã nhận hàng. Chúc bạn hài lòng!';
+        Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
 
-    return response()->json([
-        'message' => 'Yêu cầu trả hàng đã được gửi. Lý do: ' . $validated['ly_do_tra_hang'] . '. Vui lòng chờ xử lý.',
-        'order' => $order
-    ]);
-}
-
-
-
-public function daGiao($id)
-{
-    $order = Order::with('user')->findOrFail($id);
-    $user = request()->user();
-
-    if ($order->user_id !== $user->id) {
         return response()->json([
-            'message' => 'Bạn không có quyền xác nhận đơn hàng này.'
-        ], 403);
+            'message' => 'Bạn đã xác nhận đã nhận hàng thành công.',
+            'order' => $order
+        ]);
     }
-
-    if ($order->trang_thai_don_hang !== 'da_giao') {
-        return response()->json([
-            'message' => 'Chỉ xác nhận khi đơn hàng đã được giao.'
-        ], 400);
-    }
-
-    $order->trang_thai_don_hang = 'da_nhan';
-    $order->thoi_gian_nhan = now();
-    $order->save();
-
-    $message = 'Cảm ơn bạn đã xác nhận đã nhận hàng. Chúc bạn hài lòng!';
-    Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
-
-    return response()->json([
-        'message' => 'Bạn đã xác nhận đã nhận hàng thành công.',
-        'order' => $order
-    ]);
-}
-
-
 }

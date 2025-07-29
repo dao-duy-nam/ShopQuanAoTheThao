@@ -132,7 +132,7 @@ class AuthController extends Controller
             $user->save();
         }
         if ($user->otp_send_count >= 10) {
-            return response()->json(['message' => 'Bạn đã vượt quá số lần gửi OTP trong ngày. Vui lòng thử lại vào ngày mai.']);
+            return response()->json(['message' => 'Bạn đã vượt quá số lần gửi OTP trong ngày. Vui lòng thử lại vào ngày mai.'],429);
         }
 
 
@@ -176,7 +176,7 @@ class AuthController extends Controller
         if ($lockedUntil && $lockedUntil->greaterThan($permanentLockThreshold)) {
             return response()->json([
                 'message' => 'Tài khoản của bạn đã bị khóa vĩnh viễn do nhập sai OTP quá nhiều lần. Vui lòng liên hệ nhân viên hỗ trợ để mở khóa.'
-            ]);
+            ],403);
         }
 
         if ($lockedUntil && now()->lt($lockedUntil)) {
@@ -185,7 +185,7 @@ class AuthController extends Controller
 
             return response()->json([
                 'message' => "Tài khoản bị khóa do nhập sai nhiều lần. Vui lòng thử lại sau $timeLeft."
-            ],);
+            ],403);
         }
 
 
@@ -212,15 +212,9 @@ class AuthController extends Controller
 
             $user->save();
 
-            $lockedUntil = $user->otp_locked_until_verify ? Carbon::parse($user->otp_locked_until_verify) : null;
+            
 
-            if ($lockedUntil && $lockedUntil->greaterThan($permanentLockThreshold)) {
-                return response()->json([
-                    'message' => 'Tài khoản của bạn đã bị khóa vĩnh viễn do nhập sai OTP quá nhiều lần. Vui lòng liên hệ nhân viên hỗ trợ để mở khóa.'
-                ]);
-            }
-
-            return response()->json(['message' => 'Mã OTP không hợp lệ hoặc đã hết hạn.']);
+            return response()->json(['message' => 'Mã OTP không hợp lệ hoặc đã hết hạn.'],400);
         }
 
         $user->email_verified_at = now();

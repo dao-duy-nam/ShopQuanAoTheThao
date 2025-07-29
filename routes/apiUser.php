@@ -98,6 +98,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('order/tra-hang/{id}', [ClientOrderController::class, 'traHang']);
     Route::post('order/da-giao/{id}', [ClientOrderController::class, 'daGiao']);
 
+    Route::get('/orders/check-pending-payment', [ClientOrderController::class, 'checkPendingPayment']);
+
     Route::prefix('/tin-nhans')->group(function () {
         Route::get('/', [ClientMessageController::class, 'getMessagesWithAdmin']);
         Route::post('/', [ClientMessageController::class, 'sendMessageToAdmin']);
