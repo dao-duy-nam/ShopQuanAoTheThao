@@ -40,9 +40,11 @@ Route::prefix('auth')->group(function () {
 Route::prefix('products')->group(function () {
     Route::get('/', [ProductController::class, 'index']);
     Route::get('/filter', [ProductController::class, 'filter']);
+    Route::get('/filter-attribute', [ProductController::class, 'filterByAttributeValues']); // Lọc giá trị thuộc tính 
     Route::get('{id}', [ProductController::class, 'show']);
-    Route::get('/{id}/related', [ProductController::class, 'related']);
+    Route::get('/{id}/related', [ProductController::class, 'related']); // Lấy sản phẩm liên quan
 });
+Route::get('/filter-values', [ProductController::class, 'getFilterableValues']); // Lấy các giá trị thuộc tính
 Route::get('banner', [BannerController::class, 'index']);
 Route::get('categories', [CategoryController::class, 'index']);
 
