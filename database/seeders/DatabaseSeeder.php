@@ -3,10 +3,11 @@
 namespace Database\Seeders;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
-use App\Models\OrderDetail;
 use App\Models\User;
 use App\Models\Product;
+use App\Models\OrderDetail;
 use Illuminate\Database\Seeder;
+use Database\Seeders\TestDashboardSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -32,7 +33,8 @@ class DatabaseSeeder extends Seeder
             DiscountCodeSeeder::class,
             PhiShipSeeder::class,
             TestDashboardSeeder::class,
-            ContactSeeder::class
+            ContactSeeder::class,
+            PostSeeder::class,
         ]);
     
     }
