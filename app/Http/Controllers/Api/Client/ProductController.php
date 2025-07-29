@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Client;
 use App\Models\Product;
 use App\Models\Attribute;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductResource;
 
@@ -32,28 +33,43 @@ class ProductController extends Controller
 
     public function filter(Request $request)
     {
-        $query = Product::with(['variants.attributeValues.attribute'])
-            ->when(
-                $request->filled('keyword'),
-                fn($q) => $q->whereRaw('LOWER(ten) LIKE ?', ['%' . strtolower($request->keyword) . '%'])
-            )
-            ->when(
-                $request->filled('danh_muc_id'),
-                fn($q) => $q->where('danh_muc_id', $request->danh_muc_id)
-            )
-            ->whereHas('variants', function ($q) use ($request) {
+        $query = Product::with(['variants.attributeValues.attribute']);
+        if ($request->filled('keyword')) {
+            $keyword = strtolower($request->keyword);
+            $query->whereRaw('LOWER(ten) LIKE ?', ["%{$keyword}%"]);
+        }
+        if ($request->filled('danh_muc_id')) {
+            $query->where('danh_muc_id', $request->danh_muc_id);
+        }
+        if ($request->filled('gia_min') || $request->filled('gia_max')) {
+            $query->whereHas('variants', function ($q) use ($request) {
                 if ($request->filled('gia_min')) {
-                    $q->where('gia_khuyen_mai', '>=', $request->gia_min);
+                    $giaMin = $request->gia_min;
+                    $q->where(function ($sub) use ($giaMin) {
+                        $sub->whereNotNull('gia_khuyen_mai')->where('gia_khuyen_mai', '>=', $giaMin)
+                            ->orWhere(function ($q2) use ($giaMin) {
+                                $q2->whereNull('gia_khuyen_mai')->where('gia', '>=', $giaMin);
+                            });
+                    });
                 }
+
                 if ($request->filled('gia_max')) {
-                    $q->where('gia_khuyen_mai', '<=', $request->gia_max);
+                    $giaMax = $request->gia_max;
+                    $q->where(function ($sub) use ($giaMax) {
+                        $sub->whereNotNull('gia_khuyen_mai')->where('gia_khuyen_mai', '<=', $giaMax)
+                            ->orWhere(function ($q2) use ($giaMax) {
+                                $q2->whereNull('gia_khuyen_mai')->where('gia', '<=', $giaMax);
+                            });
+                    });
                 }
-            })
-            ->withMin('variants', 'gia_khuyen_mai');
+            });
+        }
+        $query->withMin('variants', DB::raw('COALESCE(gia_khuyen_mai, gia)'));
 
         $sortBy = $request->get('sort_by', 'created_at');
         $sortOrder = $request->get('sort_order', 'desc');
-        if (in_array($sortBy, ['variants_min_gia_khuyen_mai', 'ten', 'created_at'])) {
+        $sortableFields = ['variants_min_gia_ban_min', 'ten', 'created_at'];
+        if (in_array($sortBy, $sortableFields)) {
             $query->orderBy($sortBy, $sortOrder);
         }
 

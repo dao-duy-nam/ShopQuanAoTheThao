@@ -106,25 +106,4 @@ class PostController extends Controller
             'data' => $post
         ]);
     }
-
-
-    public function uploadImage(Request $request)
-    {
-        $request->validate([
-            'images' => 'required|array',
-            'images.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048',
-        ]);
-
-        $urls = [];
-
-        foreach ($request->file('images') as $image) {
-            $path = $image->store('posts/content', 'public');
-            $urls[] = Storage::url($path);
-        }
-
-        return response()->json([
-            'urls' => $urls,
-            'message' => 'Upload nhiều ảnh thành công.'
-        ]);
-    }
 }

@@ -148,7 +148,7 @@ Route::prefix('admin')->group(function () {
         Route::prefix('posts')->group(function () {
             Route::get('/listtrash', [PostController::class, 'trash'])->name('trash');
             Route::post('/restore/{id}', [PostController::class, 'restore'])->name('restore');
-            Route::post('/upload-image', [PostController::class, 'uploadImage'])->name('uploadImage');
+           
 
             Route::get('/', [PostController::class, 'index'])->name('index');
             Route::post('/', [PostController::class, 'store'])->name('store');
