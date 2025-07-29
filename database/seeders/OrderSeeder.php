@@ -5,84 +5,65 @@ namespace Database\Seeders;
 use App\Models\User;
 use App\Models\Order;
 use App\Models\Product;
-use App\Models\Variant;
 use App\Models\OrderDetail;
 use App\Models\PaymentMethod;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
 class OrderSeeder extends Seeder
 {
     public function run(): void
     {
-        $donHang1 = Order::create([
-            'ma_don_hang' => 'DH001',
-            'user_id' => 5,
-            'phuong_thuc_thanh_toan_id' => 1,
-            'trang_thai_don_hang' => 'da_giao',
-            'trang_thai_thanh_toan' => 'da_thanh_toan',
-            'so_tien_thanh_toan' => 100000,
-        ]);
+        $users = User::all();
+        $products = Product::all();
+        $paymentMethods = PaymentMethod::all();
 
-        OrderDetail::create([
-            'don_hang_id' => $donHang1->id,
-            'san_pham_id' => 1,
-            'bien_the_id' => null,
-            'so_luong' => 1,
-            'don_gia' => 100000,
-            'tong_tien' => 100000,
-        ]);
-        $donHang2 = Order::create([
-            'ma_don_hang' => 'DH002',
-            'user_id' => 5, // sửa theo user_id có thật
-            'phuong_thuc_thanh_toan_id' => 2, // ID phương thức phải tồn tại
-            'trang_thai_don_hang' => 'cho_xac_nhan',
-            'trang_thai_thanh_toan' => 'cho_xu_ly',
-            'so_tien_thanh_toan' => 120000,
-        ]);
+        if ($users->isEmpty() || $products->isEmpty() || $paymentMethods->isEmpty()) {
+            $this->command->warn('Cần có dữ liệu sẵn trong bảng users, products, payment_methods trước.');
+            return;
+        }
 
-        OrderDetail::create([
-            'don_hang_id' => $donHang1->id,
-            'san_pham_id' => 1, // đảm bảo tồn tại
-            'bien_the_id' => null,
-            'so_luong' => 2,
-            'don_gia' => 60000,
-            'tong_tien' => 120000,
-        ]);
+        // Tạo đơn hàng trong 6 tháng gần nhất
+        for ($i = 0; $i < 6; $i++) {
+            $date = Carbon::now()->subMonths($i);
 
-        $donHang3 = Order::create([
-            'ma_don_hang' => 'DH003',
-            'user_id' => 5,
-            'phuong_thuc_thanh_toan_id' => 2,
-            'trang_thai_don_hang' => 'cho_xac_nhan',
-            'trang_thai_thanh_toan' => 'cho_xu_ly',
-            'so_tien_thanh_toan' => 150000,
-        ]);
+            for ($j = 0; $j < 5; $j++) {
+                $user = $users->random();
+                $product = $products->random();
+                $payment = $paymentMethods->random();
 
-        OrderDetail::create([
-            'don_hang_id' => $donHang2->id,
-            'san_pham_id' => 1,
-            'bien_the_id' => null,
-            'so_luong' => 3,
-            'don_gia' => 50000,
-            'tong_tien' => 150000,
-        ]);
+                $so_luong = rand(1, 3);
+                $gia = $product->gia_ban ?? rand(100000, 300000);
+                $tong_tien = $gia * $so_luong;
 
-        $donHang4 = Order::create([
-            'ma_don_hang' => 'DH004',
-            'user_id' => 5,
-            'phuong_thuc_thanh_toan_id' => 2,
-            'trang_thai_don_hang' => 'cho_xac_nhan',
-            'trang_thai_thanh_toan' => 'cho_xu_ly',
-            'so_tien_thanh_toan' => 200000,
-        ]);
+                $order = Order::create([
+                'ma_don_hang' => 'DH' . strtoupper(uniqid()),
+                'user_id' => $user->id,
+                'email_nguoi_dat' => $user->email,
+                'ten_nguoi_dat' => $user->name,
+                'dia_chi_day_du' => '123 Đường ABC, Quận 1',
+                'thanh_pho' => 'TP.HCM',
+                'phuong_thuc_thanh_toan_id' => $payment->id,
+                'trang_thai_don_hang' => 'da_giao',
+                'trang_thai_thanh_toan' => 'da_thanh_toan',
+                'so_tien_thanh_toan' => 500000,
+                'phi_ship' => 20000,
+                'ma_giam_gia' => null,
+                'so_tien_duoc_giam' => 0,
+                'thoi_gian_nhan' => Carbon::now()->addDays(3),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
 
-        OrderDetail::create([
-            'don_hang_id' => $donHang3->id,
-            'san_pham_id' => 2,
-            'bien_the_id' => null,
-            'so_luong' => 4,
-            'don_gia' => 50000,
-            'tong_tien' => 200000,
-        ]);
+                // Tạo chi tiết đơn hàng
+                OrderDetail::create([
+                'don_hang_id' => $order->id,
+                'san_pham_id' => $product->id,
+                'so_luong' => $so_luong,
+                'don_gia' => $gia,
+                'tong_tien' => $tong_tien,
+            ]);
+            }
+        }
     }
 }

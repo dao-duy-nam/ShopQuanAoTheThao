@@ -28,8 +28,8 @@ class DashboardController extends Controller
             $now->copy()->subMonth()->startOfMonth(),
             $now->copy()->subMonth()->endOfMonth()
         ])
-        ->where('trang_thai_don_hang', '!=', 'da_huy')
-        ->sum('so_tien_thanh_toan');
+            ->where('trang_thai_don_hang', '!=', 'da_huy')
+            ->sum('so_tien_thanh_toan');
 
         $revenueChange = $lastMonthRevenue == 0 ? null : (($revenue - $lastMonthRevenue) / $lastMonthRevenue) * 100;
 
@@ -60,7 +60,7 @@ class DashboardController extends Controller
         // Sản phẩm đã bán
         $soldProducts = OrderDetail::whereHas('order', function ($q) use ($startOfMonth, $endOfMonth) {
             $q->whereBetween('created_at', [$startOfMonth, $endOfMonth])
-              ->where('trang_thai_don_hang', '!=', 'da_huy');
+                ->where('trang_thai_don_hang', '!=', 'da_huy');
         })->sum('so_luong');
 
         $soldProductsLastMonth = OrderDetail::whereHas('order', function ($q) use ($now) {
@@ -68,22 +68,54 @@ class DashboardController extends Controller
                 $now->copy()->subMonth()->startOfMonth(),
                 $now->copy()->subMonth()->endOfMonth()
             ])
-            ->where('trang_thai_don_hang', '!=', 'da_huy');
+                ->where('trang_thai_don_hang', '!=', 'da_huy');
         })->sum('so_luong');
 
         $productChange = $soldProductsLastMonth == 0 ? null : (($soldProducts - $soldProductsLastMonth) / $soldProductsLastMonth) * 100;
 
-        // Doanh thu 6 tháng gần nhất
+        // Doanh thu theo tháng (cũ)
         $monthlyRevenue = [];
         for ($i = 5; $i >= 0; $i--) {
             $month = $now->copy()->subMonths($i);
+            $start = $month->copy()->startOfMonth();
+            $end = $month->copy()->endOfMonth();
+
             $monthlyRevenue[] = [
                 'month' => 'Tháng ' . $month->month,
-                'revenue' => Order::whereBetween('created_at', [
-                    $month->startOfMonth(),
-                    $month->endOfMonth()
-                ])->where('trang_thai_don_hang', '!=', 'da_huy')
-                ->sum('so_tien_thanh_toan')
+                'revenue' => Order::whereBetween('created_at', [$start, $end])
+                    ->where('trang_thai_don_hang', '!=', 'da_huy')
+                    ->sum('so_tien_thanh_toan')
+            ];
+        }
+
+        // ✅ Thống kê tổng hợp theo tháng: revenue, orders, users, products
+        $thongKeTheoThang = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $month = $now->copy()->subMonths($i);
+            $start = $month->copy()->startOfMonth();
+            $end = $month->copy()->endOfMonth();
+
+            $revenue = Order::whereBetween('created_at', [$start, $end])
+                ->where('trang_thai_don_hang', '!=', 'da_huy')
+                ->sum('so_tien_thanh_toan');
+
+            $orders = Order::whereBetween('created_at', [$start, $end])->count();
+
+            $activeUsers = User::whereHas('orders', function ($query) use ($start, $end) {
+                $query->whereBetween('created_at', [$start, $end]);
+            })->count();
+
+            $soldProducts = OrderDetail::whereHas('order', function ($q) use ($start, $end) {
+                $q->whereBetween('created_at', [$start, $end])
+                    ->where('trang_thai_don_hang', '!=', 'da_huy');
+            })->sum('so_luong');
+
+            $thongKeTheoThang[] = [
+                'month' => 'Tháng ' . $month->month,
+                'revenue' => (int) $revenue,
+                'orders' => $orders,
+                'users' => $activeUsers,
+                'products' => $soldProducts
             ];
         }
 
@@ -103,14 +135,15 @@ class DashboardController extends Controller
 
         return response()->json([
             'tong_doanh_thu' => round($revenue, 2),
-            'ty_le_tang_truong_doanh_thu' => round($revenueChange, 1),
+            'ty_le_tang_truong_doanh_thu' => is_null($revenueChange) ? null : round($revenueChange, 1),
             'nguoi_dung_hoat_dong' => $activeUsers,
-            'ty_le_tang_truong_nguoi_dung' => round($userChange, 1),
+            'ty_le_tang_truong_nguoi_dung' => is_null($userChange) ? null : round($userChange, 1),
             'tong_don_hang' => $totalOrders,
-            'ty_le_tang_truong_don_hang' => round($orderChange, 1),
+            'ty_le_tang_truong_don_hang' => is_null($orderChange) ? null : round($orderChange, 1),
             'san_pham_da_ban' => $soldProducts,
-            'ty_le_tang_truong_san_pham' => round($productChange, 1),
+            'ty_le_tang_truong_san_pham' => is_null($productChange) ? null : round($productChange, 1),
             'doanh_thu_theo_thang' => $monthlyRevenue,
+            'thong_ke_theo_thang' => $thongKeTheoThang,
             'hoat_dong_gan_day' => $recentActivities
         ]);
     }
