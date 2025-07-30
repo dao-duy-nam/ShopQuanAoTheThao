@@ -43,12 +43,20 @@ class ProductController extends Controller
         }
         if ($request->filled('gia_min') || $request->filled('gia_max')) {
             $query->whereHas('variants', function ($q) use ($request) {
+                $q->whereIn('id', function ($subQuery) {
+                    $subQuery->select(DB::raw('MIN(id)'))
+                        ->from('bien_thes')
+                        ->whereNull('deleted_at') 
+                        ->groupBy('san_pham_id');
+                });
                 if ($request->filled('gia_min')) {
                     $giaMin = $request->gia_min;
                     $q->where(function ($sub) use ($giaMin) {
-                        $sub->whereNotNull('gia_khuyen_mai')->where('gia_khuyen_mai', '>=', $giaMin)
+                        $sub->whereNotNull('gia_khuyen_mai')
+                            ->where('gia_khuyen_mai', '>=', $giaMin)
                             ->orWhere(function ($q2) use ($giaMin) {
-                                $q2->whereNull('gia_khuyen_mai')->where('gia', '>=', $giaMin);
+                                $q2->whereNull('gia_khuyen_mai')
+                                    ->where('gia', '>=', $giaMin);
                             });
                     });
                 }
@@ -56,19 +64,28 @@ class ProductController extends Controller
                 if ($request->filled('gia_max')) {
                     $giaMax = $request->gia_max;
                     $q->where(function ($sub) use ($giaMax) {
-                        $sub->whereNotNull('gia_khuyen_mai')->where('gia_khuyen_mai', '<=', $giaMax)
+                        $sub->whereNotNull('gia_khuyen_mai')
+                            ->where('gia_khuyen_mai', '<=', $giaMax)
                             ->orWhere(function ($q2) use ($giaMax) {
-                                $q2->whereNull('gia_khuyen_mai')->where('gia', '<=', $giaMax);
+                                $q2->whereNull('gia_khuyen_mai')
+                                    ->where('gia', '<=', $giaMax);
                             });
                     });
                 }
             });
         }
-        $query->withMin('variants', DB::raw('COALESCE(gia_khuyen_mai, gia)'));
+        $query->withMin(['variants' => function ($q) {
+            $q->whereIn('id', function ($subQuery) {
+                $subQuery->select(DB::raw('MIN(id)'))
+                    ->from('bien_thes')
+                    ->whereNull('deleted_at')
+                    ->groupBy('san_pham_id');
+            });
+        }], DB::raw('COALESCE(gia_khuyen_mai, gia)'));
 
         $sortBy = $request->get('sort_by', 'created_at');
         $sortOrder = $request->get('sort_order', 'desc');
-        $sortableFields = ['variants_min_gia_ban_min', 'ten', 'created_at'];
+        $sortableFields = ['variants_min_coalesce_gia_khuyen_mai_gia', 'ten', 'created_at'];
         if (in_array($sortBy, $sortableFields)) {
             $query->orderBy($sortBy, $sortOrder);
         }
