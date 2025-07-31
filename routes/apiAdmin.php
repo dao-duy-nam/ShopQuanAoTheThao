@@ -80,6 +80,8 @@ Route::prefix('admin')->group(function () {
             Route::get('/', [DanhGiaController::class, 'index']);
             Route::get('/{id}', [DanhGiaController::class, 'show']);
             Route::patch('/{id}/toggle-visibility', [DanhGiaController::class, 'toggleVisibility']);
+            Route::get('/filter', [DanhGiaController::class, 'filterDanhGias']);
+
         });
         // Quản lý biến thể sản phẩm
         Route::prefix('variants')->group(function () {
@@ -173,6 +175,7 @@ Route::prefix('admin')->group(function () {
             Route::get('/search', [ContactController::class, 'search']);
             Route::get('/{id}', [ContactController::class, 'show']);
             Route::post('/reply/{id}', [ContactController::class, 'reply']);
+            Route::post('/status/{id}', [ContactController::class, 'updateStatus']);
         });
 
         Route::prefix('profile')->group(function () {
