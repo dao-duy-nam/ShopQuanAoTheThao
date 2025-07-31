@@ -18,7 +18,7 @@ class ClientContactController extends Controller
             'phone'   => 'nullable|string|max:20',
             'subject' => 'required|string|max:255',
             'message' => 'required|string',
-            'type'    => 'nullable|in:khieu_nai,gop_y,hop_tac,can_ho_tro', // tùy chỉnh các loại
+            'type'    => 'required|in:khieu_nai,gop_y,hop_tac,can_ho_tro', // tùy chỉnh các loại
         ]);
 
         if ($validated->fails()) {
