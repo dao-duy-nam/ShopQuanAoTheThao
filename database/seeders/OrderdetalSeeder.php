@@ -18,7 +18,6 @@ class ChiTietDonHangSeeder extends Seeder
     {
         $donHangs = Order::all();
         $sanPhamIds = Product::pluck('id')->toArray();
-
         foreach ($donHangs as $order) {
             OrderDetail::create([
                 'don_hang_id' => $order->id,
