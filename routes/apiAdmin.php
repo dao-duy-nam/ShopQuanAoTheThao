@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\ShippingFeeController;
 use App\Http\Controllers\Api\Admin\DiscountCodeController;
 use App\Http\Controllers\Api\Admin\AttributeValueController;
+use App\Http\Controllers\Api\Admin\ProfileController;
 use App\Http\Controllers\Api\Admin\WalletTransactionController;
 
 Route::prefix('admin')->group(function () {
@@ -148,7 +149,7 @@ Route::prefix('admin')->group(function () {
         Route::prefix('posts')->group(function () {
             Route::get('/listtrash', [PostController::class, 'trash'])->name('trash');
             Route::post('/restore/{id}', [PostController::class, 'restore'])->name('restore');
-           
+
 
             Route::get('/', [PostController::class, 'index'])->name('index');
             Route::post('/', [PostController::class, 'store'])->name('store');
@@ -172,6 +173,10 @@ Route::prefix('admin')->group(function () {
             Route::get('/search', [ContactController::class, 'search']);
             Route::get('/{id}', [ContactController::class, 'show']);
             Route::post('/reply/{id}', [ContactController::class, 'reply']);
+        });
+
+        Route::prefix('profile')->group(function () {
+            Route::match(['get', 'post'], '/', [ProfileController::class, 'edit']);
         });
     });
 });
