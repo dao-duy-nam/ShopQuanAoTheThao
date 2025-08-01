@@ -8,8 +8,11 @@ use Illuminate\Http\Request;
 
 class BannerController extends Controller
 {
-    public function index()
-    {
-        return Banner::orderBy('created_at', 'desc')->get();
-    }
+public function index()
+{
+    return Banner::where('trang_thai', 'hien')
+        ->orderBy('created_at', 'desc')
+        ->get();
+}
+
 }

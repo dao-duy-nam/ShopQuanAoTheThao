@@ -20,27 +20,46 @@ class ProductController extends Controller
 
     public function index(Request $request)
     {
-        $query = Product::query();
+        $query = Product::with('category');
 
-        if ($request->has('keyword')) {
+        if ($request->filled('keyword')) {
             $query->where('ten', 'like', '%' . $request->keyword . '%');
         }
+
+
+        if ($request->filled('ten_danh_muc')) {
+            $query->whereHas('category', function ($q) use ($request) {
+                $q->where('ten', 'like', '%' . $request->ten_danh_muc . '%');
+            });
+        }
+
+
+        if ($request->filled('gia_tu')) {
+            $query->where('gia', '>=', $request->gia_tu);
+        }
+
+        if ($request->filled('gia_den')) {
+            $query->where('gia', '<=', $request->gia_den);
+        }
+
+
         $products = $query->latest()->paginate(10);
+
         if ($products->isEmpty()) {
             return response()->json([
                 'data' => [],
                 'status' => 200,
-                'message' => $request->filled('keyword')
-                    ? 'Không tìm thấy sản phẩm nào với từ khóa "' . $request->keyword . '"'
-                    : 'Không có sản phẩm nào trong trang này',
+                'message' => 'Không tìm thấy sản phẩm nào phù hợp.',
             ]);
         }
+
         return response()->json([
             'data' => ProductResource::collection($products),
             'status' => 200,
             'message' => 'Hiển thị danh sách sản phẩm thành công',
         ]);
     }
+
 
     public function store(StoreProductRequest $request)
     {
@@ -251,36 +270,36 @@ class ProductController extends Controller
         ]);
     }
 
-    public function forceDelete($id)
-    {
-        $product = Product::onlyTrashed()->findOrFail($id);
+    // public function forceDelete($id)
+    // {
+    //     $product = Product::onlyTrashed()->findOrFail($id);
 
 
-        if ($product->hinh_anh && Storage::disk('public')->exists($product->hinh_anh)) {
-            Storage::disk('public')->delete($product->hinh_anh);
-        }
+    //     if ($product->hinh_anh && Storage::disk('public')->exists($product->hinh_anh)) {
+    //         Storage::disk('public')->delete($product->hinh_anh);
+    //     }
 
 
-        $variants = Variant::onlyTrashed()
-            ->where('san_pham_id', $product->id)
-            ->get();
+    //     $variants = Variant::onlyTrashed()
+    //         ->where('san_pham_id', $product->id)
+    //         ->get();
 
-        foreach ($variants as $variant) {
-            if ($variant->hinh_anh && Storage::disk('public')->exists($variant->hinh_anh)) {
-                Storage::disk('public')->delete($variant->hinh_anh);
-            }
-        }
+    //     foreach ($variants as $variant) {
+    //         if ($variant->hinh_anh && Storage::disk('public')->exists($variant->hinh_anh)) {
+    //             Storage::disk('public')->delete($variant->hinh_anh);
+    //         }
+    //     }
 
 
-        Variant::onlyTrashed()
-            ->where('san_pham_id', $product->id)
-            ->forceDelete();
+    //     Variant::onlyTrashed()
+    //         ->where('san_pham_id', $product->id)
+    //         ->forceDelete();
 
-        $product->forceDelete();
+    //     $product->forceDelete();
 
-        return response()->json([
-            'status'  => 200,
-            'message' => 'Đã xóa vĩnh viễn sản phẩm cùng toàn bộ ảnh & biến thể.',
-        ]);
-    }
+    //     return response()->json([
+    //         'status'  => 200,
+    //         'message' => 'Đã xóa vĩnh viễn sản phẩm cùng toàn bộ ảnh & biến thể.',
+    //     ]);
+    // }
 }

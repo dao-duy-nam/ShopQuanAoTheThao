@@ -9,10 +9,24 @@ use Illuminate\Support\Facades\Storage;
 
 class BannerController extends Controller
 {
-    public function index()
-    {
-        return Banner::orderBy('created_at', 'desc')->get();
+public function index(Request $request)
+{
+    $query = Banner::query();
+
+    if ($request->filled('search')) {
+        $query->where('tieu_de', 'like', '%' . $request->search . '%');
     }
+
+    if ($request->filled('date')) {
+        $query->whereDate('created_at', $request->date);
+    }
+
+     if ($request->filled('trang_thai')) {
+        $query->where('trang_thai', $request->trang_thai);
+    }
+
+    return $query->orderBy('created_at', 'desc')->paginate(10);
+}
 
     public function store(Request $request)
     {

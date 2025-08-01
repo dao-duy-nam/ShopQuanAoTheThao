@@ -15,7 +15,7 @@ class ContactSeeder extends Seeder
      */
     public function run(): void
     {
-         $statuses = ['chua_xu_ly', 'da_phan_hoi'];
+         $statuses = ['chua_xu_ly', 'dang_xu_ly'];
         $types = ['gop_y', 'khieu_nai', 'hop_tac', 'ho_tro'];
         for ($i = 1; $i <= 30; $i++) {
             Contact::create([

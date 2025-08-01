@@ -9,15 +9,16 @@ use App\Http\Controllers\Api\Client\BannerController;
 use App\Http\Controllers\API\Client\ReviewController;
 use App\Http\Controllers\Api\Client\WalletController;
 use App\Http\Controllers\Api\Payment\VnpayController;
-use App\Http\Controllers\Api\Client\CategoryController;
 use App\Http\Controllers\Api\Client\PostApiController;
 use App\Http\Controllers\Api\Client\ProductController;
+use App\Http\Controllers\Api\Client\CategoryController;
 use App\Http\Controllers\Api\Client\WishlistController;
 use App\Http\Controllers\Api\Payment\ZaloPayController;
 use App\Http\Controllers\Api\Client\ClientOrderController;
 use App\Http\Controllers\Api\Client\ShippingApiController;
 use App\Http\Controllers\Api\Client\DiscountCodeController;
 use App\Http\Controllers\Api\Client\ClientAccountController;
+use App\Http\Controllers\Api\Client\ClientContactController;
 use App\Http\Controllers\Api\Client\ClientMessageController;
 use App\Http\Controllers\Api\Client\ForgotPasswordController;
 
@@ -39,9 +40,11 @@ Route::prefix('auth')->group(function () {
 Route::prefix('products')->group(function () {
     Route::get('/', [ProductController::class, 'index']);
     Route::get('/filter', [ProductController::class, 'filter']);
+    Route::get('/filter-attribute', [ProductController::class, 'filterByAttributeValues']); // Lọc giá trị thuộc tính 
     Route::get('{id}', [ProductController::class, 'show']);
-    Route::get('/{id}/related', [ProductController::class, 'related']);
+    Route::get('/{id}/related', [ProductController::class, 'related']); // Lấy sản phẩm liên quan
 });
+Route::get('/filter-values', [ProductController::class, 'getFilterableValues']); // Lấy các giá trị thuộc tính
 Route::get('banner', [BannerController::class, 'index']);
 Route::get('categories', [CategoryController::class, 'index']);
 
@@ -68,11 +71,11 @@ Route::middleware(['auth:sanctum', 'user'])->group(function () {
 
     // Wallet API
     Route::get('/wallet', [WalletController::class, 'getBalance']);
-    Route::get('/wallet/transactions', [WalletController::class, 'getTransactions']);
+    // Route::get('/wallet/transactions', [WalletController::class, 'getTransactions']);
     Route::post('/wallet/deposit', [WalletController::class, 'deposit']);
     Route::post('/wallet/withdraw', [WalletController::class, 'withdraw']);
-    Route::post('/wallet/pay', [WalletController::class, 'pay']);
-    Route::post('/wallet/refund', [WalletController::class, 'refund']);
+    // Route::post('/wallet/pay', [WalletController::class, 'pay']);
+    // Route::post('/wallet/refund', [WalletController::class, 'refund']);
 
     Route::post('/client/discount-code/check', [DiscountCodeController::class, 'check']);
     Route::get('/client/discount-codes', [DiscountCodeController::class, 'userDiscounts']);
@@ -94,6 +97,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('order/huy-don/{id}', [ClientOrderController::class, 'huyDon']);
     Route::post('order/tra-hang/{id}', [ClientOrderController::class, 'traHang']);
     Route::post('order/da-giao/{id}', [ClientOrderController::class, 'daGiao']);
+
+    Route::get('/orders/check-pending-payment', [ClientOrderController::class, 'checkPendingPayment']);
 
     Route::prefix('/tin-nhans')->group(function () {
         Route::get('/', [ClientMessageController::class, 'getMessagesWithAdmin']);
@@ -125,4 +130,7 @@ Route::prefix('wishlists')->middleware('auth:sanctum')->group(function () {
     Route::post('/', [WishlistController::class, 'store']);
     Route::delete('/{id}', [WishlistController::class, 'destroy']);
 });
-
+Route::prefix('contact')->group(function () {
+    Route::post('/', [ClientContactController::class, 'store']);
+    Route::get('/types', [ClientContactController::class, 'contactTypes']);
+});

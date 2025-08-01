@@ -13,6 +13,7 @@ class ProductResource extends JsonResource
             'ten'         => $this->ten,
             'mo_ta'       => $this->mo_ta,
             'so_luong'    => $this->so_luong,
+            'so_luong_da_ban'=> $this->so_luong_da_ban,
             'hinh_anh' => $this->hinh_anh,
             'danh_muc_id' => $this->danh_muc_id,
             'ten_danh_muc'  => optional($this->category)->ten,

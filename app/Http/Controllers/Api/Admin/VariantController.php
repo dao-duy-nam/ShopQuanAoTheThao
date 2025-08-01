@@ -115,20 +115,15 @@ class VariantController extends Controller
         }
 
         if ($request->hasFile('images')) {
-            $newImages = $this->uploadImages($request->file('images'));
-            $oldImages = $variant->hinh_anh ?? [];
-
-            foreach ($newImages as $newImage) {
-                if (count($oldImages) >= 4) {
-                    $imageToDelete = array_shift($oldImages);
-                    if (Storage::disk('public')->exists($imageToDelete)) {
-                        Storage::disk('public')->delete($imageToDelete);
+            if (is_array($variant->hinh_anh)) {
+                foreach ($variant->hinh_anh as $oldImage) {
+                    if (Storage::disk('public')->exists($oldImage)) {
+                        Storage::disk('public')->delete($oldImage);
                     }
                 }
-                $oldImages[] = $newImage;
             }
-
-            $validated['hinh_anh'] = $oldImages;
+            $newImages = $this->uploadImages($request->file('images'));
+            $validated['hinh_anh'] = $newImages;
         }
 
         $variant->update($validated);

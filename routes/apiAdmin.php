@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\ShippingFeeController;
 use App\Http\Controllers\Api\Admin\DiscountCodeController;
 use App\Http\Controllers\Api\Admin\AttributeValueController;
+use App\Http\Controllers\Api\Admin\ProfileController;
 use App\Http\Controllers\Api\Admin\WalletTransactionController;
 
 Route::prefix('admin')->group(function () {
@@ -45,6 +46,8 @@ Route::prefix('admin')->group(function () {
             Route::get('/staff', [UserController::class, 'listStaffs']);
 
             Route::get('/cus', [UserController::class, 'listCustomers']);
+
+            Route::get('/filter', [UserController::class, 'filterAllUsers']);
             Route::get('/{id}', [UserController::class, 'show']);
         });
 
@@ -54,6 +57,7 @@ Route::prefix('admin')->group(function () {
         Route::delete('products/force-delete/{id}', [ProductController::class, 'forceDelete']);
         Route::get('products', [ProductController::class, 'index']);
         Route::get('products/{id}', [ProductController::class, 'show']);
+        Route::apiResource('products', ProductController::class)->except(['index', 'show']);
         Route::post('products/{id}', [ProductController::class, 'update'])->name('products.update');
 
         // Quản lý danh mục
@@ -76,6 +80,8 @@ Route::prefix('admin')->group(function () {
             Route::get('/', [DanhGiaController::class, 'index']);
             Route::get('/{id}', [DanhGiaController::class, 'show']);
             Route::patch('/{id}/toggle-visibility', [DanhGiaController::class, 'toggleVisibility']);
+            Route::get('/filter', [DanhGiaController::class, 'filterDanhGias']);
+
         });
         // Quản lý biến thể sản phẩm
         Route::prefix('variants')->group(function () {
@@ -145,7 +151,7 @@ Route::prefix('admin')->group(function () {
         Route::prefix('posts')->group(function () {
             Route::get('/listtrash', [PostController::class, 'trash'])->name('trash');
             Route::post('/restore/{id}', [PostController::class, 'restore'])->name('restore');
-            Route::post('/upload-image', [PostController::class, 'uploadImage'])->name('uploadImage');
+
 
             Route::get('/', [PostController::class, 'index'])->name('index');
             Route::post('/', [PostController::class, 'store'])->name('store');
@@ -169,6 +175,11 @@ Route::prefix('admin')->group(function () {
             Route::get('/search', [ContactController::class, 'search']);
             Route::get('/{id}', [ContactController::class, 'show']);
             Route::post('/reply/{id}', [ContactController::class, 'reply']);
+            Route::post('/status/{id}', [ContactController::class, 'updateStatus']);
+        });
+
+        Route::prefix('profile')->group(function () {
+            Route::match(['get', 'post'], '/', [ProfileController::class, 'edit']);
         });
     });
 });

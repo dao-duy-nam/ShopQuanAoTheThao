@@ -2,23 +2,22 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Models\Order;
+use App\Models\ActivityLog;
+use Illuminate\Http\Request;
+use App\Services\WalletService;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Mail\OrderStatusChangedMail;
-use App\Models\ActivityLog;
-use App\Models\Order;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
 class OrderController extends Controller
 {
-    /**
-     * Danh sách đơn hàng với tìm kiếm và phân trang
-     */
+
     public function index(Request $request)
     {
         $query = Order::query();
 
-        // Tìm kiếm nếu có
         if ($request->has('search')) {
             $search = $request->input('search');
 
@@ -26,24 +25,30 @@ class OrderController extends Controller
                 $query->where('ma_don_hang', 'like', "%$search%")
                     ->orWhere('user_id', 'like', "%$search%")
                     ->orWhere('trang_thai_don_hang', 'like', "%$search%")
-                    ->orWhere('dia_chi', 'like', "%$search%");  // Cho phép search theo địa chỉ
+                    ->orWhere('dia_chi', 'like', "%$search%");  
             });
         }
+        if ($request->filled('trang_thai')) {
+            $query->where('trang_thai_don_hang', $request->trang_thai);
+        }
 
-        $orders = $query->orderBy('created_at','desc')->paginate(10); // 10 đơn hàng mỗi trang
+        if ($request->filled('date')) {
+            $date = $request->date;
+            $query->whereDate('created_at', $date);
+        }
+
+        $orders = $query->orderBy('created_at','desc')->paginate(10);
 
         return response()->json($orders);
     }
 
-    /**
-     * Chi tiết đơn hàng theo ID
-     */
+
     public function show($id)
     {
         $order = Order::with([
-            'orderDetail.product',    // Lấy toàn bộ cột của bảng san_phams
-            'orderDetail.variant',    // (nếu muốn lấy luôn biến thể)
-            'paymentMethod'           // Lấy phương thức thanh toán
+            'orderDetail.product',    
+            'orderDetail.variant',    
+            'paymentMethod'           
         ])->findOrFail($id);
 
         return response()->json($order);
@@ -91,7 +96,7 @@ public function update(Request $request, $id)
             'yeu_cau_tra_hang' => ['cho_xac_nhan_tra_hang', 'tu_choi_tra_hang'],
             'cho_xac_nhan_tra_hang' => ['tra_hang_thanh_cong'],
             'tra_hang_thanh_cong' => [],
-            'yeu_cau_huy_hang' => [], // hủy thì xử lý riêng
+            'yeu_cau_huy_hang' => [], 
             'tu_choi_tra_hang' => [],
         ];
 
@@ -107,7 +112,6 @@ public function update(Request $request, $id)
             ], 422);
         }
 
-        // Xử lý trạng thái thanh toán nếu cần
         if ($nextStatus === 'cho_xac_nhan') {
             $validated['trang_thai_thanh_toan'] = 'cho_xu_ly';
         } else if ($nextStatus === 'cho_xac_nhan_tra_hang') {
@@ -135,7 +139,7 @@ public function update(Request $request, $id)
     ]);
 }
 
-public function cancel(Request $request, $id)
+public function cancel(Request $request, $id, WalletService $walletService)
 {
     $validated = $request->validate([
         'ly_do_huy' => 'required|string|max:255',
@@ -150,20 +154,53 @@ public function cancel(Request $request, $id)
         ], 400);
     }
 
-    $order->update([
-        'trang_thai_don_hang' => 'da_huy',
-        'ly_do_huy' => $validated['ly_do_huy'],
-        'trang_thai_thanh_toan' => 'da_huy',
-    ]);
+    // $order->update([
+    //     'trang_thai_don_hang' => 'da_huy',
+    //     'ly_do_huy' => $validated['ly_do_huy'],
+    //     'trang_thai_thanh_toan' => 'da_huy',
+    // ]);
 
-    $message = "Đơn hàng đã bị hủy. Lý do: " . $validated['ly_do_huy'];
+    // $message = "Đơn hàng đã bị hủy. Lý do: " . $validated['ly_do_huy'];
 
-    Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
+    // Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
 
-    return response()->json([
-        'message' => 'Đơn hàng đã được hủy thành công.',
-        'order' => $order
-    ]);
+    // return response()->json([
+    //     'message' => 'Đơn hàng đã được hủy thành công.',
+    //     'order' => $order
+    // ]);
+     DB::beginTransaction();
+    try {
+        $order->update([
+            'trang_thai_don_hang' => 'da_huy',
+            'ly_do_huy' => $validated['ly_do_huy'],
+            'trang_thai_thanh_toan' => 'da_huy',
+        ]);
+
+        // Bổ sung: Hoàn tiền vào ví nếu đã thanh toán online và chưa hoàn tiền
+        $onlineMethods = ['vnpay', 'zalopay']; // tuỳ hệ thống bạn
+        if (
+            in_array(optional($order->paymentMethod)->code, $onlineMethods) && // code hoặc tên phương thức
+            $order->trang_thai_thanh_toan === 'da_thanh_toan' &&
+            !$order->refund_done
+        ) {
+            $walletService->refund($order->user, $order->id, $order->so_tien_thanh_toan);
+            $order->update(['refund_done' => true]);
+        }
+
+        $message = "Đơn hàng đã bị hủy. Lý do: " . $validated['ly_do_huy'];
+        Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
+
+        DB::commit();
+        $order->refresh();
+
+        return response()->json([
+            'message' => 'Đơn hàng đã được hủy thành công.',
+            'order' => $order
+        ]);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json(['message' => 'Lỗi khi hủy đơn hàng: ' . $e->getMessage()], 500);
+    }
 }
 
 

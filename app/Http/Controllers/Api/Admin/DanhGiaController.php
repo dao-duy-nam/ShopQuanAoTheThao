@@ -8,6 +8,47 @@ use App\Http\Controllers\Controller;
 
 class DanhGiaController extends Controller
 {
+    public function filterDanhGia(Request $request)
+{
+    $query = DanhGia::with(['user', 'product', 'variant']);
+
+    // Lọc theo số sao (ép kiểu int để đảm bảo đúng)
+    if ($request->filled('so_sao')) {
+        $query->where('so_sao', (int) $request->so_sao);
+    }
+
+    // Lọc theo nội dung (LIKE %...%)
+    if ($request->filled('noi_dung')) {
+        $query->where('noi_dung', 'like', '%' . $request->noi_dung . '%');
+    }
+
+    // Phân trang kết quả
+    $danhGias = $query->orderBy('created_at', 'desc')->paginate(10);
+
+    // Nếu không có đánh giá nào khớp
+    if ($danhGias->total() === 0) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Không tìm thấy đánh giá.'
+        ]);
+    }
+
+    // Trả về danh sách đánh giá
+    return response()->json([
+        'message' => 'Danh sách đánh giá đã lọc',
+        'status' => 200,
+        'data' => $danhGias->items(),
+        'pagination' => [
+            'total' => $danhGias->total(),
+            'per_page' => $danhGias->perPage(),
+            'current_page' => $danhGias->currentPage(),
+            'last_page' => $danhGias->lastPage(),
+        ]
+    ]);
+}
+
+
+
     public function index(Request $request)
     {
         $query = DanhGia::with([
@@ -29,7 +70,7 @@ class DanhGiaController extends Controller
                     'name' => $review->user->name,
                 ],
                 'content' => $review->noi_dung,
-                'rating' => $review->so_sao,
+                'so_sao' => $review->so_sao,
                 'image' => $review->hinh_anh,
                 'created_at' => $review->created_at,
                 'updated_at' => $review->updated_at,
@@ -112,9 +153,9 @@ class DanhGiaController extends Controller
             ];
         } else {
             $data['product'] = [
-               'id' => $review->san_pham_id,
-                    'name' => $review->product->ten ?? null,
-                    'image' => $review->product->hinh_anh ?? null,
+                'id' => $review->san_pham_id,
+                'name' => $review->product->ten ?? null,
+                'image' => $review->product->hinh_anh ?? null,
             ];
         }
 

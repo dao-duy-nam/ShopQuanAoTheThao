@@ -99,7 +99,7 @@ class ReviewController extends Controller
 
         $hasPurchased = OrderDetail::whereHas('order', function ($query) use ($userId) {
             $query->where('user_id', $userId)
-                ->where('trang_thai_don_hang', 'da_giao')
+                ->where('trang_thai_don_hang', 'da_nhan')
                 ->where('updated_at', '>=', now()->subDays(7));
         })
             ->where('san_pham_id', $request->san_pham_id)

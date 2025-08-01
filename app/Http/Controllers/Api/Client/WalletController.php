@@ -34,23 +34,8 @@ class WalletController extends Controller
         return new WalletResource($wallet);
     }
 
-    // Lấy lịch sử giao dịch
-    public function getTransactions(Request $request)
-    {
-        $wallet = Wallet::where('user_id', $request->user()->id)->firstOrFail();
-        $transactions = $wallet->transactions()->latest()->paginate(20);
-        return WalletTransactionResource::collection($transactions);
-    }
+    
 
-    // Nạp tiền vào ví
-    // public function deposit(DepositRequest $request)
-    // {
-    //     $transaction = $this->walletService->deposit($request->user(), $request->amount, $request->payment_method);
-    //     // Thực tế: trả về link thanh toán, ở đây trả về transaction
-    //     return new WalletTransactionResource($transaction);
-    // }
-
-    // Rút tiền từ ví
     public function withdraw(Request $request)
 {
     $request->validate([
@@ -90,16 +75,7 @@ class WalletController extends Controller
 }
 
 
-    // Thanh toán đơn hàng bằng ví
-    public function pay(PayRequest $request)
-    {
-        try {
-            $this->walletService->pay($request->user(), $request->order_id, $request->amount);
-            return response()->json(['message' => 'Payment successful']);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
-        }
-    }
+
 
     // Hoàn tiền vào ví
     public function refund(Request $request)
