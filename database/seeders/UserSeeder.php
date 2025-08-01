@@ -40,7 +40,7 @@ class UserSeeder extends Seeder
             'email' => 'chat@gmail.com',
             'password' => bcrypt('123456'), 
             'so_dien_thoai' => '0977777777',
-            'vai_tro_id' => 3, 
+            'vai_tro_id' => 1, 
             'trang_thai' => 'active',
             'ngay_sinh' => '1995-09-15',
             'email_verified_at' => Carbon::now(),

@@ -11,21 +11,33 @@ class MessageController extends Controller
 {
     public function getUserList(Request $request)
     {
-        $adminId = $request->user()->id;
+        $currentUser = $request->user();
+        if (in_array($currentUser->vai_tro_id, [1, 3])) {
+            $userIds = Message::select('nguoi_gui_id', 'nguoi_nhan_id')
+                ->get()
+                ->flatMap(function ($message) {
+                    return [$message->nguoi_gui_id, $message->nguoi_nhan_id];
+                })
+                ->unique()
+                ->filter()
+                ->values();
+        } else {
+            $userIds = Message::where('nguoi_gui_id', $currentUser->id)
+                ->orWhere('nguoi_nhan_id', $currentUser->id)
+                ->get()
+                ->map(function ($message) use ($currentUser) {
+                    return $message->nguoi_gui_id == $currentUser->id
+                        ? $message->nguoi_nhan_id
+                        : $message->nguoi_gui_id;
+                })
+                ->unique()
+                ->filter()
+                ->values();
+        }
 
-        $userIds = Message::where('nguoi_gui_id', $adminId)
-            ->orWhere('nguoi_nhan_id', $adminId)
-            ->get()
-            ->map(function ($message) use ($adminId) {
-                return $message->nguoi_gui_id == $adminId
-                    ? $message->nguoi_nhan_id
-                    : $message->nguoi_gui_id;
-            })
-            ->unique()
-            ->values();
-
-
-        $users = User::whereIn('id', $userIds)->get();
+        $users = User::whereIn('id', $userIds)
+            ->where('vai_tro_id', 2)
+            ->get();
 
         return response()->json([
             'data' => $users
