@@ -26,12 +26,15 @@ class DiscountCodeController extends Controller
         ]);
 
         // Lấy mã giảm giá từ DB
-        $voucher = DiscountCode::where('ma', $data['ma_giam_gia'])
-            ->where('trang_thai', true)
-            ->first();
+        $voucher = DiscountCode::where('ma', $data['ma_giam_gia'])->first();
 
         if (!$voucher) {
-            return response()->json(['message' => 'Mã giảm giá không tồn tại hoặc đã bị vô hiệu hóa.'], 400);
+            return response()->json(['message' => 'Mã giảm giá không tồn tại.'], 400);
+        }
+
+        // Kiểm tra trạng thái
+        if (!$voucher->trang_thai) {
+            return response()->json(['message' => 'Mã giảm giá đã bị vô hiệu hóa.'], 400);
         }
 
         $now = Carbon::now();
@@ -82,7 +85,6 @@ class DiscountCodeController extends Controller
         // Không được giảm vượt quá tổng tiền
         $giam = min($giam, $data['tong_tien']);
 
-        // Log thông tin kiểm tra thành công (tùy chọn)
         Log::info('Mã giảm giá hợp lệ', [
             'ma' => $voucher->ma,
             'user_id' => $request->user()?->id,
