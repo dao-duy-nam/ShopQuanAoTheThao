@@ -28,7 +28,7 @@ class DatabaseSeeder extends Seeder
             AttributeSeeder::class,
             AttributeValueSeeder::class,
             VariantSeeder::class,
-            OrderSeeder::class,
+            // OrderSeeder::class,
             BannerSeeder::class,
             DiscountCodeSeeder::class,
             PhiShipSeeder::class,
