@@ -94,6 +94,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/client/orders/{id}', [ClientOrderController::class, 'show']);
     Route::get('/client/orders/', [ClientOrderController::class, 'index']);
+    Route::post('/client/orders/pay-with-wallet/{id}', [ClientOrderController::class, 'payWithWallet']);
     Route::post('order/huy-don/{id}', [ClientOrderController::class, 'huyDon']);
     Route::post('order/tra-hang/{id}', [ClientOrderController::class, 'traHang']);
     Route::post('order/da-giao/{id}', [ClientOrderController::class, 'daGiao']);

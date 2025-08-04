@@ -2,123 +2,54 @@
 
 namespace App\Services;
 
+use App\Models\Order;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
 use Illuminate\Support\Facades\DB;
+use App\Mail\WalletTransactionMail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class WalletService
 {
-    /**
-     * Tạo giao dịch nạp tiền (pending)
-     */
-    public function deposit($user, $amount, $payment_method)
+   public function refund($user, $orderId, $amount)
     {
-        $wallet = Wallet::firstOrCreate(['user_id' => $user->id]);
-        return $wallet->transactions()->create([
-            'user_id' => $user->id,
-            'type' => 'deposit',
-            'amount' => $amount,
-            'status' => 'pending',
-            'description' => 'Deposit via ' . $payment_method,
-        ]);
-    }
+        $order = Order::findOrFail($orderId);
 
-    /**
-     * Xác nhận nạp tiền thành công (callback từ cổng thanh toán)
-     */
-    public function confirmDeposit(WalletTransaction $transaction)
-    {
-        if ($transaction->status !== 'pending') return false;
-        DB::transaction(function () use ($transaction) {
-            $wallet = $transaction->wallet;
-            $wallet->balance += $transaction->amount;
-            $wallet->save();
-            $transaction->status = 'success';
-            $transaction->save();
-        });
-        return true;
-    }
-
-    /**
-     * Tạo yêu cầu rút tiền (pending)
-     */
-    public function withdraw($user, $amount, $bank_info)
-    {
-        $wallet = Wallet::where('user_id', $user->id)->firstOrFail();
-        if ($wallet->balance < $amount) {
-            throw new \Exception('Insufficient balance');
+        if ($order->user_id !== $user->id) {
+            throw new \Exception('Bạn không có quyền hoàn tiền cho đơn hàng này.');
         }
-        return $wallet->transactions()->create([
-            'user_id' => $user->id,
-            'type' => 'withdraw',
-            'amount' => $amount,
-            'status' => 'pending',
-            'description' => 'Withdraw to bank: ' . $bank_info,
-        ]);
-    }
 
-    /**
-     * Xác nhận rút tiền thành công (admin duyệt)
-     */
-    public function confirmWithdraw(WalletTransaction $transaction)
-    {
-        if ($transaction->status !== 'pending') return false;
-        DB::transaction(function () use ($transaction) {
-            $wallet = $transaction->wallet;
-            if ($wallet->balance < $transaction->amount) {
-                throw new \Exception('Insufficient balance');
-            }
-            $wallet->balance -= $transaction->amount;
-            $wallet->save();
-            $transaction->status = 'success';
-            $transaction->save();
-        });
-        return true;
-    }
-
-    /**
-     * Thanh toán đơn hàng bằng ví
-     */
-    public function pay($user, $order_id, $amount)
-    {
-        $wallet = Wallet::where('user_id', $user->id)->firstOrFail();
-        if ($wallet->balance < $amount) {
-            throw new \Exception('Insufficient balance');
+        if ($order->refund_done) {
+            throw new \Exception('Đơn hàng này đã được hoàn tiền.');
         }
-        DB::transaction(function () use ($wallet, $user, $order_id, $amount) {
-            $wallet->balance -= $amount;
-            $wallet->save();
-            $wallet->transactions()->create([
-                'user_id' => $user->id,
-                'type' => 'payment',
-                'amount' => $amount,
-                'status' => 'success',
-                'description' => 'Pay for order #' . $order_id,
-                'related_order_id' => $order_id,
-            ]);
-        });
-        return true;
-    }
 
-    /**
-     * Hoàn tiền vào ví
-     */
-    public function refund($user, $order_id, $amount)
-    {
-        $wallet = Wallet::firstOrCreate(['user_id' => $user->id]);
-        DB::transaction(function () use ($wallet, $user, $order_id, $amount) {
-            $wallet->balance += $amount;
-            $wallet->save();
-            $wallet->transactions()->create([
+        DB::beginTransaction();
+
+        try {
+            $wallet = Wallet::firstOrCreate(['user_id' => $user->id]);
+
+            // Tạo giao dịch hoàn tiền
+            $transaction = WalletTransaction::create([
                 'user_id' => $user->id,
+                'wallet_id' => $wallet->id,
+                'transaction_code' => 'REFUND_' . strtoupper(\Illuminate\Support\Str::random(6)),
                 'type' => 'refund',
                 'amount' => $amount,
                 'status' => 'success',
-                'description' => 'Refund for order #' . $order_id,
-                'related_order_id' => $order_id,
+                'description' => 'Hoàn tiền cho đơn hàng ' . $order->ma_don_hang,
+                'related_order_id' => $order->id,
             ]);
-        });
-        return true;
+
+            
+            $wallet->increment('balance', $amount);
+            $order->update(['refund_done' => true]);
+            Mail::to($user->email)->queue(new WalletTransactionMail($transaction, 'Hoàn tiền thành công cho đơn hàng ' . $order->ma_don_hang));
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
 } 
