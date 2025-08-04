@@ -599,6 +599,7 @@ class ClientOrderController extends Controller
                 'ngay_dat' => $order->created_at->toDateTimeString(),
                 'phuong_thuc_thanh_toan' => optional($order->paymentMethod)->ten,
                 'so_luong_mat_hang' => $order->orderDetail->sum('so_luong'),
+                        'gia_tri_bien_the' => $order->gia_tri_bien_the, 
                 'items' => $items,
             ];
         });
