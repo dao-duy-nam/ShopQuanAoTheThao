@@ -31,33 +31,33 @@ class WalletController extends Controller
     }
 
     public function checkPendingTransaction(Request $request)
-{
-    $user = $request->user();
+    {
+        $user = $request->user();
 
-    $transaction = WalletTransaction::where('user_id', $user->id)
-        ->where('status', 'pending')
-        ->where('expires_at', '>', now()) 
-        ->latest()
-        ->first();
+        $transaction = WalletTransaction::where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->where('expires_at', '>', now())
+            ->latest()
+            ->first();
 
-    if ($transaction) {
+        if ($transaction) {
+            return response()->json([
+                'status' => 'pending',
+                'message' => 'Bạn có giao dịch nạp tiền đang chờ',
+                'data' => [
+                    'transaction_code' => $transaction->transaction_code,
+                    'amount' => $transaction->amount,
+                    'expires_at' => $transaction->expires_at,
+                    'payment_url' => $transaction->payment_url,
+                ]
+            ]);
+        }
+
         return response()->json([
-            'status' => 'pending',
-            'message' => 'Bạn có giao dịch nạp tiền đang chờ',
-            'data' => [
-                'transaction_code' => $transaction->transaction_code,
-                'amount' => $transaction->amount,
-                'expires_at' => $transaction->expires_at,
-                'redirect_url' => $transaction->payment_url,
-            ]
+            'status' => 'no_pending',
+            'message' => 'Không có giao dịch nạp tiền đang chờ xử lý'
         ]);
     }
-
-    return response()->json([
-        'status' => 'no_pending',
-        'message' => 'Không có giao dịch nạp tiền đang chờ xử lý'
-    ]);
-}
 
     // Lấy số dư ví
     public function getBalance(Request $request)
@@ -131,7 +131,7 @@ class WalletController extends Controller
         $code = 'NAP_' . time();
 
 
-        WalletTransaction::create([
+        $transaction=WalletTransaction::create([
             'user_id' => $user->id,
             'wallet_id' => $wallet->id,
             'transaction_code' => $code,
@@ -140,6 +140,7 @@ class WalletController extends Controller
             'status' => 'pending',
             'description' => 'Nạp tiền vào ví',
             'expires_at' => now()->addMinutes(15),
+            
         ]);
 
 
@@ -177,7 +178,7 @@ class WalletController extends Controller
         $vnp_SecureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
         $query = http_build_query($inputData, '', '&', PHP_QUERY_RFC3986);
         $redirectUrl = $vnp_Url . '?' . $query . '&vnp_SecureHash=' . $vnp_SecureHash;
-
+        $transaction->update(['payment_url' => $redirectUrl]);
         return response()->json([
             'status' => 'success',
             'message' => 'Tạo giao dịch nạp tiền thành công',

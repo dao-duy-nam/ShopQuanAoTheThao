@@ -9,14 +9,14 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up()
+    public function up(): void
     {
         Schema::table('wallet_transactions', function (Blueprint $table) {
-            $table->string('payment_url')->nullable()->after('transaction_code');
+            $table->string('payment_url', 1000)->nullable(); // thêm cột mới
         });
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::table('wallet_transactions', function (Blueprint $table) {
             $table->dropColumn('payment_url');
