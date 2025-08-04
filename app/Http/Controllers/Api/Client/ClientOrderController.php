@@ -712,7 +712,7 @@ class ClientOrderController extends Controller
 
         try {
             $order->trang_thai_don_hang = 'yeu_cau_tra_hang';
-            $order->trang_thai_thanh_toan = 'chua_hoan_tien';
+            $order->trang_thai_thanh_toan = 'cho_hoan_tien';
             $order->ly_do_tra_hang = $validated['ly_do_tra_hang'];
 
             // Xử lý upload hình ảnh
