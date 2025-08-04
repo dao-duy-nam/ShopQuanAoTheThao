@@ -37,7 +37,7 @@ class ClientOrderController extends Controller
             return response()->json([
                 'status'       => 'need_payment',
                 'message'      => 'Bạn có một đơn hàng còn hiệu lực chưa thanh toán.',
-                'ma_don_hang'  => $order->ma_don_hang, 
+                'ma_don_hang'  => $order->ma_don_hang,
                 'payment_link' => $order->payment_link,
                 'expires_at'   => $order->expires_at,
                 'amount'       => $order->tong_tien,
@@ -129,7 +129,7 @@ class ClientOrderController extends Controller
 
                     if ($bienTheId) {
                         $bienThe = Variant::with(['product', 'variantAttributes.attributeValue.attribute'])->findOrFail($bienTheId);
-                        if ($bienThe->so_luong < $soLuong) throw new \Exception("Biến thể không đủ tồn kho.");
+                        if ($bienThe->so_luong < $soLuong) throw new \Exception("Sản phẩm không đủ tồn kho.");
                         $donGia = $bienThe->gia_khuyen_mai ?? $bienThe->gia;
                         if (is_null($donGia)) {
                             throw new \Exception("Biến thể '{$bienThe->product->ten}' không có giá.");
@@ -402,6 +402,8 @@ class ClientOrderController extends Controller
                         'so_tien_duoc_giam' => $tongSauGiam,
                         'thuoc_tinh_bien_the' => $sp['thuoc_tinh_bien_the'],
                         'hinh_anh' => $sp['hinh_anh'], // THÊM DÒNG NÀY
+                        'bien_the_id' => $sp['bien_the_id'] ?? null, // Thêm dòng này
+
                     ];
                 }
                 unset($sp);
@@ -438,6 +440,16 @@ class ClientOrderController extends Controller
                 'gia_tri_bien_the' => $thuocTinhBienTheTongHop,
                 'dia_chi_day_du' => $diaChiDayDu,
             ]);
+
+            foreach ($chiTietSanPham as $sp) {
+                if (!empty($sp['thuoc_tinh_bien_the']) && !empty($sp['bien_the_id'])) {
+                    $bienThe = Variant::find($sp['bien_the_id']);
+                    if (!$bienThe || $bienThe->so_luong < $sp['so_luong']) {
+                        throw new \Exception("Biến thể '{$sp['ten_san_pham']}' không còn đủ tồn kho để hoàn tất đơn hàng.");
+                    }
+                }
+            }
+
 
             DB::commit();
 
@@ -602,134 +614,146 @@ class ClientOrderController extends Controller
         ]);
     }
 
+    public function huyDon(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'ly_do_huy' => 'required|string|max:255',
+        ]);
 
-public function huyDon(Request $request, $id)
-{
-    $validated = $request->validate([
-        'ly_do_huy' => 'required|string|max:255',
-    ]);
+        DB::beginTransaction();
 
-    DB::beginTransaction();
+        try {
+            $order = Order::with(['user', 'orderDetail.variant'])->findOrFail($id);
 
-    try {
-        // Load đơn hàng + user + chi tiết đơn + biến thể
+            foreach ($order->orderDetail as $chiTiet) {
+                $variant = $chiTiet->variant;
+                if ($variant) {
+                    $variant->so_luong += $chiTiet->so_luong;
+                    $variant->save();
+                }
+            }
+
+            $order->trang_thai_don_hang = 'da_huy';
+            if (in_array($order->phuong_thuc_thanh_toan_id, [2, 3])) {
+                $order->trang_thai_thanh_toan = 'cho_hoan_tien';
+            } else if ($order->phuong_thuc_thanh_toan_id == 1) {
+                $order->trang_thai_thanh_toan = 'da_huy';
+            } else {
+                $order->trang_thai_thanh_toan = 'da_huy';
+            }
+
+            $order->ly_do_huy = $validated['ly_do_huy'];
+            $order->save();
+
+            $message = 'Đơn hàng của bạn đã bị hủy. Lý do: ' . $validated['ly_do_huy'];
+            Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Đơn hàng đã được hủy thành công. Lý do: ' . $validated['ly_do_huy'],
+                'order' => $order
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'Đã xảy ra lỗi khi huỷ đơn hàng.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
+
+    public function traHang(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'ly_do_tra_hang' => 'required|string|max:255',
+            'hinh_anh_tra_hang' => 'nullable|array',
+            'hinh_anh_tra_hang.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
+        ]);
+
         $order = Order::with(['user', 'orderDetail.variant'])->findOrFail($id);
+        $user = $request->user();
 
-        // ✅ Hoàn lại số lượng cho từng biến thể
-        foreach ($order->orderDetail as $chiTiet) {
-            $variant = $chiTiet->variant;
-            if ($variant) {
-                $variant->so_luong += $chiTiet->so_luong;
-                $variant->save();
-            }
+        if ($order->user_id !== $user->id) {
+            return response()->json([
+                'message' => 'Bạn không có quyền trả đơn hàng này.'
+            ], 403);
         }
 
-        // ✅ Cập nhật trạng thái đơn hàng
-        $order->trang_thai_don_hang = 'da_huy';
-        $order->trang_thai_thanh_toan = 'da_huy';
-        $order->ly_do_huy = $validated['ly_do_huy'];
-        $order->save();
-
-        // ✅ Gửi email thông báo
-        $message = 'Đơn hàng của bạn đã bị hủy. Lý do: ' . $validated['ly_do_huy'];
-        Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
-
-        DB::commit();
-
-        return response()->json([
-            'message' => 'Đơn hàng đã được hủy thành công. Lý do: ' . $validated['ly_do_huy'],
-            'order' => $order
-        ]);
-    } catch (\Exception $e) {
-        DB::rollBack();
-
-        return response()->json([
-            'message' => 'Đã xảy ra lỗi khi huỷ đơn hàng.',
-            'error' => $e->getMessage(),
-        ], 500);
-    }
-}
-
-
-public function traHang(Request $request, $id)
-{
-    $validated = $request->validate([
-        'ly_do_tra_hang' => 'required|string|max:255',
-    ]);
-
-    $order = Order::with(['user', 'orderDetail.product'])->findOrFail($id);
-    $user = request()->user();
-
-    if ($order->user_id !== $user->id) {
-        return response()->json([
-            'message' => 'Bạn không có quyền trả đơn hàng này.'
-        ], 403);
-    }
-
-    if (!in_array($order->trang_thai_don_hang, ['da_giao', 'da_nhan'])) {
-        return response()->json([
-            'message' => 'Chỉ được trả khi đơn hàng đã giao hoặc đã nhận.'
-        ], 400);
-    }
-
-    // Nếu đã nhận thì check quá 3 ngày
-    if ($order->trang_thai_don_hang === 'da_nhan') {
-        if (!$order->thoi_gian_nhan) {
+        if (!in_array($order->trang_thai_don_hang, ['da_giao', 'da_nhan'])) {
             return response()->json([
-                'message' => 'Không xác định được thời gian nhận hàng.'
+                'message' => 'Chỉ được trả khi đơn hàng đã giao hoặc đã nhận.'
             ], 400);
         }
 
-        $thoiGianNhan = $order->thoi_gian_nhan instanceof Carbon 
-            ? $order->thoi_gian_nhan 
-            : Carbon::parse($order->thoi_gian_nhan);
+        if ($order->trang_thai_don_hang === 'da_nhan') {
+            if (!$order->thoi_gian_nhan) {
+                return response()->json([
+                    'message' => 'Không xác định được thời gian nhận hàng.'
+                ], 400);
+            }
 
-        if ($thoiGianNhan->addDays(3)->lt(now())) {
-            return response()->json([
-                'message' => 'Đơn hàng đã nhận quá 3 ngày, không thể trả hàng.'
-            ], 400);
-        }
-    }
+            $thoiGianNhan = $order->thoi_gian_nhan instanceof Carbon
+                ? $order->thoi_gian_nhan
+                : Carbon::parse($order->thoi_gian_nhan);
 
-    DB::beginTransaction();
-
-    try {
-        // Cập nhật trạng thái đơn hàng
-        $order->trang_thai_don_hang = 'yeu_cau_tra_hang';
-        $order->trang_thai_thanh_toan = 'hoan_tien';
-        $order->ly_do_tra_hang = $validated['ly_do_tra_hang'];
-        $order->save();
-
-        // Hoàn lại số lượng cho sản phẩm
-        foreach ($order->orderDetail as $chiTiet) {
-            $variant = $chiTiet->variant;
-            if ($variant) {
-                $variant->so_luong += $chiTiet->so_luong;
-                $variant->save();
+            if ($thoiGianNhan->addDays(3)->lt(now())) {
+                return response()->json([
+                    'message' => 'Đơn hàng đã nhận quá 3 ngày, không thể trả hàng.'
+                ], 400);
             }
         }
 
-        // Gửi mail thông báo
-        $message = 'Đơn hàng của bạn đã được yêu cầu trả hàng. Lý do: ' . $validated['ly_do_tra_hang'] . '. Chúng tôi sẽ xử lý hoàn tiền sớm nhất.';
-        Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
+        DB::beginTransaction();
 
-        DB::commit();
+        try {
+            $order->trang_thai_don_hang = 'yeu_cau_tra_hang';
+            $order->trang_thai_thanh_toan = 'chua_hoan_tien';
+            $order->ly_do_tra_hang = $validated['ly_do_tra_hang'];
 
-        return response()->json([
-            'message' => 'Yêu cầu trả hàng đã được gửi. Lý do: ' . $validated['ly_do_tra_hang'] . '. Vui lòng chờ xử lý.',
-            'order' => $order
-        ]);
-    } catch (\Exception $e) {
-        DB::rollBack();
+            // Xử lý upload hình ảnh
+            $imagePaths = [];
+            if ($request->hasFile('hinh_anh_tra_hang')) {
+                foreach ($request->file('hinh_anh_tra_hang') as $image) {
+                    $path = $image->store('tra_hang', 'public');
+                    $imagePaths[] = $path;
+                }
+                $order->hinh_anh_tra_hang = json_encode($imagePaths);
+            }
 
-        return response()->json([
-            'message' => 'Đã xảy ra lỗi khi gửi yêu cầu trả hàng.',
-            'error' => $e->getMessage()
-        ], 500);
+            $order->save();
+
+            // Cộng lại số lượng vào tồn kho
+            foreach ($order->orderDetail as $chiTiet) {
+                $variant = $chiTiet->variant;
+                if ($variant) {
+                    $variant->so_luong += $chiTiet->so_luong;
+                    $variant->save();
+                }
+            }
+
+            // Gửi mail thông báo
+            $message = 'Đơn hàng của bạn đã được yêu cầu trả hàng. Lý do: ' . $validated['ly_do_tra_hang'] . '. Chúng tôi sẽ xử lý hoàn tiền sớm nhất.';
+            Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Yêu cầu trả hàng đã được gửi thành công.',
+                'order' => $order
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'Đã xảy ra lỗi khi gửi yêu cầu trả hàng.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
-}
-
-
 
 
     public function daGiao($id)
