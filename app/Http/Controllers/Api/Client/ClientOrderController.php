@@ -2,26 +2,106 @@
 
 namespace App\Http\Controllers\Api\Client;
 
+use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Order;
+use App\Models\Wallet;
+use App\Models\PhiShip;
 use App\Models\Product;
 use App\Models\Variant;
+use App\Models\Shipping;
 use App\Models\OrderDetail;
 use Illuminate\Support\Str;
 use App\Models\DiscountCode;
 use Illuminate\Http\Request;
+use App\Models\WalletTransaction;
 use Illuminate\Support\Facades\DB;
 use App\Mail\OrderConfirmationMail;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Mail\OrderStatusChangedMail;
-use App\Models\PhiShip;
-use App\Models\Shipping;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
 
 class ClientOrderController extends Controller
 {
+
+    public function payWithWallet(Request $request, $orderId)
+    {
+        $user = $request->user();
+
+        $order = Order::with(['orderDetail', 'user'])->findOrFail($orderId);
+
+        // Kiểm tra quyền sở hữu đơn hàng
+        if ($order->user_id !== $user->id) {
+            return response()->json([
+                'message' => 'Bạn không có quyền thanh toán đơn hàng này.'
+            ], 403);
+        }
+
+        // Kiểm tra trạng thái đơn hàng
+        if ($order->trang_thai_thanh_toan !== 'cho_xu_ly') {
+            return response()->json([
+                'message' => 'Đơn hàng này không thể thanh toán do đã ở trạng thái: ' . $order->trang_thai_thanh_toan
+            ], 400);
+        }
+
+        // Tìm ví của người dùng
+        $wallet = Wallet::firstOrCreate(['user_id' => $user->id]);
+
+        // Kiểm tra số dư ví
+        if ($wallet->balance < $order->so_tien_thanh_toan) {
+            return response()->json([
+                'message' => 'Số dư ví không đủ để thanh toán đơn hàng.'
+            ], 400);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            // Trừ tiền từ ví
+            $wallet->decrement('balance', $order->so_tien_thanh_toan);
+
+            // Tạo giao dịch ví
+            $transaction = WalletTransaction::create([
+                'user_id' => $user->id,
+                'wallet_id' => $wallet->id,
+                'transaction_code' => 'PAY_' . strtoupper(Str::random(6)),
+                'type' => 'payment',
+                'amount' => $order->so_tien_thanh_toan,
+                'status' => 'success',
+                'description' => 'Thanh toán đơn hàng ' . $order->ma_don_hang,
+                'related_order_id' => $order->id,
+            ]);
+
+            // Cập nhật trạng thái thanh toán đơn hàng
+            $order->update([
+                'trang_thai_thanh_toan' => 'da_thanh_toan',
+                'ngay_thanh_toan' => now(),
+                'expires_at' => null,
+                'payment_link' => null,
+            ]);
+
+            // Gửi email thông báo
+            $message = 'Đơn hàng ' . $order->ma_don_hang . ' đã được thanh toán thành công bằng ví.';
+            Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Thanh toán đơn hàng thành công bằng ví.',
+                'order' => $order,
+                'transaction' => $transaction
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Lỗi thanh toán bằng ví', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return response()->json([
+                'message' => 'Lỗi khi thanh toán bằng ví: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Các phương thức khác giữ nguyên
 
     public function checkPendingPayment(Request $request)
     {
@@ -453,7 +533,7 @@ class ClientOrderController extends Controller
 
             DB::commit();
 
-            Mail::to($emailNguoiDat)->queue(new OrderConfirmationMail($order));
+            Mail::to($emailNguoiDat)->send(new OrderConfirmationMail($order));
 
             return response()->json([
                 'message' => 'Đặt hàng thành công!',
@@ -599,7 +679,6 @@ class ClientOrderController extends Controller
                 'ngay_dat' => $order->created_at->toDateTimeString(),
                 'phuong_thuc_thanh_toan' => optional($order->paymentMethod)->ten,
                 'so_luong_mat_hang' => $order->orderDetail->sum('so_luong'),
-                        'gia_tri_bien_the' => $order->gia_tri_bien_the, 
                 'items' => $items,
             ];
         });
@@ -647,7 +726,7 @@ class ClientOrderController extends Controller
             $order->save();
 
             $message = 'Đơn hàng của bạn đã bị hủy. Lý do: ' . $validated['ly_do_huy'];
-            Mail::to($order->email_nguoi_dat)->queue(new OrderStatusChangedMail($order, $message));
+            Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
 
             DB::commit();
 
@@ -712,7 +791,7 @@ class ClientOrderController extends Controller
 
         try {
             $order->trang_thai_don_hang = 'yeu_cau_tra_hang';
-            $order->trang_thai_thanh_toan = 'cho_hoan_tien';
+            $order->trang_thai_thanh_toan = 'chua_hoan_tien';
             $order->ly_do_tra_hang = $validated['ly_do_tra_hang'];
 
             // Xử lý upload hình ảnh
@@ -738,7 +817,7 @@ class ClientOrderController extends Controller
 
             // Gửi mail thông báo
             $message = 'Đơn hàng của bạn đã được yêu cầu trả hàng. Lý do: ' . $validated['ly_do_tra_hang'] . '. Chúng tôi sẽ xử lý hoàn tiền sớm nhất.';
-            Mail::to($order->email_nguoi_dat)->queue(new OrderStatusChangedMail($order, $message));
+            Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
 
             DB::commit();
 
@@ -779,7 +858,7 @@ class ClientOrderController extends Controller
         $order->save();
 
         $message = 'Cảm ơn bạn đã xác nhận đã nhận hàng. Chúc bạn hài lòng!';
-        Mail::to($order->email_nguoi_dat)->queue(new OrderStatusChangedMail($order, $message));
+        Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
 
         return response()->json([
             'message' => 'Bạn đã xác nhận đã nhận hàng thành công.',
