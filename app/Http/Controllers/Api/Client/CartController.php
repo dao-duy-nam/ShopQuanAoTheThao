@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers\Api\Client;
 
-use App\Http\Controllers\Controller;
 use App\Models\Cart;
-use App\Models\CartItem;
 use App\Models\Product;
 use App\Models\Variant;
+use App\Models\CartItem;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Mail\CartItemIssueMail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 
 class CartController extends Controller
 {
@@ -87,6 +89,9 @@ class CartController extends Controller
             ];
         });
 
+         if (!empty($issueMessages)) {
+            Mail::to($user->email)->queue(new CartItemIssueMail($issueMessages));
+        }
         
 
         return response()->json([
