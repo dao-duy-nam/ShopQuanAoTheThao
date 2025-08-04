@@ -114,7 +114,10 @@ public function update(Request $request, $id)
 
         if ($nextStatus === 'cho_xac_nhan') {
             $validated['trang_thai_thanh_toan'] = 'cho_xu_ly';
-        } else if ($nextStatus === 'cho_xac_nhan_tra_hang') {
+        } 
+         else if ($nextStatus === 'da_giao') {
+            $validated['trang_thai_thanh_toan'] = 'da_thanh_toan';
+        }else if ($nextStatus === 'cho_xac_nhan_tra_hang') {
             $validated['trang_thai_thanh_toan'] = 'cho_hoan_tien';
         } else if ($nextStatus === 'tra_hang_thanh_cong') {
             $validated['trang_thai_thanh_toan'] = 'hoan_tien';
