@@ -142,7 +142,7 @@ class AuthController extends Controller
         $user->otp_send_count += 1;
         $user->save();
 
-        Mail::to($user->email)->send(new SendOtpMail($user, $otp));
+        Mail::to($user->email)->queue(new SendOtpMail($user, $otp));
 
         return response()->json(['message' => 'Mã OTP đã được gửi đến email.']);
     }

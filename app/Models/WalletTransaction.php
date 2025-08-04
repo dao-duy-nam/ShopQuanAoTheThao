@@ -12,6 +12,7 @@ class WalletTransaction extends Model
     protected $fillable = [
         'user_id',
         'wallet_id',
+        'transaction_code',
         'type',
         'amount',
         'status',
@@ -20,9 +21,13 @@ class WalletTransaction extends Model
         'bank_account',
         'description',
         'related_order_id',
-        'rejection_reason'
+        'rejection_reason',
+        'expires_at',
+        'payment_url'
     ];
-
+    protected $casts = [
+        'expires_at' => 'datetime', 
+    ];
     public function wallet()
     {
         return $this->belongsTo(Wallet::class);
