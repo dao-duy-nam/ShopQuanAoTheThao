@@ -453,7 +453,7 @@ class ClientOrderController extends Controller
 
             DB::commit();
 
-            Mail::to($emailNguoiDat)->send(new OrderConfirmationMail($order));
+            Mail::to($emailNguoiDat)->queue(new OrderConfirmationMail($order));
 
             return response()->json([
                 'message' => 'Đặt hàng thành công!',
@@ -647,7 +647,7 @@ class ClientOrderController extends Controller
             $order->save();
 
             $message = 'Đơn hàng của bạn đã bị hủy. Lý do: ' . $validated['ly_do_huy'];
-            Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
+            Mail::to($order->email_nguoi_dat)->queue(new OrderStatusChangedMail($order, $message));
 
             DB::commit();
 
@@ -738,7 +738,7 @@ class ClientOrderController extends Controller
 
             // Gửi mail thông báo
             $message = 'Đơn hàng của bạn đã được yêu cầu trả hàng. Lý do: ' . $validated['ly_do_tra_hang'] . '. Chúng tôi sẽ xử lý hoàn tiền sớm nhất.';
-            Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
+            Mail::to($order->email_nguoi_dat)->queue(new OrderStatusChangedMail($order, $message));
 
             DB::commit();
 
@@ -779,7 +779,7 @@ class ClientOrderController extends Controller
         $order->save();
 
         $message = 'Cảm ơn bạn đã xác nhận đã nhận hàng. Chúc bạn hài lòng!';
-        Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
+        Mail::to($order->email_nguoi_dat)->queue(new OrderStatusChangedMail($order, $message));
 
         return response()->json([
             'message' => 'Bạn đã xác nhận đã nhận hàng thành công.',
