@@ -20,7 +20,7 @@ return new class extends Migration
             'da_giao',
             'da_nhan',
             'yeu_cau_tra_hang',
-            'cho_xac_nhan_tra_hang',
+            'xac_nhan_tra_hang',
             'tu_choi_tra_hang',
             'tra_hang_thanh_cong',
             'yeu_cau_huy_hang',
