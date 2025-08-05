@@ -9,15 +9,15 @@ use Illuminate\Http\Request;
 class WalletTransactionController extends Controller
 {
     private $validTransactionTypes = [
-        'deposit',  // Nạp tiền
-        'withdraw', // Rút tiền
-        'payment',  // Thanh toán đơn hàng
-        'refund'    // Hoàn tiền
+        'deposit',
+        'withdraw',
+        'payment',
+        'refund'
     ];
 
     public function index(Request $request)
     {
-        $query = WalletTransaction::with(['user:id,name,email,so_dien_thoai','order']);
+        $query = WalletTransaction::with(['user:id,name,email,so_dien_thoai', 'order']);
 
 
         if ($request->filled('keyword')) {
@@ -31,7 +31,7 @@ class WalletTransactionController extends Controller
         }
 
         if ($request->filled('type')) {
-            // Kiểm tra tính hợp lệ của type
+
             if (!in_array($request->type, $this->validTransactionTypes)) {
                 return response()->json([
                     'message' => 'Loại giao dịch không hợp lệ. Các loại hợp lệ: ' . implode(', ', $this->validTransactionTypes)
@@ -39,7 +39,7 @@ class WalletTransactionController extends Controller
             }
             $query->where('type', $request->type);
         }
-        
+
         if ($request->filled('type')) {
             $query->where('type', $request->type);
         }
@@ -62,49 +62,52 @@ class WalletTransactionController extends Controller
 
 
     public function updateStatus(Request $request, $id)
-{
-    $transaction = WalletTransaction::findOrFail($id);
+    {
+        $transaction = WalletTransaction::findOrFail($id);
+        if ($transaction->type !== 'withdraw') {
+            return response()->json([
+                'message' => 'Chỉ có giao dịch rút tiền mới được phép cập nhật trạng thái.'
+            ], 403);
+        }
+        $newStatus = $request->input('status');
+        $rejectionReason = $request->input('rejection_reason');
 
-    $newStatus = $request->input('status');
-    $rejectionReason = $request->input('rejection_reason');
+        $currentStatus = $transaction->status;
 
-    $currentStatus = $transaction->status;
 
-    
-    $allowedTransitions = [
-        'pending' => ['success', 'rejected'],
-        'success' => ['rejected'],
-        'rejected' => [],
-    ];
+        $allowedTransitions = [
+            'pending' => ['success', 'rejected'],
+            'success' => ['rejected'],
+            'rejected' => [],
+        ];
 
-    
-    if (!in_array($newStatus, $allowedTransitions[$currentStatus])) {
+
+        if (!in_array($newStatus, $allowedTransitions[$currentStatus])) {
+            return response()->json([
+                'message' => "Không thể chuyển từ trạng thái '$currentStatus' sang '$newStatus'."
+            ], 400);
+        }
+
+
+        if ($newStatus === 'rejected' && empty($rejectionReason)) {
+            return response()->json([
+                'message' => "Bạn phải nhập lý do từ chối khi chuyển trạng thái sang 'rejected'."
+            ], 422);
+        }
+
+
+        $transaction->status = $newStatus;
+
+
+        if ($newStatus === 'rejected') {
+            $transaction->rejection_reason = $rejectionReason;
+        }
+
+        $transaction->save();
+
         return response()->json([
-            'message' => "Không thể chuyển từ trạng thái '$currentStatus' sang '$newStatus'."
-        ], 400);
+            'message' => "Cập nhật trạng thái thành công",
+            'data' => $transaction
+        ]);
     }
-
-   
-    if ($newStatus === 'rejected' && empty($rejectionReason)) {
-        return response()->json([
-            'message' => "Bạn phải nhập lý do từ chối khi chuyển trạng thái sang 'rejected'."
-        ], 422);
-    }
-
-    
-    $transaction->status = $newStatus;
-
-    
-    if ($newStatus === 'rejected') {
-        $transaction->rejection_reason = $rejectionReason;
-    }
-
-    $transaction->save();
-
-    return response()->json([
-        'message' => "Cập nhật trạng thái thành công",
-        'data' => $transaction
-    ]);
-}
-
 }
