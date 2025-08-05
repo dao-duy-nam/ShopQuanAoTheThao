@@ -10,7 +10,9 @@ class Order extends Model
 
     protected $casts = [
     'thoi_gian_nhan' => 'datetime',
+    'hinh_anh_tra_hang' => 'array',
     ];
+    
 
     protected $fillable = [
         'ma_don_hang',

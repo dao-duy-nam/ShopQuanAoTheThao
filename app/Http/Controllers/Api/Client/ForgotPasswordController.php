@@ -35,7 +35,7 @@ class ForgotPasswordController extends Controller
         $user->otp_send_count += 1;
         $user->save();
 
-        Mail::to($user->email)->send(new ResetPasswordMail($user, $otp));
+        Mail::to($user->email)->queue(new ResetPasswordMail($user, $otp));
 
         return response()->json(['message' => 'Mã OTP đã được gửi đến email.']);
     }
@@ -76,7 +76,7 @@ class ForgotPasswordController extends Controller
         $user->otp_send_count += 1;
         $user->save();
 
-        Mail::to($user->email)->send(new ResetPasswordMail($user, $otp));
+        Mail::to($user->email)->queue(new ResetPasswordMail($user, $otp));
 
         return response()->json(['message' => 'Mã OTP mới đã được gửi đến email.']);
     }

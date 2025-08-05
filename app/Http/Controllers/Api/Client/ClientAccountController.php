@@ -110,7 +110,7 @@ class ClientAccountController extends Controller
             ->count();
 
         $reviewCount = DanhGia::where('user_id', $user->id)->count();
-        $Wishlist = Wishlist::where('user_id', $user->id)->count();
+        $Wishlist = Wishlist::where('nguoi_dung_id', $user->id)->count();
 
         if ($orderCount >= 30) {
             $rank = 'KIM CƯƠNG';

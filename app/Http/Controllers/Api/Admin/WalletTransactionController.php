@@ -8,10 +8,16 @@ use Illuminate\Http\Request;
 
 class WalletTransactionController extends Controller
 {
+    private $validTransactionTypes = [
+        'deposit',  // Nạp tiền
+        'withdraw', // Rút tiền
+        'payment',  // Thanh toán đơn hàng
+        'refund'    // Hoàn tiền
+    ];
 
     public function index(Request $request)
     {
-        $query = WalletTransaction::with(['user:id,name,email,so_dien_thoai']);
+        $query = WalletTransaction::with(['user:id,name,email,so_dien_thoai','order']);
 
 
         if ($request->filled('keyword')) {
@@ -24,7 +30,16 @@ class WalletTransactionController extends Controller
             });
         }
 
-
+        if ($request->filled('type')) {
+            // Kiểm tra tính hợp lệ của type
+            if (!in_array($request->type, $this->validTransactionTypes)) {
+                return response()->json([
+                    'message' => 'Loại giao dịch không hợp lệ. Các loại hợp lệ: ' . implode(', ', $this->validTransactionTypes)
+                ], 400);
+            }
+            $query->where('type', $request->type);
+        }
+        
         if ($request->filled('type')) {
             $query->where('type', $request->type);
         }

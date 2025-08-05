@@ -74,14 +74,14 @@ Route::middleware(['auth:sanctum', 'user'])->group(function () {
     // Route::get('/wallet/transactions', [WalletController::class, 'getTransactions']);
     Route::post('/wallet/deposit', [WalletController::class, 'deposit']);
     Route::post('/wallet/withdraw', [WalletController::class, 'withdraw']);
-    // Route::post('/wallet/pay', [WalletController::class, 'pay']);
-    // Route::post('/wallet/refund', [WalletController::class, 'refund']);
+    Route::get('/wallet/check-pending', [WalletController::class, 'checkPendingTransaction']);
 
     Route::post('/client/discount-code/check', [DiscountCodeController::class, 'check']);
     Route::get('/client/discount-codes', [DiscountCodeController::class, 'userDiscounts']);
 });
 
-
+Route::get('/wallet/vnpay/callback', [WalletController::class, 'vnpayWalletCallback']);
+Route::get('/wallet/vnpay/ipn', [WalletController::class, 'vnpayWalletIpn']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/orders', [ClientOrderController::class, 'storeOrder']);
 });
@@ -94,6 +94,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/client/orders/{id}', [ClientOrderController::class, 'show']);
     Route::get('/client/orders/', [ClientOrderController::class, 'index']);
+    Route::post('/client/orders/pay-with-wallet/{id}', [ClientOrderController::class, 'payWithWallet']);
     Route::post('order/huy-don/{id}', [ClientOrderController::class, 'huyDon']);
     Route::post('order/tra-hang/{id}', [ClientOrderController::class, 'traHang']);
     Route::post('order/da-giao/{id}', [ClientOrderController::class, 'daGiao']);

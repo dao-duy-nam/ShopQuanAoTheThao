@@ -120,6 +120,11 @@ class DiscountCodeController extends Controller
         ]);
 
         $code = DiscountCode::findOrFail($id);
+        if (!$code->trang_thai) {
+            return response()->json([
+                'message' => 'Mã giảm giá này hiện không còn hoạt động.',
+            ], 422);
+        }
         $gioiHan = max(1, $code->gioi_han);
         $maxUsersCanSend = intval(floor($code->so_luong / $gioiHan));
 

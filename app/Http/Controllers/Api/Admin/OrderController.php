@@ -114,7 +114,10 @@ public function update(Request $request, $id)
 
         if ($nextStatus === 'cho_xac_nhan') {
             $validated['trang_thai_thanh_toan'] = 'cho_xu_ly';
-        } else if ($nextStatus === 'cho_xac_nhan_tra_hang') {
+        } 
+         else if ($nextStatus === 'da_giao') {
+            $validated['trang_thai_thanh_toan'] = 'da_thanh_toan';
+        }else if ($nextStatus === 'cho_xac_nhan_tra_hang') {
             $validated['trang_thai_thanh_toan'] = 'cho_hoan_tien';
         } else if ($nextStatus === 'tra_hang_thanh_cong') {
             $validated['trang_thai_thanh_toan'] = 'hoan_tien';
@@ -130,7 +133,7 @@ public function update(Request $request, $id)
             $message .= " Lý do: " . $validated['ly_do_tu_choi_tra_hang'];
         }
 
-        Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
+        Mail::to($order->email_nguoi_dat)->queue(new OrderStatusChangedMail($order, $message));
     }
 
     return response()->json([
@@ -148,38 +151,34 @@ public function cancel(Request $request, $id, WalletService $walletService)
     $order = Order::findOrFail($id);
     $currentStatus = $order->trang_thai_don_hang;
 
-    if (!in_array($currentStatus, ['cho_xac_nhan', 'dang_chuan_bi', 'yeu_cau_huy_hang'])) {
+    if (!in_array($currentStatus, ['cho_xac_nhan', 'dang_chuan_bi'])) {
         return response()->json([
             'message' => "Không thể hủy đơn hàng ở trạng thái '$currentStatus'."
         ], 400);
     }
 
-    // $order->update([
-    //     'trang_thai_don_hang' => 'da_huy',
-    //     'ly_do_huy' => $validated['ly_do_huy'],
-    //     'trang_thai_thanh_toan' => 'da_huy',
-    // ]);
+    DB::beginTransaction();
 
-    // $message = "Đơn hàng đã bị hủy. Lý do: " . $validated['ly_do_huy'];
-
-    // Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
-
-    // return response()->json([
-    //     'message' => 'Đơn hàng đã được hủy thành công.',
-    //     'order' => $order
-    // ]);
-     DB::beginTransaction();
     try {
+        $pttt = (int) $order->phuong_thuc_thanh_toan_id;
+
+        if (in_array($pttt, [2, 3])) {
+            $trangThaiThanhToan = 'cho_hoan_tien';
+        } else if ($pttt === 1) {
+            $trangThaiThanhToan = 'da_huy';
+        } else {
+            $trangThaiThanhToan = 'da_huy';
+        }
+
         $order->update([
             'trang_thai_don_hang' => 'da_huy',
             'ly_do_huy' => $validated['ly_do_huy'],
-            'trang_thai_thanh_toan' => 'da_huy',
+            'trang_thai_thanh_toan' => $trangThaiThanhToan,
         ]);
 
-        // Bổ sung: Hoàn tiền vào ví nếu đã thanh toán online và chưa hoàn tiền
-        $onlineMethods = ['vnpay', 'zalopay']; // tuỳ hệ thống bạn
+        $onlineMethods = ['vnpay', 'zalopay'];
         if (
-            in_array(optional($order->paymentMethod)->code, $onlineMethods) && // code hoặc tên phương thức
+            in_array(optional($order->paymentMethod)->code, $onlineMethods) &&
             $order->trang_thai_thanh_toan === 'da_thanh_toan' &&
             !$order->refund_done
         ) {
