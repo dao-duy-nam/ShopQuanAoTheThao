@@ -71,10 +71,18 @@ class WalletController extends Controller
     public function withdraw(Request $request)
     {
         $request->validate([
-            'amount' => 'required|numeric|min:50000',
+            'amount' => 'required|numeric|min:50000|max:500000000',
             'bank_name' => 'required|string|max:255',
             'bank_account' => 'required|string|max:50',
             'acc_name' => 'required|string|max:255',
+        ], [
+            'amount.required' => 'Vui lòng nhập số tiền cần rút.',
+            'amount.numeric' => 'Số tiền phải là một số.',
+            'amount.min' => 'Số tiền rút tối thiểu là 50.000 VNĐ.',
+            'amount.max' => 'Số tiền rút tối đa là 500.000.000 VNĐ.',
+            'bank_name.required' => 'Vui lòng nhập tên ngân hàng.',
+            'bank_account.required' => 'Vui lòng nhập số tài khoản.',
+            'acc_name.required' => 'Vui lòng nhập tên chủ tài khoản.',
         ]);
 
         $user = $request->user();
@@ -85,12 +93,12 @@ class WalletController extends Controller
         }
 
         try {
-
+            $transactionCode = 'RUT_' . time();
             $wallet->decrement('balance', $request->amount);
-
 
             $transaction = $wallet->transactions()->create([
                 'user_id' => $user->id,
+                'transaction_code' => $transactionCode,
                 'type' => 'withdraw',
                 'amount' => $request->amount,
                 'status' => 'pending',
@@ -122,8 +130,14 @@ class WalletController extends Controller
     public function deposit(Request $request)
     {
         $request->validate([
-            'amount' => 'required|numeric|min:10000',
+            'amount' => 'required|numeric|min:10000|max:500000000',
+        ], [
+            'amount.required' => 'Vui lòng nhập số tiền cần nạp.',
+            'amount.numeric' => 'Số tiền phải là một số.',
+            'amount.min' => 'Số tiền nạp tối thiểu là 10.000 VNĐ.',
+            'amount.max' => 'Số tiền nạp tối đa là 500.000.000 VNĐ.',
         ]);
+
 
         $user = $request->user();
         $wallet = Wallet::firstOrCreate(['user_id' => $user->id]);
@@ -131,7 +145,7 @@ class WalletController extends Controller
         $code = 'NAP_' . time();
 
 
-        $transaction=WalletTransaction::create([
+        $transaction = WalletTransaction::create([
             'user_id' => $user->id,
             'wallet_id' => $wallet->id,
             'transaction_code' => $code,
@@ -140,7 +154,7 @@ class WalletController extends Controller
             'status' => 'pending',
             'description' => 'Nạp tiền vào ví',
             'expires_at' => now()->addMinutes(15),
-            
+
         ]);
 
 
