@@ -69,6 +69,7 @@ class CategoryController extends Controller
         ], 200);
     }
 
+    
     public function update(Request $request, $id)
     {
         $danhMuc = Category::findOrFail($id);
@@ -80,12 +81,18 @@ class CategoryController extends Controller
                 'data' => null
             ], 403);
         }
-        $validated = $request->validate([
-            'ten' => 'required|string|max:255|unique:danh_mucs,ten,' . $id,
+        $rules = [
             'mo_ta' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ], [
-            'ten.required' => 'Tên danh mục không được bỏ trống',
+        ];
+
+        if ($request->filled('ten') && $request->ten !== $danhMuc->ten) {
+            $rules['ten'] = 'string|max:255|unique:danh_mucs,ten,' . $id;
+        } else {
+            $rules['ten'] = 'nullable|string|max:255';
+        }
+
+        $validated = $request->validate($rules, [
             'ten.unique' => 'Tên danh mục đã tồn tại',
             'ten.string' => 'Tên danh mục phải là chuỗi',
             'ten.max' => 'Tên danh mục không được vượt quá 255 ký tự',

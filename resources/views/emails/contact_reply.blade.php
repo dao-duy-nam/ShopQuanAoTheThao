@@ -53,16 +53,22 @@
 
         <p>Xin chào <strong>{{ $contact->name }}</strong>,</p>
 
-        <p>Chúng tôi đã nhận được liên hệ từ bạn với nội dung:</p>
+        <p>Chúng tôi rất cảm ơn bạn đã dành thời gian liên hệ và chia sẻ ý kiến của mình với chúng tôi.</p>
+
+        <p>Bạn đã gửi đến chúng tôi nội dung sau:</p>
         <blockquote>{{ $contact->message }}</blockquote>
 
-        <p>Phản hồi từ chúng tôi:</p>
+        <p>Dưới đây là phản hồi từ đội ngũ hỗ trợ của chúng tôi:</p>
         <blockquote>{{ $replyContent }}</blockquote>
 
-        <p>Trân trọng,<br>Đội ngũ hỗ trợ</p>
+        <p>Chúng tôi luôn trân trọng mọi phản hồi từ bạn vì đó là cơ sở để chúng tôi cải thiện chất lượng dịch vụ ngày càng tốt hơn.</p>
+
+        <p>Nếu bạn còn bất kỳ thắc mắc hoặc yêu cầu nào khác, xin đừng ngần ngại liên hệ lại. Chúng tôi luôn sẵn sàng hỗ trợ bạn trong thời gian sớm nhất.</p>
+
+        <p>Trân trọng,<br><strong>Đội ngũ Hỗ trợ Khách hàng</strong></p>
 
         <div class="footer">
-            Email này được gửi từ hệ thống. Vui lòng không trả lời lại.
+            Email này được gửi tự động từ hệ thống. Vui lòng không trả lời lại email này.
         </div>
     </div>
 </body>

@@ -58,7 +58,7 @@ class OrderController extends Controller
 public function update(Request $request, $id)
 {
     $validated = $request->validate([
-        'trang_thai_don_hang' => 'nullable|in:cho_xac_nhan,dang_chuan_bi,dang_van_chuyen,da_giao,yeu_cau_tra_hang,cho_xac_nhan_tra_hang,tra_hang_thanh_cong,yeu_cau_huy_hang,tu_choi_tra_hang',
+        'trang_thai_don_hang' => 'nullable|in:cho_xac_nhan,dang_chuan_bi,dang_van_chuyen,da_giao,yeu_cau_tra_hang,xac_nhan_tra_hang,tra_hang_thanh_cong,yeu_cau_huy_hang,tu_choi_tra_hang',
         'dia_chi' => 'nullable|string|max:255',
         'ly_do_tu_choi_tra_hang' => 'nullable|string|max:255',
     ]);
@@ -76,13 +76,13 @@ public function update(Request $request, $id)
             ], 403);
         }
 
-        if ($currentStatus === 'yeu_cau_tra_hang' && !in_array($nextStatus, ['cho_xac_nhan_tra_hang', 'tu_choi_tra_hang'])) {
+        if ($currentStatus === 'yeu_cau_tra_hang' && !in_array($nextStatus, ['xac_nhan_tra_hang', 'tu_choi_tra_hang'])) {
             return response()->json([
-                'message' => "Đơn hàng đang yêu cầu trả hàng, chỉ được xác nhận sang 'cho_xac_nhan_tra_hang' hoặc 'tu_choi_tra_hang'."
+                'message' => "Đơn hàng đang yêu cầu trả hàng, chỉ được xác nhận sang 'xac_nhan_tra_hang' hoặc 'tu_choi_tra_hang'."
             ], 400);
         }
 
-        if ($currentStatus === 'cho_xac_nhan_tra_hang' && $nextStatus !== 'tra_hang_thanh_cong') {
+        if ($currentStatus === 'xac_nhan_tra_hang' && $nextStatus !== 'tra_hang_thanh_cong') {
             return response()->json([
                 'message' => "Đơn hàng đang chờ xác nhận trả hàng, chỉ được xác nhận sang 'tra_hang_thanh_cong'."
             ], 400);
@@ -93,8 +93,8 @@ public function update(Request $request, $id)
             'dang_chuan_bi' => ['dang_van_chuyen'],
             'dang_van_chuyen' => ['da_giao'],
             'da_giao' => [],
-            'yeu_cau_tra_hang' => ['cho_xac_nhan_tra_hang', 'tu_choi_tra_hang'],
-            'cho_xac_nhan_tra_hang' => ['tra_hang_thanh_cong'],
+            'yeu_cau_tra_hang' => ['xac_nhan_tra_hang', 'tu_choi_tra_hang'],
+            'xac_nhan_tra_hang' => ['tra_hang_thanh_cong'],
             'tra_hang_thanh_cong' => [],
             'yeu_cau_huy_hang' => [], 
             'tu_choi_tra_hang' => [],
@@ -117,7 +117,7 @@ public function update(Request $request, $id)
         } 
          else if ($nextStatus === 'da_giao') {
             $validated['trang_thai_thanh_toan'] = 'da_thanh_toan';
-        }else if ($nextStatus === 'cho_xac_nhan_tra_hang') {
+        }else if ($nextStatus === 'xac_nhan_tra_hang') {
             $validated['trang_thai_thanh_toan'] = 'cho_hoan_tien';
         } else if ($nextStatus === 'tra_hang_thanh_cong') {
             $validated['trang_thai_thanh_toan'] = 'hoan_tien';

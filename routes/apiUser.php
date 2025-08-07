@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Client\AuthController;
 use App\Http\Controllers\Api\Client\CartController;
+use App\Http\Controllers\Api\Client\AIChatController;
 use App\Http\Controllers\Api\Client\BannerController;
 use App\Http\Controllers\API\Client\ReviewController;
 use App\Http\Controllers\Api\Client\WalletController;
@@ -47,7 +48,7 @@ Route::prefix('products')->group(function () {
 Route::get('/filter-values', [ProductController::class, 'getFilterableValues']); // Lấy các giá trị thuộc tính
 Route::get('banner', [BannerController::class, 'index']);
 Route::get('categories', [CategoryController::class, 'index']);
-
+Route::post('/chat', [AIChatController::class, 'generate']);
 Route::get('/posts', [PostApiController::class, 'index']);
 Route::get('/posts/{id}', [PostApiController::class, 'show']);
 Route::get('/phi-ship', [ShippingApiController::class, 'getPhiShip']);
