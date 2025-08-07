@@ -72,7 +72,7 @@ Route::middleware(['auth:sanctum', 'user'])->group(function () {
 
     // Wallet API
     Route::get('/wallet', [WalletController::class, 'getBalance']);
-    // Route::get('/wallet/transactions', [WalletController::class, 'getTransactions']);
+    Route::get('/wallet/transactions', [WalletController::class, 'getTransactions']);
     Route::post('/wallet/deposit', [WalletController::class, 'deposit']);
     Route::post('/wallet/withdraw', [WalletController::class, 'withdraw']);
     Route::get('/wallet/check-pending', [WalletController::class, 'checkPendingTransaction']);
