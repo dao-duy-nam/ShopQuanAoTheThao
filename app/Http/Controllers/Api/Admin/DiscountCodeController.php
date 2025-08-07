@@ -30,12 +30,16 @@ class DiscountCodeController extends Controller
     }
 
 
-    public function store(StoreDiscountCodeRequest $request)
+   public function store(StoreDiscountCodeRequest $request)
     {
         $code = DiscountCode::create($request->validated());
 
+        $requestSend = new Request([
+            'kieu' => 'tat_ca',
+        ]);
+        $sendResult = $this->sendToUsers($requestSend, $code->id);
         return response()->json([
-            'message' => 'Tạo mã giảm giá thành công.',
+            'message' => 'Tạo mã giảm giá và gửi cho người dùng thành công.',
             'data' => new DiscountCodeResource($code),
         ]);
     }
