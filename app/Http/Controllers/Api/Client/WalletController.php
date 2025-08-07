@@ -114,9 +114,19 @@ class WalletController extends Controller
         }
     }
 
-
-
-
+    
+    public function getTransactions(Request $request)
+    {
+        $wallet = Wallet::with(['transactions' => function($query) {
+            $query->orderBy('created_at', 'desc');
+        }])->firstOrCreate(['user_id' => $request->user()->id]);
+        
+        return response()->json([
+            'data' => [
+                'transactions' => WalletTransactionResource::collection($wallet->transactions)
+            ]
+        ]);
+    }
 
     public function refund(Request $request)
     {
