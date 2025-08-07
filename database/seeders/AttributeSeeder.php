@@ -12,7 +12,7 @@ class AttributeSeeder extends Seeder
         $attributes = [
             ['ten' => 'Kích cỡ'],
             ['ten' => 'Màu sắc'],
-            ['ten' => 'Chất liệu']
+            
         ];
 
         foreach ($attributes as $item) {
