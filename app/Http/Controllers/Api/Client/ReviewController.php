@@ -67,6 +67,25 @@ class ReviewController extends Controller
             'message' => 'Hiển thị danh sách đánh giá thành công',
         ]);
     }
+    public function topFiveStarReviews(Request $request)
+    {
+        $limit = $request->input('limit', 10);
+
+        $query = DanhGia::with('user')
+            ->where('so_sao', 5)
+            ->where('is_hidden', false)
+            ->orderByDesc('created_at');
+
+
+        $danhGias = $query->limit($limit)->get();
+
+        return response()->json([
+            'data' => ReviewResource::collection($danhGias),
+            'status' => 200,
+            'message' => 'Hiển thị đánh giá 5 sao mới nhất thành công',
+        ]);
+    }
+
 
     public function store(Request $request)
     {
