@@ -58,7 +58,9 @@ Route::middleware(['auth:sanctum', 'user'])->group(function () {
         Route::delete('/{id}', [ReviewController::class, 'destroy']);
         Route::post('/', [ReviewController::class, 'store']);
         Route::put('/{id}', [ReviewController::class, 'update']);
+        
     });
+    
 
     Route::get('/products/{id}/review', [ReviewController::class, 'index']);
 
@@ -136,3 +138,4 @@ Route::prefix('contact')->group(function () {
     Route::post('/', [ClientContactController::class, 'store']);
     Route::get('/types', [ClientContactController::class, 'contactTypes']);
 });
+Route::get('reviews/ds-moi-nhat', [ReviewController::class, 'topFiveStarReviews']);
