@@ -92,10 +92,15 @@ class WalletController extends Controller
             return response()->json(['message' => 'Số dư không đủ để rút tiền'], 400);
         }
 
+        DB::beginTransaction();
         try {
             $transactionCode = 'RUT_' . time();
-            $wallet->decrement('balance', $request->amount);
 
+            
+            $wallet->decrement('balance', $request->amount);
+            $wallet->increment('frozen_balance', $request->amount);
+
+            
             $transaction = $wallet->transactions()->create([
                 'user_id' => $user->id,
                 'transaction_code' => $transactionCode,
@@ -108,8 +113,10 @@ class WalletController extends Controller
                 'description' => 'Yêu cầu rút tiền đang chờ admin duyệt',
             ]);
 
+            DB::commit();
             return new WalletTransactionResource($transaction);
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json(['message' => 'Lỗi rút tiền: ' . $e->getMessage()], 500);
         }
     }
@@ -127,6 +134,7 @@ class WalletController extends Controller
             ]
         ]);
     }
+
 
     public function refund(Request $request)
     {
