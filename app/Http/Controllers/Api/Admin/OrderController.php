@@ -58,7 +58,7 @@ class OrderController extends Controller
     }
 
 
-public function update(Request $request, $id)
+public function update(Request $request, $id, WalletService $walletService)
 {
     $validated = $request->validate([
         'trang_thai_don_hang' => 'nullable|in:cho_xac_nhan,dang_chuan_bi,dang_van_chuyen,da_giao,yeu_cau_tra_hang,xac_nhan_tra_hang,tra_hang_thanh_cong,yeu_cau_huy_hang,tu_choi_tra_hang',
@@ -68,6 +68,7 @@ public function update(Request $request, $id)
 
     $order = Order::findOrFail($id);
     $currentStatus = $order->trang_thai_don_hang;
+    $oldPaymentStatus = $order->trang_thai_thanh_toan;
 
     if (isset($validated['trang_thai_don_hang'])) {
         $nextStatus = $validated['trang_thai_don_hang'];
@@ -128,6 +129,39 @@ public function update(Request $request, $id)
     }
 
     $order->update($validated);
+    if (isset($nextStatus) && $nextStatus === 'tra_hang_thanh_cong') {
+        $order->load('user');
+        $wasPaid = !is_null($order->ngay_thanh_toan);
+
+        if ($wasPaid && !$order->refund_done) {
+            if (in_array((int) $order->phuong_thuc_thanh_toan_id, [2, 3], true)) {
+                Log::info('[ADMIN RETURN] Refund to wallet', [
+                    'order_id' => $order->id,
+                    'user_id' => $order->user_id,
+                    'amount' => $order->so_tien_thanh_toan,
+                    'payment_method_id' => $order->phuong_thuc_thanh_toan_id,
+                ]);
+                $walletService->refund($order->user, $order->id, $order->so_tien_thanh_toan);
+            }
+            $hasWalletPayment = WalletTransaction::where('user_id', $order->user_id)
+                ->where('related_order_id', $order->id)
+                ->where('type', 'payment')
+                ->where('status', 'success')
+                ->exists();
+
+            if ($hasWalletPayment) {
+                Log::info('[ADMIN RETURN] Refund internal wallet payment', [
+                    'order_id' => $order->id,
+                    'user_id' => $order->user_id,
+                    'amount' => $order->so_tien_thanh_toan,
+                ]);
+                $walletService->refund($order->user, $order->id, $order->so_tien_thanh_toan);
+            }
+            if ($order->trang_thai_thanh_toan !== 'hoan_tien') {
+                $order->update(['trang_thai_thanh_toan' => 'hoan_tien']);
+            }
+        }
+    }
 
     if (isset($nextStatus)) {
         $message = "Đơn hàng đã được cập nhật trạng thái: $nextStatus.";
