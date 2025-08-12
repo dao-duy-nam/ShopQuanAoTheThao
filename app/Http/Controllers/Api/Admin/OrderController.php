@@ -161,6 +161,21 @@ public function update(Request $request, $id, WalletService $walletService)
                 $order->update(['trang_thai_thanh_toan' => 'hoan_tien']);
             }
         }
+
+        // COD
+        if ((int) $order->phuong_thuc_thanh_toan_id === 1 && !$order->refund_done) {
+            Log::info('[ADMIN RETURN][COD] Refund to wallet (Option B)', [
+                'order_id' => $order->id,
+                'user_id' => $order->user_id,
+                'amount' => $order->so_tien_thanh_toan,
+                'payment_method_id' => $order->phuong_thuc_thanh_toan_id,
+            ]);
+            $walletService->refund($order->user, $order->id, $order->so_tien_thanh_toan);
+
+            if ($order->trang_thai_thanh_toan !== 'hoan_tien') {
+                $order->update(['trang_thai_thanh_toan' => 'hoan_tien']);
+            }
+        }
     }
 
     if (isset($nextStatus)) {
