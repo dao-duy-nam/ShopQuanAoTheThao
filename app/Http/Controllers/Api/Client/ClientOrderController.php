@@ -681,6 +681,7 @@ class ClientOrderController extends Controller
                 'phuong_thuc_thanh_toan' => optional($order->paymentMethod)->ten,
                 'so_luong_mat_hang' => $order->orderDetail->sum('so_luong'),
                'gia_tri_bien_the' => $order->gia_tri_bien_the,
+               'ten_san_pham' => $order->ten_san_pham,
                 'items' => $items,
             ];
         });
