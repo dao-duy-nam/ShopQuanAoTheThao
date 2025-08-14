@@ -66,6 +66,19 @@ class WalletTransactionController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $transaction = WalletTransaction::findOrFail($id);
+        $request->validate([
+            'status' => 'required|in:success,rejected',
+            'transfer_image' => 'required_if:status,success|image|mimes:jpg,jpeg,png|max:2048',
+            'rejection_reason' => 'required_if:status,rejected|string|max:255',
+        ], [
+            'status.required' => 'Trạng thái là bắt buộc.',
+            'status.in' => 'Trạng thái không hợp lệ.',
+            'transfer_image.required_if' => 'Bạn phải tải lên ảnh minh chứng khi duyệt thành công.',
+            'transfer_image.image' => 'Ảnh minh chứng phải là định dạng ảnh.',
+            'transfer_image.mimes' => 'Ảnh minh chứng chỉ chấp nhận JPG, JPEG hoặc PNG.',
+            'transfer_image.max' => 'Ảnh minh chứng không được vượt quá 2MB.',
+            'rejection_reason.required_if' => 'Bạn phải nhập lý do từ chối khi chuyển sang thất bại.',
+        ]);
 
         if ($transaction->type !== 'withdraw') {
             return response()->json([
@@ -89,11 +102,7 @@ class WalletTransactionController extends Controller
             ], 400);
         }
 
-        if ($newStatus === 'rejected' && empty($rejectionReason)) {
-            return response()->json([
-                'message' => "Bạn phải nhập lý do từ chối khi chuyển trạng thái sang thất bại."
-            ], 422);
-        }
+
 
         DB::beginTransaction();
         try {
@@ -104,18 +113,11 @@ class WalletTransactionController extends Controller
             }
 
             if ($newStatus === 'success') {
-                
-                if (!$request->hasFile('transfer_image')) {
-                    DB::rollBack();
-                    return response()->json([
-                        'message' => 'Bạn phải tải lên ảnh minh chứng khi duyệt thành công.'
-                    ], 422);
-                }
 
                 $path = $request->file('transfer_image')->store('transfers', 'public');
                 $transaction->transfer_image = $path;
 
-                
+
                 if ($wallet->frozen_balance < $transaction->amount) {
                     DB::rollBack();
                     return response()->json(['message' => 'Số tiền đóng băng không đủ.'], 400);
@@ -127,7 +129,7 @@ class WalletTransactionController extends Controller
             if ($newStatus === 'rejected') {
                 $transaction->rejection_reason = $rejectionReason;
 
-                
+
                 if ($wallet->frozen_balance < $transaction->amount) {
                     DB::rollBack();
                     return response()->json(['message' => 'Số tiền đóng băng không đủ để hoàn.'], 400);
