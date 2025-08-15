@@ -23,7 +23,7 @@ return new class extends Migration
             $table->unsignedInteger('gia_tri'); // Giá trị giảm (VD: 50% hoặc 100000 VND)
             $table->unsignedInteger('gia_tri_don_hang')->nullable(); // Giá trị đơn hàng tối thiểu
 
-            $table->unsignedInteger('so_luong')->default(0); // Số mã còn lại
+            $table->unsignedInteger('so_luong')->nullable()->default(0); // Số mã còn lại
             $table->unsignedInteger('so_lan_su_dung')->default(0); // Đã dùng
             $table->unsignedInteger('gioi_han')->nullable(); // Số lần mỗi user dùng
 

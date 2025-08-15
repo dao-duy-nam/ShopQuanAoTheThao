@@ -50,9 +50,9 @@ class DiscountCodeController extends Controller
         }
 
         // Kiểm tra số lượng còn lại
-        if ($voucher->so_luong <= 0) {
-            return response()->json(['message' => 'Mã giảm giá đã hết lượt sử dụng.'], 400);
-        }
+        // if ($voucher->so_luong <= 0) {
+        //     return response()->json(['message' => 'Mã giảm giá đã hết lượt sử dụng.'], 400);
+        // }
 
         // Kiểm tra giá trị đơn hàng tối thiểu
         if ($voucher->gia_tri_don_hang && $data['tong_tien'] < $voucher->gia_tri_don_hang) {
@@ -116,7 +116,7 @@ class DiscountCodeController extends Controller
         }
         $discounts = $user->discountCodes()
             ->where('trang_thai', true)
-            ->where('so_luong', '>', 0)
+            // ->where('so_luong', '>', 0)
             ->where(function ($q) use ($now) {
                 $q->whereNull('ngay_bat_dau')->orWhere('ngay_bat_dau', '<=', $now);
             })

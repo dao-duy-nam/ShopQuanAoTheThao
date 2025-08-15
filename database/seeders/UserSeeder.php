@@ -47,7 +47,7 @@ class UserSeeder extends Seeder
         ]);
         User::create([
             'name' => 'Duy Nam',
-            'email' => 'namddph50247@gmail.com',
+            'email' => 'user@gmail.com',
             'password' => bcrypt('123456'),
             'so_dien_thoai' => '0123456781',
             'vai_tro_id' => 2,

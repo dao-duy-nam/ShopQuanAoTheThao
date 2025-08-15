@@ -399,9 +399,9 @@ class ClientOrderController extends Controller
                     throw new \Exception("Mã giảm giá không hợp lệ hoặc đã hết hạn.");
                 }
 
-                if ($discount->so_luong !== null && $discount->so_luong <= 0) {
-                    throw new \Exception("Mã giảm giá đã được sử dụng hết số lượt.");
-                }
+                // if ($discount->so_luong !== null && $discount->so_luong <= 0) {
+                //     throw new \Exception("Mã giảm giá đã được sử dụng hết số lượt.");
+                // }
 
                 if ($discount->gia_tri_don_hang && $tongTienDonHang < $discount->gia_tri_don_hang) {
                     throw new \Exception("Đơn hàng chưa đạt mức tối thiểu để áp dụng mã.");
@@ -427,7 +427,7 @@ class ClientOrderController extends Controller
                 }
 
                 $giamGia = min($giamGia, $tongTienDonHang);
-                $discount->decrement('so_luong');
+                // $discount->decrement('so_luong');
 
                 DB::table('ma_giam_gia_nguoi_dung')->updateOrInsert(
                     [
