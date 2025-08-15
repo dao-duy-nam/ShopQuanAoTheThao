@@ -34,8 +34,12 @@ class DiscountCodeController extends Controller
     {
         $code = DiscountCode::create($request->validated());
 
+        $requestSend = new Request([
+            'kieu' => 'tat_ca',
+        ]);
+        $sendResult = $this->sendToUsers($requestSend, $code->id);
         return response()->json([
-            'message' => 'Tạo mã giảm giá thành công.',
+            'message' => 'Tạo mã giảm giá và gửi cho người dùng thành công.',
             'data' => new DiscountCodeResource($code),
         ]);
     }
@@ -125,24 +129,15 @@ class DiscountCodeController extends Controller
                 'message' => 'Mã giảm giá này hiện không còn hoạt động.',
             ], 422);
         }
-        $gioiHan = max(1, $code->gioi_han);
-        $maxUsersCanSend = intval(floor($code->so_luong / $gioiHan));
 
         $query = User::where('vai_tro_id', User::ROLE_USER)
             ->whereNotNull('email');
 
         if ($request->kieu === 'tat_ca') {
-            $users = $query->limit($maxUsersCanSend)->get();
+            $users = $query->get(); // Lấy tất cả
         } else {
             $soLuongNhap = $request->input('so_luong');
-
-            if ($soLuongNhap !== null && $soLuongNhap > $maxUsersCanSend) {
-                return response()->json([
-                    'message' => "Số lượng vượt quá giới hạn. Chỉ có thể gửi cho tối đa {$maxUsersCanSend} người dùng.",
-                ], 422);
-            }
-
-            $soLuong = $soLuongNhap ?? rand(1, min(10, $maxUsersCanSend));
+            $soLuong = $soLuongNhap ?? rand(1, 10);
 
             $users = $query->inRandomOrder()->limit($soLuong)->get();
         }

@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Mail\OrderStatusChangedMail;
 use Illuminate\Support\Facades\Mail;
+use App\Services\WalletService;
 
 class ClientOrderController extends Controller
 {
@@ -398,9 +399,9 @@ class ClientOrderController extends Controller
                     throw new \Exception("Mã giảm giá không hợp lệ hoặc đã hết hạn.");
                 }
 
-                if ($discount->so_luong !== null && $discount->so_luong <= 0) {
-                    throw new \Exception("Mã giảm giá đã được sử dụng hết số lượt.");
-                }
+                // if ($discount->so_luong !== null && $discount->so_luong <= 0) {
+                //     throw new \Exception("Mã giảm giá đã được sử dụng hết số lượt.");
+                // }
 
                 if ($discount->gia_tri_don_hang && $tongTienDonHang < $discount->gia_tri_don_hang) {
                     throw new \Exception("Đơn hàng chưa đạt mức tối thiểu để áp dụng mã.");
@@ -426,7 +427,7 @@ class ClientOrderController extends Controller
                 }
 
                 $giamGia = min($giamGia, $tongTienDonHang);
-                $discount->decrement('so_luong');
+                // $discount->decrement('so_luong');
 
                 DB::table('ma_giam_gia_nguoi_dung')->updateOrInsert(
                     [
@@ -680,6 +681,7 @@ class ClientOrderController extends Controller
                 'phuong_thuc_thanh_toan' => optional($order->paymentMethod)->ten,
                 'so_luong_mat_hang' => $order->orderDetail->sum('so_luong'),
                'gia_tri_bien_the' => $order->gia_tri_bien_the,
+               'ten_san_pham' => $order->ten_san_pham,
                 'items' => $items,
             ];
         });
@@ -695,7 +697,7 @@ class ClientOrderController extends Controller
         ]);
     }
 
-    public function huyDon(Request $request, $id)
+    public function huyDon(Request $request, $id, WalletService $walletService)
     {
         $validated = $request->validate([
             'ly_do_huy' => 'required|string|max:255',
@@ -705,6 +707,9 @@ class ClientOrderController extends Controller
 
         try {
             $order = Order::with(['user', 'orderDetail.variant'])->findOrFail($id);
+
+            // Lưu trạng thái thanh toán trước khi cập nhật
+            $oldPaymentStatus = $order->trang_thai_thanh_toan;
 
             foreach ($order->orderDetail as $chiTiet) {
                 $variant = $chiTiet->variant;
@@ -725,6 +730,42 @@ class ClientOrderController extends Controller
 
             $order->ly_do_huy = $validated['ly_do_huy'];
             $order->save();
+
+            // Hoàn tiền về ví nếu thanh toán VNPay và đã thanh toán thành công
+            if (
+                (int) $order->phuong_thuc_thanh_toan_id === 2 &&
+                $oldPaymentStatus === 'da_thanh_toan' &&
+                !$order->refund_done
+            ) {
+                Log::info('[CLIENT CANCEL] Refund to wallet', [
+                    'order_id' => $order->id,
+                    'user_id' => $order->user_id,
+                    'amount' => $order->so_tien_thanh_toan,
+                    'payment_method_id' => $order->phuong_thuc_thanh_toan_id,
+                ]);
+                $walletService->refund($order->user, $order->id, $order->so_tien_thanh_toan);
+            }
+
+            // Hoàn khi đơn đã thanh toán bằng ví nội bộ (phát hiện qua giao dịch 'payment' thành công)
+            if ($oldPaymentStatus === 'da_thanh_toan' && !$order->refund_done) {
+                $hasWalletPayment = WalletTransaction::where('user_id', $order->user_id)
+                    ->where('related_order_id', $order->id)
+                    ->where('type', 'payment')
+                    ->where('status', 'success')
+                    ->exists();
+
+                if ($hasWalletPayment) {
+                    Log::info('[CLIENT CANCEL] Refund internal wallet payment', [
+                        'order_id' => $order->id,
+                        'user_id' => $order->user_id,
+                        'amount' => $order->so_tien_thanh_toan,
+                    ]);
+                    $walletService->refund($order->user, $order->id, $order->so_tien_thanh_toan);
+                    if ($order->trang_thai_thanh_toan !== 'hoan_tien') {
+                        $order->update(['trang_thai_thanh_toan' => 'hoan_tien']);
+                    }
+                }
+            }
 
             $message = 'Đơn hàng của bạn đã bị hủy. Lý do: ' . $validated['ly_do_huy'];
             Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));

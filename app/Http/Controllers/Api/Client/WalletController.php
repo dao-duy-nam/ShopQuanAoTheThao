@@ -92,10 +92,15 @@ class WalletController extends Controller
             return response()->json(['message' => 'Số dư không đủ để rút tiền'], 400);
         }
 
+        DB::beginTransaction();
         try {
             $transactionCode = 'RUT_' . time();
-            $wallet->decrement('balance', $request->amount);
 
+            
+            $wallet->decrement('balance', $request->amount);
+            $wallet->increment('frozen_balance', $request->amount);
+
+            
             $transaction = $wallet->transactions()->create([
                 'user_id' => $user->id,
                 'transaction_code' => $transactionCode,
@@ -108,14 +113,27 @@ class WalletController extends Controller
                 'description' => 'Yêu cầu rút tiền đang chờ admin duyệt',
             ]);
 
+            DB::commit();
             return new WalletTransactionResource($transaction);
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json(['message' => 'Lỗi rút tiền: ' . $e->getMessage()], 500);
         }
     }
 
 
+    public function getTransactions(Request $request)
+    {
+        $wallet = Wallet::with(['transactions' => function ($query) {
+            $query->orderBy('created_at', 'desc');
+        }])->firstOrCreate(['user_id' => $request->user()->id]);
 
+        return response()->json([
+            'data' => [
+                'transactions' => WalletTransactionResource::collection($wallet->transactions)
+            ]
+        ]);
+    }
 
 
     public function refund(Request $request)
@@ -237,7 +255,7 @@ class WalletController extends Controller
             return $this->walletVnpResponse($isIpn, '97', 'Chữ ký không hợp lệ');
         }
 
-        $transaction = \App\Models\WalletTransaction::where('transaction_code', $input['vnp_TxnRef'])->lockForUpdate()->first();
+        $transaction = WalletTransaction::where('transaction_code', $input['vnp_TxnRef'])->lockForUpdate()->first();
 
         if (!$transaction) {
             return $this->walletVnpResponse($isIpn, '01', 'Giao dịch không tồn tại');
@@ -271,12 +289,39 @@ class WalletController extends Controller
             }
         });
 
-        return $this->walletVnpResponse(
-            $isIpn,
-            $respCode === '00' ? '00' : '02',
-            $respCode === '00' ? 'Nạp tiền thành công' : 'Nạp tiền thất bại',
-            $transaction
-        );
+        if ($isIpn) {
+            return $this->walletVnpResponse(
+                true,
+                $respCode === '00' ? '00' : '02',
+                $respCode === '00' ? 'Nạp tiền thành công' : 'Nạp tiền thất bại',
+                $transaction
+            );
+        }
+
+        
+        $successUrl = rtrim((string) config('services.frontend.wallet_success_url'), '/');
+        $failedUrl  = rtrim((string) config('services.frontend.wallet_failed_url'), '/');
+
+        
+        if (empty($successUrl) || empty($failedUrl)) {
+            return $this->walletVnpResponse(
+                false,
+                $respCode === '00' ? '00' : '02',
+                $respCode === '00' ? 'Nạp tiền thành công' : 'Nạp tiền thất bại',
+                $transaction
+            );
+        }
+
+        
+        $query = http_build_query([
+            'vnp_TxnRef'       => $input['vnp_TxnRef'] ?? ($transaction->transaction_code ?? ''),
+            'vnp_Amount'       => isset($input['vnp_Amount']) ? $input['vnp_Amount'] : ($transaction->amount * 100),
+            'vnp_ResponseCode' => $respCode ?? '99',
+            'vnp_Message'      => $respCode === '00' ? 'Nạp tiền thành công' : 'Nạp tiền thất bại',
+        ]);
+
+        $redirectUrl = ($respCode === '00' ? $successUrl : $failedUrl) . '?' . $query;
+        return redirect()->away($redirectUrl);
     }
 
     private function walletVnpResponse(bool $isIpn, string $code, string $message, $transaction = null)

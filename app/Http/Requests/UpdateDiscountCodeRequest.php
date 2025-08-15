@@ -22,7 +22,7 @@ class UpdateDiscountCodeRequest extends FormRequest
             'san_pham_id' => 'nullable|exists:san_phams,id',
             'gia_tri' => 'required|integer|min:1',
             'gia_tri_don_hang' => 'nullable|integer|min:0',
-            'so_luong' => 'required|integer|min:0',
+            // 'so_luong' => 'required|integer|min:0',
             'gioi_han' => 'nullable|integer|min:0',
             'ngay_bat_dau' => 'nullable|date',
             'ngay_ket_thuc' => 'nullable|date|after:ngay_bat_dau',

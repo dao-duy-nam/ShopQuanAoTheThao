@@ -58,7 +58,9 @@ Route::middleware(['auth:sanctum', 'user'])->group(function () {
         Route::delete('/{id}', [ReviewController::class, 'destroy']);
         Route::post('/', [ReviewController::class, 'store']);
         Route::put('/{id}', [ReviewController::class, 'update']);
+        
     });
+    
 
     Route::get('/products/{id}/review', [ReviewController::class, 'index']);
 
@@ -72,7 +74,7 @@ Route::middleware(['auth:sanctum', 'user'])->group(function () {
 
     // Wallet API
     Route::get('/wallet', [WalletController::class, 'getBalance']);
-    // Route::get('/wallet/transactions', [WalletController::class, 'getTransactions']);
+    Route::get('/wallet/transactions', [WalletController::class, 'getTransactions']);
     Route::post('/wallet/deposit', [WalletController::class, 'deposit']);
     Route::post('/wallet/withdraw', [WalletController::class, 'withdraw']);
     Route::get('/wallet/check-pending', [WalletController::class, 'checkPendingTransaction']);
@@ -136,3 +138,4 @@ Route::prefix('contact')->group(function () {
     Route::post('/', [ClientContactController::class, 'store']);
     Route::get('/types', [ClientContactController::class, 'contactTypes']);
 });
+Route::get('reviews/ds-moi-nhat', [ReviewController::class, 'topFiveStarReviews']);

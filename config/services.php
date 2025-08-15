@@ -51,6 +51,12 @@ return [
         'callback_url'   => env('ZALOPAY_CALLBACK_URL'),
         'redirect_url'   => env('ZALOPAY_REDIRECT_URL'),
     ],
+    'frontend' => [
+        
+        'wallet_success_url' => env('FRONTEND_WALLET_SUCCESS_URL'),
+        
+        'wallet_failed_url'  => env('FRONTEND_WALLET_FAILED_URL'),
+    ],
 
 
 

@@ -43,6 +43,7 @@ class Order extends Model
         'ly_do_tu_choi_tra_hang', 
         'xac_nhan_da_giao',
         'ngay_thanh_toan',
+        'refund_done',
     ];
 
     public function user()

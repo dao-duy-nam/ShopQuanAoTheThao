@@ -27,11 +27,7 @@ class AttributeValueSeeder extends Seeder
             ['thuoc_tinh_id' => 2, 'gia_tri' => 'Tím'],
 
            
-            ['thuoc_tinh_id' => 3, 'gia_tri' => 'Cotton'],
-            ['thuoc_tinh_id' => 3, 'gia_tri' => 'Polyester'],
-            ['thuoc_tinh_id' => 3, 'gia_tri' => 'Da'],
-            ['thuoc_tinh_id' => 3, 'gia_tri' => 'Len'],
-            ['thuoc_tinh_id' => 3, 'gia_tri' => 'Nỉ'],
+            
 
         ];
 
