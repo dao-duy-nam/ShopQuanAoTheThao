@@ -50,7 +50,7 @@
         <h2>Xin chào {{ $user->name }},</h2>
         <p>Tài khoản của bạn đã bị <strong style="color: #e74c3c;">tạm khóa</strong> bởi quản trị viên.</p>
         <p><strong>Lý do khóa:</strong></p>
-        <blockquote>{{ $reason }}</blockquote>
+        <blockquote>{{ $reason ? $reason : 'Không có lý do cụ thể.' }}</blockquote>
         <p>Nếu bạn có bất kỳ thắc mắc hoặc cần hỗ trợ, vui lòng liên hệ với <a href="mailto:support@yourapp.com" style="color: #3498db; text-decoration: none;">bộ phận hỗ trợ</a>.</p>
         <p>Trân trọng,<br>Đội ngũ quản trị</p>
 
