@@ -180,7 +180,7 @@ class UserController extends Controller
     public function block(Request $request, $id)
     {
         $request->validate([
-            'ly_do_block' => 'required|string',
+            'ly_do_block' => 'nullable|string',
         ]);
 
         $user = User::with('role')->findOrFail($id);
