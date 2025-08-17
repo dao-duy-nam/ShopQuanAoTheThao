@@ -96,11 +96,11 @@ class WalletController extends Controller
         try {
             $transactionCode = 'RUT_' . time();
 
-            
+
             $wallet->decrement('balance', $request->amount);
             $wallet->increment('frozen_balance', $request->amount);
 
-            
+
             $transaction = $wallet->transactions()->create([
                 'user_id' => $user->id,
                 'transaction_code' => $transactionCode,
@@ -283,9 +283,12 @@ class WalletController extends Controller
                 $transaction->wallet->increment('balance', $transaction->amount);
 
                 Mail::to($transaction->user->email)->queue(new WalletTransactionMail($transaction, 'Nạp tiền thành công'));
-            } else {
-
-                $transaction->update(['status' => 'rejected']);
+            } elseif ($respCode === '24') {
+                $transaction->update([
+                    'status' => 'rejected',
+                    'payment_url' => null
+                ]);
+                Mail::to($transaction->user->email)->queue(new WalletTransactionMail($transaction, 'Giao dịch bị hủy bởi người dùng'));
             }
         });
 
@@ -298,11 +301,11 @@ class WalletController extends Controller
             );
         }
 
-        
+
         $successUrl = rtrim((string) config('services.frontend.wallet_success_url'), '/');
         $failedUrl  = rtrim((string) config('services.frontend.wallet_failed_url'), '/');
 
-        
+
         if (empty($successUrl) || empty($failedUrl)) {
             return $this->walletVnpResponse(
                 false,
@@ -312,7 +315,7 @@ class WalletController extends Controller
             );
         }
 
-        
+
         $query = http_build_query([
             'vnp_TxnRef'       => $input['vnp_TxnRef'] ?? ($transaction->transaction_code ?? ''),
             'vnp_Amount'       => isset($input['vnp_Amount']) ? $input['vnp_Amount'] : ($transaction->amount * 100),

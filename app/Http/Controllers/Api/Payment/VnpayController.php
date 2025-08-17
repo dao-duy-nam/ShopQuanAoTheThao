@@ -254,6 +254,20 @@ class VnpayController extends Controller
                         );
                     }
                 }
+            } elseif ($respCode === '24') {
+
+                $order->update([
+                    'trang_thai_thanh_toan' => 'that_bai',
+                    'trang_thai_don_hang'   => 'da_huy',
+                    'payment_link'          => null,
+                    'expires_at'            => null,
+                ]);
+
+                if ($order->user && $order->user->email) {
+                    Mail::to($order->user->email)->queue(
+                        new OrderCancelledMail($order, 'Khách hàng đã hủy giao dịch VNPay.')
+                    );
+                }
             }
         });
 
@@ -268,18 +282,38 @@ class VnpayController extends Controller
 
         return $this->vnpResponse(
             $isIpn,
-            '00',
-            $respCode === '00' ? 'Thanh toán thành công' : 'Thanh toán thất bại',
+            $respCode,
             $order
         );
     }
 
-    private function vnpResponse(bool $isIpn, string $code, string $message, $order = null)
+    private function vnpResponse(bool $isIpn, ?string $code, $order = null)
     {
-        return response()->json(
-            $isIpn
-                ? ['RspCode' => $code, 'Message' => $message]
-                : ['code' => $code, 'message' => $message, 'order' => $order]
-        );
+        $messages = [
+            '00' => 'Giao dịch thành công',
+            '01' => 'Không tìm thấy đơn hàng',
+            '11' => 'Đơn hàng đã hết hạn',
+            '24' => 'Khách hàng đã hủy giao dịch',
+            '51' => 'Số dư không đủ',
+            '65' => 'Vượt hạn mức giao dịch',
+            '75' => 'Ngân hàng đang bảo trì',
+            '97' => 'Sai chữ ký (checksum)',
+            '99' => 'Lỗi hệ thống',
+        ];
+
+        $message = $messages[$code] ?? 'Thanh toán thất bại';
+
+        if ($isIpn) {
+            return response()->json([
+                'RspCode' => $code,
+                'Message' => $message
+            ]);
+        }
+
+        return response()->json([
+            'code'    => $code,
+            'message' => $message,
+            'order'   => $order
+        ]);
     }
 }
