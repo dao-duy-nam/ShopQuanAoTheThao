@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Models\Wallet;
 use Illuminate\Http\Request;
+use App\Mail\WithdrawSuccessMail;
 use App\Models\WalletTransaction;
+use App\Mail\WithdrawRejectedMail;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Mail;
 
 class WalletTransactionController extends Controller
 {
@@ -141,6 +144,14 @@ class WalletTransactionController extends Controller
 
             $transaction->status = $newStatus;
             $transaction->save();
+            if ($newStatus === 'success') {
+                Mail::to($transaction->user->email)->send(new WithdrawSuccessMail($transaction));
+            }
+
+            if ($newStatus === 'rejected') {
+                Mail::to($transaction->user->email)->send(new WithdrawRejectedMail($transaction));
+            }
+
 
             DB::commit();
 
