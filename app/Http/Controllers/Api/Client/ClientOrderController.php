@@ -20,6 +20,7 @@ use App\Mail\OrderConfirmationMail;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Mail\OrderStatusChangedMail;
+use App\Mail\OrderViMail;
 use Illuminate\Support\Facades\Mail;
 use App\Services\WalletService;
 
@@ -234,8 +235,12 @@ class ClientOrderController extends Controller
                             'tong_tien' => $tongTien,
                             'thuoc_tinh_bien_the' => $thuocTinhBienThe->isEmpty() ? null : json_encode($thuocTinhBienThe),
                         ]);
-                        $bienThe->decrement('so_luong', $soLuong);
-                        $bienThe->increment('so_luong_da_ban', $soLuong);
+                        if (in_array($validated['phuong_thuc_thanh_toan_id'], [1, 4])) {
+                        if ($bienTheId) {
+                            $bienThe->decrement('so_luong', $soLuong);
+                            $bienThe->increment('so_luong_da_ban', $soLuong);
+                        }
+}
                         $chiTietSanPham[] = [
                             'san_pham_id' => $bienThe->product->id,
                             'ten_san_pham' => $bienThe->product->ten,
@@ -315,8 +320,13 @@ class ClientOrderController extends Controller
                             'tong_tien' => $tongTien,
                             'thuoc_tinh_bien_the' => $thuocTinhBienThe->isEmpty() ? null : json_encode($thuocTinhBienThe),
                         ]);
-                        $bienThe->decrement('so_luong', $soLuong);
-                        $bienThe->increment('so_luong_da_ban', $soLuong);
+                        if (in_array($validated['phuong_thuc_thanh_toan_id'], [1, 4])) {
+                        if ($bienTheId) {
+                            $bienThe->decrement('so_luong', $soLuong);
+                            $bienThe->increment('so_luong_da_ban', $soLuong);
+                        }
+}
+
                         $chiTietSanPham[] = [
                             'san_pham_id' => $bienThe->product->id,
                             'ten_san_pham' => $bienThe->product->ten,
@@ -377,12 +387,10 @@ class ClientOrderController extends Controller
                         $query->whereNull('ngay_ket_thuc')->orWhere('ngay_ket_thuc', '>=', now());
                     })
                     ->first();
-                // Kiểm tra số lần user đã dùng mã này
                 if (!$discount) {
                     throw new \Exception("Mã giảm giá không hợp lệ hoặc đã hết hạn.");
                 }
 
-                // Check số lần đã dùng
                 $discountUser = DB::table('ma_giam_gia_nguoi_dung')
                     ->where('ma_giam_gia_id', $discount->id)
                     ->where('nguoi_dung_id', $user->id)
@@ -399,9 +407,6 @@ class ClientOrderController extends Controller
                     throw new \Exception("Mã giảm giá không hợp lệ hoặc đã hết hạn.");
                 }
 
-                // if ($discount->so_luong !== null && $discount->so_luong <= 0) {
-                //     throw new \Exception("Mã giảm giá đã được sử dụng hết số lượt.");
-                // }
 
                 if ($discount->gia_tri_don_hang && $tongTienDonHang < $discount->gia_tri_don_hang) {
                     throw new \Exception("Đơn hàng chưa đạt mức tối thiểu để áp dụng mã.");
@@ -446,6 +451,20 @@ class ClientOrderController extends Controller
 
             $soTienPhaiTra = $tongTienDonHang - $giamGia + $phiShip;
 
+            if ($validated['phuong_thuc_thanh_toan_id'] == 4) {
+                $wallet = Wallet::where('user_id', $user->id)->lockForUpdate()->first();
+
+                if (!$wallet) {
+                    return response()->json(['message' => 'Không tìm thấy ví của bạn.'], 404);
+                }
+
+                if ($wallet->balance < $soTienPhaiTra) {
+                    return response()->json([
+                        'message' => 'Số dư ví không đủ để thanh toán đơn hàng.'
+                    ], 400);
+                }
+            }
+
             if ($giamGia > 0 && $tongTienDonHang > 0) {
                 $tongGiamDaPhanBo = 0;
                 $soLuongSanPham = count($chiTietSanPham);
@@ -461,11 +480,11 @@ class ClientOrderController extends Controller
                     $tongGiamDaPhanBo += $giamTru;
                     $tongSauGiam = max(0, $sp['tong_tien'] - $giamTru);
 
-                    // Cập nhật vào bảng chi_tiet_don_hangs
+
                     DB::table('chi_tiet_don_hangs')
                         ->where('don_hang_id', $order->id)
                         ->where('san_pham_id', $sp['san_pham_id'])
-                        ->where('so_luong', $sp['so_luong']) // Cần xác định rõ nếu có trùng sản phẩm
+                        ->where('so_luong', $sp['so_luong'])
                         ->update([
                             'ma_giam_gia_id' => $discountId,
                             'ma_giam_gia' => $validated['ma_giam_gia'] ?? null,
@@ -482,8 +501,8 @@ class ClientOrderController extends Controller
                         'tong_tien' => $sp['tong_tien'],
                         'so_tien_duoc_giam' => $tongSauGiam,
                         'thuoc_tinh_bien_the' => $sp['thuoc_tinh_bien_the'],
-                        'hinh_anh' => $sp['hinh_anh'], // THÊM DÒNG NÀY
-                        'bien_the_id' => $sp['bien_the_id'] ?? null, // Thêm dòng này
+                        'hinh_anh' => $sp['hinh_anh'],
+                        'bien_the_id' => $sp['bien_the_id'] ?? null,
 
                     ];
                 }
@@ -497,7 +516,6 @@ class ClientOrderController extends Controller
                 ->unique()
                 ->implode(', ');
 
-            // Lấy thuoc_tinh_bien_the trực tiếp từ bảng chi_tiet_don_hangs
             $thuocTinhBienTheTongHop = DB::table('chi_tiet_don_hangs')
                 ->where('don_hang_id', $order->id)
                 ->whereNotNull('thuoc_tinh_bien_the')
@@ -534,7 +552,11 @@ class ClientOrderController extends Controller
 
             DB::commit();
 
-            Mail::to($emailNguoiDat)->send(new OrderConfirmationMail($order));
+            if ($validated['phuong_thuc_thanh_toan_id'] == 1) {
+                Mail::to($emailNguoiDat)->queue(new OrderConfirmationMail($order));
+            } elseif ($validated['phuong_thuc_thanh_toan_id'] == 4) {
+                Mail::to($emailNguoiDat)->queue(new OrderVIMail($order));
+            }
 
             return response()->json([
                 'message' => 'Đặt hàng thành công!',
@@ -567,13 +589,10 @@ class ClientOrderController extends Controller
                 'user'
             ])->findOrFail($id);
 
-            // Kiểm tra quyền truy cập
             if ($order->user_id !== $user->id) {
                 return response()->json(['error' => 'Bạn không có quyền xem đơn hàng này.'], 403);
             }
-            // Xử lý chi tiết từng sản phẩm trong đơn hàng
             $orderDetails = $order->orderDetail->map(function ($detail) {
-                // Lấy thuộc tính biến thể (nếu có)
                 $variantAttributes = $detail->variant && $detail->variant->variantAttributes
                     ? $detail->variant->variantAttributes->map(function ($attr) {
                         return [
@@ -602,7 +621,6 @@ class ClientOrderController extends Controller
                 );
             });
 
-            // Trả toàn bộ thông tin đơn hàng
             return response()->json([
                 'order' => array_merge(
                     $order->getAttributes(),
@@ -708,7 +726,6 @@ class ClientOrderController extends Controller
         try {
             $order = Order::with(['user', 'orderDetail.variant'])->findOrFail($id);
 
-            // Lưu trạng thái thanh toán trước khi cập nhật
             $oldPaymentStatus = $order->trang_thai_thanh_toan;
 
             foreach ($order->orderDetail as $chiTiet) {
@@ -731,7 +748,6 @@ class ClientOrderController extends Controller
             $order->ly_do_huy = $validated['ly_do_huy'];
             $order->save();
 
-            // Hoàn tiền về ví nếu thanh toán VNPay và đã thanh toán thành công
             if (
                 (int) $order->phuong_thuc_thanh_toan_id === 2 &&
                 $oldPaymentStatus === 'da_thanh_toan' &&
@@ -746,7 +762,6 @@ class ClientOrderController extends Controller
                 $walletService->refund($order->user, $order->id, $order->so_tien_thanh_toan);
             }
 
-            // Hoàn khi đơn đã thanh toán bằng ví nội bộ (phát hiện qua giao dịch 'payment' thành công)
             if ($oldPaymentStatus === 'da_thanh_toan' && !$order->refund_done) {
                 $hasWalletPayment = WalletTransaction::where('user_id', $order->user_id)
                     ->where('related_order_id', $order->id)
@@ -836,7 +851,6 @@ class ClientOrderController extends Controller
             $order->trang_thai_thanh_toan = 'cho_hoan_tien';
             $order->ly_do_tra_hang = $validated['ly_do_tra_hang'];
 
-            // Xử lý upload hình ảnh
             $imagePaths = [];
             if ($request->hasFile('hinh_anh_tra_hang')) {
                 foreach ($request->file('hinh_anh_tra_hang') as $image) {
@@ -848,7 +862,6 @@ class ClientOrderController extends Controller
 
             $order->save();
 
-            // Cộng lại số lượng vào tồn kho
             foreach ($order->orderDetail as $chiTiet) {
                 $variant = $chiTiet->variant;
                 if ($variant) {
@@ -857,7 +870,6 @@ class ClientOrderController extends Controller
                 }
             }
 
-            // Gửi mail thông báo
             $message = 'Đơn hàng của bạn đã được yêu cầu trả hàng. Lý do: ' . $validated['ly_do_tra_hang'] . '. Chúng tôi sẽ xử lý hoàn tiền sớm nhất.';
             Mail::to($order->email_nguoi_dat)->send(new OrderStatusChangedMail($order, $message));
 
