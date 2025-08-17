@@ -262,7 +262,7 @@ class VnpayController extends Controller
                     'payment_link'          => null,
                     'expires_at'            => null,
                 ]);
-
+                $order->refresh();
                 if ($order->user && $order->user->email) {
                     Mail::to($order->user->email)->queue(
                         new OrderCancelledMail($order, 'Khách hàng đã hủy giao dịch VNPay.')
