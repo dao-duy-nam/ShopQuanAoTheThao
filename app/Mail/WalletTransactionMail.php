@@ -1,12 +1,13 @@
 <?php
 namespace App\Mail;
 
-use App\Models\WalletTransaction;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use App\Models\WalletTransaction;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
-class WalletTransactionMail extends Mailable
+class WalletTransactionMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 

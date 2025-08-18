@@ -145,11 +145,11 @@ class WalletTransactionController extends Controller
             $transaction->status = $newStatus;
             $transaction->save();
             if ($newStatus === 'success') {
-                Mail::to($transaction->user->email)->send(new WithdrawSuccessMail($transaction));
+                Mail::to($transaction->user->email)->queue(new WithdrawSuccessMail($transaction));
             }
 
             if ($newStatus === 'rejected') {
-                Mail::to($transaction->user->email)->send(new WithdrawRejectedMail($transaction));
+                Mail::to($transaction->user->email)->queue(new WithdrawRejectedMail($transaction));
             }
 
 
