@@ -6,8 +6,9 @@ use App\Models\DiscountCode;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
-class DiscountCodeMail extends Mailable
+class DiscountCodeMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
