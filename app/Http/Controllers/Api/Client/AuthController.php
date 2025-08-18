@@ -64,10 +64,10 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json(['message' => 'Email hoặc mật khẩu không đúng.']);
+            return response()->json(['message' => 'Email hoặc mật khẩu không đúng.'],401);
         }
 
-        // Kiểm tra trạng thái tài khoản bị block
+        
         if ($user->trang_thai === 'blocked') {
             if (is_null($user->block_den_ngay) || now()->lessThan($user->block_den_ngay)) {
                 return response()->json([
@@ -93,11 +93,6 @@ class AuthController extends Controller
             ]);
         }
 
-        if (!$user->isRoleUser('user')) {
-            return response()->json([
-                'message' => 'Bạn không có quyền truy cập.'
-            ], 403);
-        }
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -120,7 +115,7 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
-            return response()->json(['message' => 'Không tìm thấy người dùng.']);
+            return response()->json(['message' => 'Không tìm thấy người dùng.'],404);
         }
 
         if ($user->hasVerifiedEmail()) {
@@ -137,7 +132,7 @@ class AuthController extends Controller
             $user->save();
         }
         if ($user->otp_send_count >= 10) {
-            return response()->json(['message' => 'Bạn đã vượt quá số lần gửi OTP trong ngày. Vui lòng thử lại vào ngày mai.']);
+            return response()->json(['message' => 'Bạn đã vượt quá số lần gửi OTP trong ngày. Vui lòng thử lại vào ngày mai.'],429);
         }
 
 
@@ -147,7 +142,7 @@ class AuthController extends Controller
         $user->otp_send_count += 1;
         $user->save();
 
-        Mail::to($user->email)->send(new SendOtpMail($user, $otp));
+        Mail::to($user->email)->queue(new SendOtpMail($user, $otp));
 
         return response()->json(['message' => 'Mã OTP đã được gửi đến email.']);
     }
@@ -171,7 +166,7 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
-            return response()->json(['message' => 'Người dùng không tồn tại.']);
+            return response()->json(['message' => 'Người dùng không tồn tại.'],404);
         }
 
         $permanentLockThreshold = now()->addYears(1);
@@ -181,7 +176,7 @@ class AuthController extends Controller
         if ($lockedUntil && $lockedUntil->greaterThan($permanentLockThreshold)) {
             return response()->json([
                 'message' => 'Tài khoản của bạn đã bị khóa vĩnh viễn do nhập sai OTP quá nhiều lần. Vui lòng liên hệ nhân viên hỗ trợ để mở khóa.'
-            ]);
+            ],403);
         }
 
         if ($lockedUntil && now()->lt($lockedUntil)) {
@@ -190,7 +185,7 @@ class AuthController extends Controller
 
             return response()->json([
                 'message' => "Tài khoản bị khóa do nhập sai nhiều lần. Vui lòng thử lại sau $timeLeft."
-            ],);
+            ],403);
         }
 
 
@@ -217,15 +212,9 @@ class AuthController extends Controller
 
             $user->save();
 
-            $lockedUntil = $user->otp_locked_until_verify ? Carbon::parse($user->otp_locked_until_verify) : null;
+            
 
-            if ($lockedUntil && $lockedUntil->greaterThan($permanentLockThreshold)) {
-                return response()->json([
-                    'message' => 'Tài khoản của bạn đã bị khóa vĩnh viễn do nhập sai OTP quá nhiều lần. Vui lòng liên hệ nhân viên hỗ trợ để mở khóa.'
-                ]);
-            }
-
-            return response()->json(['message' => 'Mã OTP không hợp lệ hoặc đã hết hạn.']);
+            return response()->json(['message' => 'Mã OTP không hợp lệ hoặc đã hết hạn.'],400);
         }
 
         $user->email_verified_at = now();

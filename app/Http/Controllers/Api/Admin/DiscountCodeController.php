@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\DiscountCode;
 use Illuminate\Http\Request;
 use App\Mail\DiscountCodeMail;
+use App\Models\UserDiscountCode;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Resources\DiscountCodeResource;
@@ -33,8 +34,12 @@ class DiscountCodeController extends Controller
     {
         $code = DiscountCode::create($request->validated());
 
+        $requestSend = new Request([
+            'kieu' => 'tat_ca',
+        ]);
+        $sendResult = $this->sendToUsers($requestSend, $code->id);
         return response()->json([
-            'message' => 'Tạo mã giảm giá thành công.',
+            'message' => 'Tạo mã giảm giá và gửi cho người dùng thành công.',
             'data' => new DiscountCodeResource($code),
         ]);
     }
@@ -119,29 +124,36 @@ class DiscountCodeController extends Controller
         ]);
 
         $code = DiscountCode::findOrFail($id);
-        $users = collect();
+        if (!$code->trang_thai) {
+            return response()->json([
+                'message' => 'Mã giảm giá này hiện không còn hoạt động.',
+            ], 422);
+        }
+
+        $query = User::where('vai_tro_id', User::ROLE_USER)
+            ->whereNotNull('email');
 
         if ($request->kieu === 'tat_ca') {
-            $users = User::where('vai_tro_id', User::ROLE_USER)
-                ->whereNotNull('email')
-                ->get();
-        } elseif ($request->kieu === 'ngau_nhien') {
+            $users = $query->get(); // Lấy tất cả
+        } else {
+            $soLuongNhap = $request->input('so_luong');
+            $soLuong = $soLuongNhap ?? rand(1, 10);
 
-            $tongUser = User::where('vai_tro_id', User::ROLE_USER)
-                ->whereNotNull('email')
-                ->count();
-
-            $soLuong = $request->input('so_luong', rand(1, min(10, $tongUser)));
-
-            $users = User::where('vai_tro_id', User::ROLE_USER)
-                ->whereNotNull('email')
-                ->inRandomOrder()
-                ->limit($soLuong)
-                ->get();
+            $users = $query->inRandomOrder()->limit($soLuong)->get();
         }
 
         foreach ($users as $user) {
             Mail::to($user->email)->queue(new DiscountCodeMail($user, $code));
+
+            UserDiscountCode::updateOrCreate(
+                [
+                    'ma_giam_gia_id' => $code->id,
+                    'nguoi_dung_id' => $user->id,
+                ],
+                [
+                    'so_lan_da_dung' => 0,
+                ]
+            );
         }
 
         return response()->json([

@@ -2,9 +2,12 @@
 
 namespace Database\Seeders;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+
 use App\Models\User;
 use App\Models\Product;
+use App\Models\OrderDetail;
 use Illuminate\Database\Seeder;
+use Database\Seeders\TestDashboardSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -14,7 +17,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // User::factory(10)->create();
-        Product::factory(10)->create();
+        Product::factory(30)->create();
 
         $this->call([
             CategorySeeder::class,
@@ -25,8 +28,14 @@ class DatabaseSeeder extends Seeder
             AttributeSeeder::class,
             AttributeValueSeeder::class,
             VariantSeeder::class,
-            OrderSeeder::class,
+            // OrderSeeder::class,
             BannerSeeder::class,
+            DiscountCodeSeeder::class,
+            PhiShipSeeder::class,
+            TestDashboardSeeder::class,
+            ContactSeeder::class,
+            PostSeeder::class,
         ]);
+    
     }
 }

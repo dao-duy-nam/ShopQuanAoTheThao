@@ -41,6 +41,23 @@ return [
         'url'         => env('VNPAY_URL'),
         'return_url'  => env('VNPAY_RETURN_URL'),
         'ipn_url'     => env('VNPAY_IPN_URL'),
+        'wallet_return_url' => env('VNPAY_WALLET_RETURN_URL'),
+        'wallet_ipn_url'    => env('VNPAY_WALLET_IPN_URL'),
     ],
+    'zalopay' => [
+        'app_id'         => env('ZALOPAY_APP_ID'),
+        'key1'           => env('ZALOPAY_KEY1'),
+        'key2'           => env('ZALOPAY_KEY2'),
+        'callback_url'   => env('ZALOPAY_CALLBACK_URL'),
+        'redirect_url'   => env('ZALOPAY_REDIRECT_URL'),
+    ],
+    'frontend' => [
+        
+        'wallet_success_url' => env('FRONTEND_WALLET_SUCCESS_URL'),
+        
+        'wallet_failed_url'  => env('FRONTEND_WALLET_FAILED_URL'),
+    ],
+
+
 
 ];

@@ -1,18 +1,24 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\Admin\PostController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\Admin\OrderController;
 use App\Http\Controllers\Api\Admin\BannerController;
+use App\Http\Controllers\Api\Admin\ContactController;
 use App\Http\Controllers\Api\Admin\DanhGiaController;
+use App\Http\Controllers\Api\Admin\MessageController;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\VariantController;
 use App\Http\Controllers\Api\Admin\CategoryController;
-use App\Http\Controllers\Api\Admin\AttributeValueController;
 use App\Http\Controllers\Api\Admin\AdminAuthController;
 use App\Http\Controllers\Api\Admin\AttributeController;
 use App\Http\Controllers\Api\Admin\DashboardController;
+use App\Http\Controllers\Api\Admin\ShippingFeeController;
 use App\Http\Controllers\Api\Admin\DiscountCodeController;
+use App\Http\Controllers\Api\Admin\AttributeValueController;
+use App\Http\Controllers\Api\Admin\ProfileController;
+use App\Http\Controllers\Api\Admin\WalletTransactionController;
 
 Route::prefix('admin')->group(function () {
 
@@ -40,6 +46,8 @@ Route::prefix('admin')->group(function () {
             Route::get('/staff', [UserController::class, 'listStaffs']);
 
             Route::get('/cus', [UserController::class, 'listCustomers']);
+
+            Route::get('/filter', [UserController::class, 'filterAllUsers']);
             Route::get('/{id}', [UserController::class, 'show']);
         });
 
@@ -47,6 +55,8 @@ Route::prefix('admin')->group(function () {
         Route::get('products/trash', [ProductController::class, 'trashed']);
         Route::patch('products/restore/{id}', [ProductController::class, 'restore']);
         Route::delete('products/force-delete/{id}', [ProductController::class, 'forceDelete']);
+        Route::get('products', [ProductController::class, 'index']);
+        Route::get('products/{id}', [ProductController::class, 'show']);
         Route::apiResource('products', ProductController::class)->except(['index', 'show']);
         Route::post('products/{id}', [ProductController::class, 'update'])->name('products.update');
 
@@ -70,6 +80,8 @@ Route::prefix('admin')->group(function () {
             Route::get('/', [DanhGiaController::class, 'index']);
             Route::get('/{id}', [DanhGiaController::class, 'show']);
             Route::patch('/{id}/toggle-visibility', [DanhGiaController::class, 'toggleVisibility']);
+            Route::get('/filter', [DanhGiaController::class, 'filterDanhGias']);
+
         });
         // Quản lý biến thể sản phẩm
         Route::prefix('variants')->group(function () {
@@ -111,6 +123,8 @@ Route::prefix('admin')->group(function () {
             Route::get('/{id}', [OrderController::class, 'show']);
             // Route::post('/', [OrderController::class, 'store']);
             Route::put('/{id}', [OrderController::class, 'update']);
+            Route::post('/cancel/{id}', [OrderController::class, 'cancel']);
+
             // Route::delete('/{id}', [OrderController::class, 'destroy']);
         });
         Route::prefix('discount-codes')->group(function () {
@@ -124,9 +138,48 @@ Route::prefix('admin')->group(function () {
             Route::post('/restore/{id}', [DiscountCodeController::class, 'restore']);
             Route::post('/{id}/send', [DiscountCodeController::class, 'sendToUsers']);
         });
+        Route::prefix('wallet-transactions')->group(function () {
+            Route::get('/', [WalletTransactionController::class, 'index'])->name('wallet-transactions.index');
+            Route::get('/{id}', [WalletTransactionController::class, 'show'])->name('wallet-transactions.show');
+            Route::patch('/{id}', [WalletTransactionController::class, 'updateStatus'])->name('wallet-transactions.updateStatus');
+        });
 
         Route::prefix('dashboard')->group(function () {
             Route::get('/', [DashboardController::class, 'index']);
+        });
+
+        Route::prefix('posts')->group(function () {
+            Route::get('/listtrash', [PostController::class, 'trash'])->name('trash');
+            Route::post('/restore/{id}', [PostController::class, 'restore'])->name('restore');
+
+
+            Route::get('/', [PostController::class, 'index'])->name('index');
+            Route::post('/', [PostController::class, 'store'])->name('store');
+            Route::get('/{id}', [PostController::class, 'show'])->name('show');
+            Route::post('/{id}', [PostController::class, 'update'])->name('update');
+            Route::delete('/{id}', [PostController::class, 'destroy'])->name('destroy');
+        });
+
+        Route::prefix('tin-nhans')->group(function () {
+            Route::get('/', [MessageController::class, 'getUserList']);
+            Route::get('{userId}', [MessageController::class, 'getMessagesWithUser']);
+            Route::post('/', [MessageController::class, 'sendMessageToUser']);
+        });
+        Route::prefix('shipping-fees')->group(function () {
+            Route::get('/', [ShippingFeeController::class, 'index']);
+            Route::get('/{id}', [ShippingFeeController::class, 'show']);
+            Route::put('/{id}', [ShippingFeeController::class, 'update']);
+        });
+        Route::prefix('contacts')->group(function () {
+            Route::get('/', [ContactController::class, 'index']);
+            Route::get('/search', [ContactController::class, 'search']);
+            Route::get('/{id}', [ContactController::class, 'show']);
+            Route::post('/reply/{id}', [ContactController::class, 'reply']);
+            Route::post('/status/{id}', [ContactController::class, 'updateStatus']);
+        });
+
+        Route::prefix('profile')->group(function () {
+            Route::match(['get', 'post'], '/', [ProfileController::class, 'edit']);
         });
     });
 });

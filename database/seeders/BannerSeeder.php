@@ -14,22 +14,22 @@ class BannerSeeder extends Seeder
     {
         DB::table('banners')->insert([
             [
-                'tieu_de' => 'Banner Khuyến Mãi Tháng 7',
-                'hinh_anh' => 'banners/banner1.jpg',
+                'tieu_de' => 'Khuyến mãi độc quyền tháng 7',
+                'hinh_anh' => 'banner/1d264c988391a6b743cfbd299b381170.jpg',
                 'trang_thai' => 'hien',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'tieu_de' => 'Banner Mùa Hè Sôi Động',
-                'hinh_anh' => 'banners/banner2.jpg',
+                'tieu_de' => 'Chào hè – Ưu đãi khủng',
+                'hinh_anh' => 'banner/1f0865ae231cd9efe9bdd7147a92d4a1.jpg',
                 'trang_thai' => 'hien',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'tieu_de' => 'Banner Sale 50%',
-                'hinh_anh' => 'banners/banner3.jpg',
+                'tieu_de' => 'Sale Sốc 50% – Duy nhất hôm nay',
+                'hinh_anh' => 'banner/214d3ec8be4c2084e2dcaecb66734fd8.jpg',
                 'trang_thai' => 'an',
                 'created_at' => now(),
                 'updated_at' => now(),

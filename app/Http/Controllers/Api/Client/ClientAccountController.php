@@ -2,9 +2,14 @@
 
 namespace App\Http\Controllers\Api\Client;
 
+use App\Models\Order;
+use App\Models\DanhGia;
+use App\Models\Wishlist;
 use Illuminate\Http\Request;
+use App\Mail\PasswordChangedMail;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use App\Http\Resources\UserProfileResource;
 
 class ClientAccountController extends Controller
@@ -86,6 +91,7 @@ class ClientAccountController extends Controller
         $user->update([
             'password' => Hash::make($request->new_password),
         ]);
+        Mail::to($user->email)->queue(new PasswordChangedMail($user));
 
         return response()->json(['message' => 'Đổi mật khẩu thành công']);
     }
@@ -95,5 +101,34 @@ class ClientAccountController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return response()->json(['message' => 'Đăng xuất thành công']);
+    }
+    public function getUserOverview(Request $request)
+    {
+        $user = $request->user();
+        $orderCount = Order::where('user_id', $user->id)
+            ->where('trang_thai_don_hang', 'da_nhan')
+            ->count();
+
+        $reviewCount = DanhGia::where('user_id', $user->id)->count();
+        $Wishlist = Wishlist::where('nguoi_dung_id', $user->id)->count();
+
+        if ($orderCount >= 30) {
+            $rank = 'KIM CƯƠNG';
+        } elseif ($orderCount >= 20) {
+            $rank = 'BẠCH KIM';
+        } elseif ($orderCount >= 10) {
+            $rank = 'VÀNG';
+        } elseif ($orderCount >= 5) {
+            $rank = 'BẠC';
+        } else {
+            $rank = 'ĐỒNG';
+        }
+
+        return response()->json([
+            'orders' => $orderCount,
+            'reviews' => $reviewCount,
+            'Wishlist' => $Wishlist,
+            'rank' => $rank,
+        ]);
     }
 }

@@ -11,6 +11,7 @@ class DanhGia extends Model
     protected $table = 'danh_gias';
     protected $fillable = [
         'user_id',
+        'chi_tiet_don_hang_id',
         'san_pham_id',
         'bien_the_id',
         'noi_dung',
@@ -19,7 +20,7 @@ class DanhGia extends Model
         'is_hidden'
     ];
     protected $casts = [
-        'hinh_anh' => 'array',
+        'hinh_anh' => 'string',
     ];
 
     public function user()
@@ -35,5 +36,9 @@ class DanhGia extends Model
     public function variant()
     {
         return $this->belongsTo(Variant::class, 'bien_the_id');
+    }
+    public function orderDetail()
+    {
+        return $this->belongsTo(OrderDetail::class, 'chi_tiet_don_hang_id');
     }
 }

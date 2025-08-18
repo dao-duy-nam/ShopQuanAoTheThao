@@ -35,7 +35,7 @@ class ForgotPasswordController extends Controller
         $user->otp_send_count += 1;
         $user->save();
 
-        Mail::to($user->email)->send(new ResetPasswordMail($user, $otp));
+        Mail::to($user->email)->queue(new ResetPasswordMail($user, $otp));
 
         return response()->json(['message' => 'Mã OTP đã được gửi đến email.']);
     }
@@ -66,7 +66,7 @@ class ForgotPasswordController extends Controller
             $user->save();
         }
         if ($user->otp_send_count >= 10) {
-            return response()->json(['message' => 'Bạn đã vượt quá số lần gửi OTP trong ngày. Vui lòng thử lại vào ngày mai.']);
+            return response()->json(['message' => 'Bạn đã vượt quá số lần gửi OTP trong ngày. Vui lòng thử lại vào ngày mai.'],429);
         }
 
 
@@ -76,7 +76,7 @@ class ForgotPasswordController extends Controller
         $user->otp_send_count += 1;
         $user->save();
 
-        Mail::to($user->email)->send(new ResetPasswordMail($user, $otp));
+        Mail::to($user->email)->queue(new ResetPasswordMail($user, $otp));
 
         return response()->json(['message' => 'Mã OTP mới đã được gửi đến email.']);
     }
@@ -106,7 +106,7 @@ class ForgotPasswordController extends Controller
         if ($lockedUntil && $lockedUntil->greaterThan($permanentLockThreshold)) {
             return response()->json([
                 'message' => 'Tài khoản của bạn đã bị khóa vĩnh viễn do nhập sai OTP quá nhiều lần. Vui lòng liên hệ nhân viên hỗ trợ để mở khóa.'
-            ]);
+            ],403);
         }
 
 
@@ -116,7 +116,7 @@ class ForgotPasswordController extends Controller
 
             return response()->json([
                 'message' => "Tài khoản bị khóa do nhập sai nhiều lần. Vui lòng thử lại sau $timeLeft."
-            ]);
+            ],429);
         }
 
 
@@ -150,10 +150,10 @@ class ForgotPasswordController extends Controller
             if ($lockedUntil && $lockedUntil->greaterThan($permanentLockThreshold)) {
                 return response()->json([
                     'message' => 'Tài khoản của bạn đã bị khóa vĩnh viễn do nhập sai OTP quá nhiều lần. Vui lòng liên hệ nhân viên hỗ trợ để mở khóa.'
-                ]);
+                ],403);
             }
 
-            return response()->json(['message' => 'Mã OTP không hợp lệ hoặc đã hết hạn.']);
+            return response()->json(['message' => 'Mã OTP không hợp lệ hoặc đã hết hạn.'],400);
         }
 
 

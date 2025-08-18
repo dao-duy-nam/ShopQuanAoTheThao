@@ -13,7 +13,8 @@ class PaymentSeeder extends Seeder
         DB::table('phuong_thuc_thanh_toans')->insert([
             ['id' => 1, 'ten' => 'Thanh toán khi nhận hàng (COD)', 'created_at' => now(), 'updated_at' => now()],
             ['id' => 2, 'ten' => 'Thanh toán qua VNPAY', 'created_at' => now(), 'updated_at' => now()],
-            ['id' => 3, 'ten' => 'Thanh toán qua Momo', 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 3, 'ten' => 'Thanh toán qua ZaloPay', 'created_at' => now(), 'updated_at' => now()],
+             ['id' => 4, 'ten' => 'Ví điện tử', 'created_at' => now(), 'updated_at' => now()],
         ]);
     }
 }
