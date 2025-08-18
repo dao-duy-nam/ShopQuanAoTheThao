@@ -52,7 +52,7 @@ class ClientMessageController extends Controller
     public function sendMessageToAdmin(Request $request)
     {
         $request->validate([
-            'noi_dung' => 'required|string|max:1000',
+            'noi_dung' => 'nullable|string|max:1000',
             'tep_dinh_kem' => 'nullable|file|mimes:jpg,jpeg,png,gif,pdf,doc,docx|max:5120',
         ]);
 
