@@ -116,10 +116,8 @@ class WalletTransactionController extends Controller
             }
 
             if ($newStatus === 'success') {
-
                 $path = $request->file('transfer_image')->store('transfers', 'public');
                 $transaction->transfer_image = $path;
-
 
                 if ($wallet->frozen_balance < $transaction->amount) {
                     DB::rollBack();
@@ -127,11 +125,13 @@ class WalletTransactionController extends Controller
                 }
                 $wallet->frozen_balance -= $transaction->amount;
                 $wallet->save();
+
+                // Cập nhật description
+                $transaction->description = 'Rút tiền thành công';
             }
 
             if ($newStatus === 'rejected') {
                 $transaction->rejection_reason = $rejectionReason;
-
 
                 if ($wallet->frozen_balance < $transaction->amount) {
                     DB::rollBack();
@@ -140,6 +140,9 @@ class WalletTransactionController extends Controller
                 $wallet->frozen_balance -= $transaction->amount;
                 $wallet->balance += $transaction->amount;
                 $wallet->save();
+
+                // Cập nhật description
+                $transaction->description = 'Yêu cầu rút tiền bị từ chối';
             }
 
             $transaction->status = $newStatus;
