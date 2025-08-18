@@ -7,41 +7,28 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Resources\ProductResource;
+use App\Http\Resources\WishlistResource;
 
 class WishlistController extends Controller
 {
 
-    public function index()
+    public function index(Request $request)
     {
         $userId = Auth::id();
 
         $wishlists = Wishlist::where('nguoi_dung_id', $userId)
             ->with([
-                'product.variants' => function ($query) {
-                    $query->orderBy('id');
-                }
+                'product.category',
+                'product.variants.attributeValues.attribute'
             ])
-            ->get()
-            ->map(function ($wishlist) {
-                $product = $wishlist->product;
-                $firstVariant = $product->variants->first();
+            ->paginate($request->get('per_page', 12));
 
-                return [
-                    'id' => $product->id,
-                    'ten' => $product->ten,
-                    'mo_ta' => $product->mo_ta,
-                    'hinh_anh' => $product->hinh_anh,
-                    'gia' => $firstVariant ? $firstVariant->gia : null,
-                ];
-            });
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Lấy danh sách sản phẩm yêu thích thành công.',
-            'data' => $wishlists
-        ]);
+        return WishlistResource::collection($wishlists)
+            ->additional([
+                'status'  => true,
+                'message' => 'Danh sách sản phẩm yêu thích',
+            ]);
     }
-
 
 
     public function store(Request $request)

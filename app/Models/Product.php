@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Product extends Model
 {
     use HasFactory, SoftDeletes;
-    protected $table = 'san_phams'; 
+    protected $table = 'san_phams';
 
     protected $fillable = [
         'ten',
@@ -37,5 +37,8 @@ class Product extends Model
     {
         return $this->hasMany(Variant::class, 'san_pham_id');
     }
-    
+    public function wishlists()
+    {
+        return $this->hasMany(Wishlist::class, 'san_pham_id');
+    }
 }
