@@ -11,6 +11,7 @@ class Order extends Model
     protected $casts = [
     'thoi_gian_nhan' => 'datetime',
     'hinh_anh_tra_hang' => 'array',
+    'gia_tri_bien_the' => 'array',
     ];
     
 
