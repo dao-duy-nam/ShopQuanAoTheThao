@@ -16,7 +16,7 @@ class ReviewController extends Controller
     public function index(Request $request, $id)
     {
 
-        $query = DanhGia::with('user')
+        $query = DanhGia::with(['user', 'product:id,ten,hinh_anh', 'variant.product:id,ten,hinh_anh'])
             ->where('san_pham_id', $id)
             ->where('is_hidden', false);
 
@@ -72,7 +72,7 @@ class ReviewController extends Controller
     {
         $limit = $request->input('limit', 10);
 
-        $query = DanhGia::with('user')
+        $query = DanhGia::with(['user', 'product:id,ten,hinh_anh', 'variant.product:id,ten,hinh_anh'])
             ->where('so_sao', 5)
             ->where('is_hidden', false)
             ->orderByDesc('created_at');
