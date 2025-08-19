@@ -121,6 +121,46 @@ class WalletController extends Controller
         }
     }
 
+    public function cancelWithdraw(Request $request, $id)
+    {
+        $user = $request->user();
+
+        $transaction = WalletTransaction::where('id', $id)
+            ->where('user_id', $user->id)
+            ->where('type', 'withdraw')
+            ->where('status', 'pending')
+            ->first();
+
+        if (!$transaction) {
+            return response()->json([
+                'message' => 'Không tìm thấy yêu cầu rút tiền khả dụng để hủy'
+            ], 404);
+        }
+
+        DB::beginTransaction();
+        try {
+            $wallet = $transaction->wallet;
+
+            
+            $wallet->increment('balance', $transaction->amount);
+            $wallet->decrement('frozen_balance', $transaction->amount);
+
+            $transaction->update([
+                'status' => 'rejected',
+                'description' => 'Người dùng đã hủy yêu cầu rút tiền'
+            ]);
+
+            DB::commit();
+            return new WalletTransactionResource($transaction);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Lỗi khi hủy rút tiền: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
 
     public function getTransactions(Request $request)
     {
