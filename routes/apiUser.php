@@ -78,6 +78,7 @@ Route::middleware(['auth:sanctum', 'user'])->group(function () {
     Route::post('/wallet/deposit', [WalletController::class, 'deposit']);
     Route::post('/wallet/withdraw', [WalletController::class, 'withdraw']);
     Route::get('/wallet/check-pending', [WalletController::class, 'checkPendingTransaction']);
+    Route::post('/wallet/withdraw/{id}/cancel', [WalletController::class, 'cancelWithdraw']);
 
     Route::post('/client/discount-code/check', [DiscountCodeController::class, 'check']);
     Route::get('/client/discount-codes', [DiscountCodeController::class, 'userDiscounts']);
