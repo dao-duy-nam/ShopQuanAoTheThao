@@ -47,25 +47,71 @@ class CartController extends Controller
                 ->get();
 
             $issueMessages = [];
-            $items = $chiTietGioHang->map(function ($item) use (&$issueMessages) {
+            $adjustedItemIds = [];
+
+            DB::beginTransaction();
+            try {
+                foreach ($chiTietGioHang as $item) {
+                    $product = $item->product;
+                    $variant = $item->variant;
+
+                    if (!$product || $product->trashed()) {
+                        $issueMessages[] = ($item->product?->ten ?? 'Sản phẩm không xác định') . ' - đã bị xóa khỏi hệ thống.';
+                        $item->delete();
+                        continue;
+                    }
+
+                    if ($variant) {
+                        if ($variant->trashed()) {
+                            $issueMessages[] = $product->ten . ' - biến thể đã bị xóa.';
+                            $item->delete();
+                            continue;
+                        }
+                        $availableQty = max((int) $variant->so_luong, 0);
+                    } else {
+                        $availableQty = max((int) $product->so_luong, 0);
+                    }
+
+                    if ($availableQty <= 0) {
+                        $issueMessages[] = $product->ten . ' - đã hết hàng.';
+                        $item->delete();
+                        continue;
+                    }
+
+                    if ($item->so_luong > $availableQty) {
+                        $item->so_luong = $availableQty;
+                        $item->updateThanhTien();
+                        $item->save();
+                        $adjustedItemIds[$item->id] = $availableQty;
+                    }
+                }
+                DB::commit();
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+
+            // Reload items after adjustments/removals
+            $chiTietGioHang = $gioHang->cartItem()
+                ->with([
+                    'variant' => function ($q) {
+                        $q->withTrashed()->with(['attributeValues.attribute', 'product' => function ($q2) {
+                            $q2->withTrashed();
+                        }]);
+                    },
+                    'product' => function ($q) {
+                        $q->withTrashed();
+                    }
+                ])
+                ->get();
+
+            $items = $chiTietGioHang->map(function ($item) use ($adjustedItemIds) {
                 $product = $item->product;
                 $variant = $item->variant;
 
                 $error = null;
-                if (!$product || $product->trashed()) {
-                    $error = 'Sản phẩm đã bị xóa.';
-                    $issueMessages[] = $item->product?->ten ?? 'Sản phẩm không xác định' . ' - đã bị xóa.';
-                } elseif ($variant) {
-                    if ($variant->trashed()) {
-                        $error = 'Biến thể đã bị xóa.';
-                        $issueMessages[] = $product->ten . ' - biến thể đã bị xóa.';
-                    } elseif ($variant->so_luong <= 0) {
-                        $error = 'Sản phẩm đã hết hàng.';
-                        $issueMessages[] = $product->ten . ' - đã hết hàng.';
-                    }
-                } elseif ($product->so_luong <= 0) {
-                    $error = 'Sản phẩm đã hết hàng.';
-                    $issueMessages[] = $product->ten . ' - đã hết hàng.';
+                if (isset($adjustedItemIds[$item->id])) {
+                    $error = 'Số lượng đã được điều chỉnh theo tồn kho. Tối đa hiện có: ' . $adjustedItemIds[$item->id] . '.';
                 }
 
                 return [
@@ -94,12 +140,15 @@ class CartController extends Controller
             }
 
 
+            $tongTien = $gioHang->cartItem()->sum('thanh_tien');
+            $tongSoLuong = $gioHang->cartItem()->sum('so_luong');
+
             return response()->json([
                 'message' => 'Lấy giỏ hàng thành công',
                 'data' => [
                     'items' => $items,
-                    'tong_tien' => $gioHang->tong_tien,
-                    'tong_so_luong' => $gioHang->tong_so_luong
+                    'tong_tien' => $tongTien,
+                    'tong_so_luong' => $tongSoLuong
                 ]
             ]);
         } catch (\Exception $e) {
