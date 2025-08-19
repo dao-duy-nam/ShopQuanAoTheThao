@@ -105,4 +105,8 @@ class User extends Authenticatable implements MustVerifyEmail
             ->withPivot('so_lan_da_dung')
             ->withTimestamps();
     }
+    public function wishlists()
+    {
+        return $this->hasMany(Wishlist::class, 'nguoi_dung_id');
+    }
 }
