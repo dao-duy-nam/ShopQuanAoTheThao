@@ -57,6 +57,12 @@ class ProductController extends Controller
             'data' => ProductResource::collection($products),
             'status' => 200,
             'message' => 'Hiển thị danh sách sản phẩm thành công',
+            'pagination' => [
+                'total' => $products->total(),
+                'per_page' => $products->perPage(),
+                'current_page' => $products->currentPage(),
+                'last_page' => $products->lastPage(),
+            ]
         ]);
     }
 
