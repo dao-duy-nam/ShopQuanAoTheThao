@@ -642,6 +642,7 @@ public function show($id)
                 'created_at' => $order->created_at,
                 'ten_nguoi_dat' => $order->ten_nguoi_dat,
                 'sdt_nguoi_dat' => $order->sdt_nguoi_dat,
+                'ly_do_huy' => $order->ly_do_huy,
                 'gia_tri_bien_the' => $order->gia_tri_bien_the ,
                 'user' => $order->user ? $order->user->toArray() : null,
                 'phuong_thuc_thanh_toan' => $order->paymentMethod ? $order->paymentMethod->toArray() : null,
