@@ -639,6 +639,7 @@ public function show($id)
                 'trang_thai_don_hang' => $order->trang_thai_don_hang,
                 'so_tien_thanh_toan' => $order->so_tien_thanh_toan,
                 'trang_thai_thanh_toan' => $order->trang_thai_thanh_toan,
+                'so_tien_duoc_giam' => $order->so_tien_duoc_giam,
                 'email_nguoi_dat' => $order->email_nguoi_dat,  
                 'dia_chi' => $order->dia_chi,   
                 'phi_ship' => $order->phi_ship,   
