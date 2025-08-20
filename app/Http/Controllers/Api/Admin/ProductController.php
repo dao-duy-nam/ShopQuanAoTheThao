@@ -67,6 +67,7 @@ class ProductController extends Controller
     }
 
 
+
     public function store(StoreProductRequest $request)
     {
         $data = $request->validated();
