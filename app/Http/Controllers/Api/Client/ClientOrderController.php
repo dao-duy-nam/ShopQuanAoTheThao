@@ -221,6 +221,7 @@ class ClientOrderController extends Controller
 
                         $thuocTinhBienThe = [
                             'bien_the_id' => $bienThe->id,
+                            'hinh_anh' => $bienThe->hinh_anh , // LẤY HÌNH ẢNH    
                             'thuoc_tinh'  => $bienThe->variantAttributes->mapWithKeys(function ($attr) {
                                 return [
                                     $attr->attributeValue->attribute->ten ?? '' => $attr->attributeValue->gia_tri ?? ''
@@ -309,6 +310,7 @@ class ClientOrderController extends Controller
 
                        $thuocTinhBienThe = [
                         'bien_the_id' => $bienThe->id,
+                        'hinh_anh' => $bienThe->hinh_anh,
                         'thuoc_tinh'  => $bienThe->variantAttributes->mapWithKeys(function ($attr) {
                             return [
                                 $attr->attributeValue->attribute->ten ?? '' => $attr->attributeValue->gia_tri ?? ''
@@ -368,9 +370,9 @@ class ClientOrderController extends Controller
                             'don_gia' => $donGia,
                             'tong_tien' => $tongTien,
                             'thuoc_tinh_bien_the' => null,
-                            'hinh_anh' => $bienTheId
-                                ? ($bienThe->hinh_anh ?? $sanPham->hinh_anh)
-                                : $sanPham->hinh_anh,
+                            'hinh_anh' => $bienTheId->hinh_anh,
+                                // ? ($bienThe->hinh_anh ?? $sanPham->hinh_anh)
+                                // : $sanPham->hinh_anh,
                         ];
                     }
                 }
@@ -599,13 +601,13 @@ public function show($id)
             return response()->json(['error' => 'Bạn không có quyền xem đơn hàng này.'], 403);
         }
 
-        // Lấy order details kèm sản phẩm, biến thể
         $orderDetails = $order->orderDetail->map(function ($detail) {
             $thuocTinhBienThe = [];
 
             if ($detail->variant && $detail->variant->variantAttributes) {
                 $thuocTinhBienThe = [
                     'bien_the_id' => $detail->variant->id,
+                    'hinh_anh' => $detail->variant->hinh_anh ?? $detail->product->hinh_anh,
                     'thuoc_tinh'  => $detail->variant->variantAttributes->mapWithKeys(function ($attr) {
                         return [
                             $attr->attributeValue->attribute->ten ?? '' => $attr->attributeValue->gia_tri ?? ''
@@ -684,33 +686,32 @@ public function show($id)
 
     $result = $orders->map(function ($order) {
         $items = $order->orderDetail->map(function ($detail) {
-            $thuocTinhBienThe = null;
+                    $thuocTinhBienThe = [];
 
-            if ($detail->bien_the_id && $detail->variant && $detail->variant->variantAttributes) {
-                $thuocTinhBienThe = $detail->variant->variantAttributes->map(function ($attr) {
-                    if (!$attr->attributeValue || !$attr->attributeValue->attribute) {
-                        return null;
-                    }
-                    return [
-                        'thuoc_tinh_id' => $attr->attributeValue->attribute->id,
-                        'ten_thuoc_tinh' => $attr->attributeValue->attribute->ten,
-                        'gia_tri' => $attr->attributeValue->gia_tri,
-                    ];
-                })->filter()->values();
+            if ($detail->variant && $detail->variant->variantAttributes) {
+                $thuocTinhBienThe = [
+                    'bien_the_id' => $detail->variant->id,
+                    'hinh_anh' => $detail->variant->hinh_anh ?? $detail->product->hinh_anh,
+                    'thuoc_tinh'  => $detail->variant->variantAttributes->mapWithKeys(function ($attr) {
+                        return [
+                            $attr->attributeValue->attribute->ten ?? '' => $attr->attributeValue->gia_tri ?? ''
+                        ];
+                    })->toArray()
+                ];
             }
 
-            return [
-                'san_pham_id' => $detail->san_pham_id,
-                'ten_san_pham' => optional($detail->product)->ten,
-                'hinh_anh' => $detail->variant && $detail->variant->hinh_anh
-                    ? $detail->variant->hinh_anh
-                    : optional($detail->product)->hinh_anh,
-                'bien_the_id' => $detail->bien_the_id,
-                'thuoc_tinh_bien_the' => $thuocTinhBienThe,
-                'so_luong' => $detail->so_luong,
-                'don_gia' => $detail->don_gia,
-                'tong_tien' => $detail->tong_tien,
-            ];
+        return [
+            'san_pham_id' => $detail->san_pham_id,
+            'ten_san_pham' => optional($detail->product)->ten,
+            'hinh_anh' => $detail->variant && $detail->variant->hinh_anh
+                ? $detail->variant->hinh_anh
+                : optional($detail->product)->hinh_anh,
+            'bien_the_id' => $detail->bien_the_id,
+            'thuoc_tinh_bien_the' => $thuocTinhBienThe,
+            'so_luong' => $detail->so_luong,
+            'don_gia' => $detail->don_gia,
+            'tong_tien' => $detail->tong_tien,
+        ];
         });
 
                 $giaTriBienThe = null;
@@ -721,6 +722,7 @@ public function show($id)
                 $giaTriBienThe = collect($decoded)->map(function ($item) {
                     return [
                         'bien_the_id' => $item['bien_the_id'] ?? null,
+                        'hinh_anh' => $item['hinh_anh'] ?? null,
                         'thuoc_tinh'  => $item['thuoc_tinh'] ?? [],
                     ];
                 })->toArray();
