@@ -12,16 +12,12 @@ class DanhGiaSeeder extends Seeder
 {
     public function run(): void
     {
-        $users = User::inRandomOrder()->take(5)->get();
-        $products = Product::inRandomOrder()->take(5)->get();
-        $bienThes = Variant::inRandomOrder()->take(5)->get();
-
-        // Kiểm tra dữ liệu đủ để seed chưa
-        if ($users->isEmpty() || ($products->isEmpty() && $bienThes->isEmpty())) {
-            $this->command->warn('⚠️ Không có đủ dữ liệu để seed DanhGia. Hãy seed User, Product và BienThe trước.');
+        $users = \App\Models\User::inRandomOrder()->take(10)->get();
+        $products = \App\Models\Product::with('variants')->get();
+        if ($users->isEmpty() || $products->isEmpty()) {
+            $this->command->warn('⚠️ Không có đủ dữ liệu để seed DanhGia. Hãy seed User và Product trước.');
             return;
         }
-
         $reviewSamples = [
             ['stars' => 5, 'content' => 'Chất liệu thoáng mát, thấm mồ hôi tốt. Mặc chạy bộ rất dễ chịu.'],
             ['stars' => 4, 'content' => 'Form vừa vặn, đường may chắc chắn. Màu sắc giống ảnh.'],
@@ -34,24 +30,24 @@ class DanhGiaSeeder extends Seeder
             ['stars' => 4, 'content' => 'Giày bám đường tốt, chạy máy êm chân.'],
             ['stars' => 5, 'content' => 'Áo thun ProDry mặc mát và nhanh khô, quá ổn!'],
         ];
-
-        foreach ($reviewSamples as $sample) {
-            $user = $users->random();
-
-            $useVariant = $bienThes->isNotEmpty() && rand(0, 1);
-            $useProduct = !$useVariant && $products->isNotEmpty();
-
-            DanhGia::create([
-                'user_id' => $user->id,
-                'san_pham_id' => $useProduct ? $products->random()->id : null,
-                'bien_the_id' => $useVariant ? $bienThes->random()->id : null,
-                'noi_dung' => $sample['content'],
-                'so_sao' => $sample['stars'],
-                'hinh_anh' => null,
-                'is_hidden' => false,
-            ]);
+        foreach ($products as $product) {
+            $variants = $product->variants;
+            $numReviews = rand(2, 3);
+            for ($i = 0; $i < $numReviews; $i++) {
+                $user = $users->random();
+                $sample = $reviewSamples[array_rand($reviewSamples)];
+                $variant = $variants->isNotEmpty() ? $variants->random() : null;
+                \App\Models\DanhGia::create([
+                    'user_id' => $user->id,
+                    'san_pham_id' => $product->id,
+                    'bien_the_id' => $variant ? $variant->id : null,
+                    'noi_dung' => $sample['content'],
+                    'so_sao' => $sample['stars'],
+                    'hinh_anh' => null,
+                    'is_hidden' => false,
+                ]);
+            }
         }
-
         $this->command->info('✅ DanhGiaSeeder đã chạy thành công.');
     }
 }
