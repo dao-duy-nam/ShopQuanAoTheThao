@@ -47,7 +47,7 @@ class PhiShipSeeder extends Seeder
         foreach ($provinces as $province) {
             Shipping::create([
                 'tinh_thanh' => $province,
-                'phi' => rand(15000, 50000),
+                'phi' => 30000,
             ]);
         }
     }

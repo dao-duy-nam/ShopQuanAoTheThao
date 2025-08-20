@@ -10,7 +10,7 @@ class DanhGiaController extends Controller
 {
     public function filterDanhGia(Request $request)
 {
-    $query = DanhGia::with(['user', 'product', 'variant']);
+    $query = DanhGia::with(['user', 'product', 'variant.product']);
 
     // Lọc theo số sao (ép kiểu int để đảm bảo đúng)
     if ($request->filled('so_sao')) {
@@ -54,7 +54,7 @@ class DanhGiaController extends Controller
         $query = DanhGia::with([
             'user:id,name',
             'product:id,ten,hinh_anh',
-            'variant.product:id,ten',
+            'variant.product:id,ten,hinh_anh',
             'variant.variantAttributes.attributeValue.attribute',
         ]);
 
@@ -88,6 +88,11 @@ class DanhGiaController extends Controller
                         ];
                     }),
                 ];
+                $base['product'] = [
+                    'id' => $review->variant->product->id ?? $review->san_pham_id,
+                    'name' => $review->variant->product->ten ?? null,
+                    'image' => $review->variant->product->hinh_anh ?? null,
+                ];
             } else {
                 $base['product'] = [
                     'id' => $review->san_pham_id,
@@ -116,7 +121,7 @@ class DanhGiaController extends Controller
         $review = DanhGia::with([
             'user:id,name',
             'product:id,ten,hinh_anh',
-            'variant.product:id,ten',
+            'variant.product:id,ten,hinh_anh',
             'variant.variantAttributes.attributeValue.attribute',
         ])->find($id);
 
@@ -150,6 +155,11 @@ class DanhGiaController extends Controller
                         'value' => $va->attributeValue->gia_tri ?? null,
                     ];
                 }),
+            ];
+            $data['product'] = [
+                'id' => $review->variant->product->id ?? $review->san_pham_id,
+                'name' => $review->variant->product->ten ?? null,
+                'image' => $review->variant->product->hinh_anh ?? null,
             ];
         } else {
             $data['product'] = [

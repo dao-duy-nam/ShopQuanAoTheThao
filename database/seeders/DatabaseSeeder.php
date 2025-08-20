@@ -17,17 +17,16 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // User::factory(10)->create();
-        Product::factory(30)->create();
 
         $this->call([
             CategorySeeder::class,
             RoleSeeder::class,
             UserSeeder::class,
-            DanhGiaSeeder::class,
+            
             PaymentSeeder::class,
             AttributeSeeder::class,
             AttributeValueSeeder::class,
-            VariantSeeder::class,
+            ProductSeeder::class,
             // OrderSeeder::class,
             BannerSeeder::class,
             DiscountCodeSeeder::class,
@@ -35,6 +34,7 @@ class DatabaseSeeder extends Seeder
             TestDashboardSeeder::class,
             ContactSeeder::class,
             PostSeeder::class,
+            DanhGiaSeeder::class,
         ]);
     
     }

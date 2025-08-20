@@ -219,12 +219,15 @@ class ClientOrderController extends Controller
                         $tongTien = $donGia * $soLuong;
                         $tongTienDonHang += $tongTien;
 
-                        $thuocTinhBienThe = $bienThe->variantAttributes->map(function ($attr) {
-                            return [
-                                'thuoc_tinh' => $attr->attributeValue->attribute->ten ?? '',
-                                'gia_tri' => $attr->attributeValue->gia_tri ?? ''
-                            ];
-                        })->filter()->values();
+                        $thuocTinhBienThe = [
+                            'bien_the_id' => $bienThe->id,
+                            'thuoc_tinh'  => $bienThe->variantAttributes->mapWithKeys(function ($attr) {
+                                return [
+                                    $attr->attributeValue->attribute->ten ?? '' => $attr->attributeValue->gia_tri ?? ''
+                                ];
+                            })->toArray()
+                        ];
+
 
                         OrderDetail::create([
                             'don_hang_id' => $order->id,
@@ -233,7 +236,7 @@ class ClientOrderController extends Controller
                             'so_luong' => $soLuong,
                             'don_gia' => $donGia,
                             'tong_tien' => $tongTien,
-                            'thuoc_tinh_bien_the' => $thuocTinhBienThe->isEmpty() ? null : json_encode($thuocTinhBienThe),
+                             'thuoc_tinh_bien_the' => empty($thuocTinhBienThe) ? null : $thuocTinhBienThe,
                         ]);
                         if (in_array($validated['phuong_thuc_thanh_toan_id'], [1, 4])) {
                         if ($bienTheId) {
@@ -304,12 +307,14 @@ class ClientOrderController extends Controller
                         $tongTien = $donGia * $soLuong;
                         $tongTienDonHang += $tongTien;
 
-                        $thuocTinhBienThe = $bienThe->variantAttributes->map(function ($attr) {
+                       $thuocTinhBienThe = [
+                        'bien_the_id' => $bienThe->id,
+                        'thuoc_tinh'  => $bienThe->variantAttributes->mapWithKeys(function ($attr) {
                             return [
-                                'thuoc_tinh' => $attr->attributeValue->attribute->ten ?? '',
-                                'gia_tri' => $attr->attributeValue->gia_tri ?? ''
+                                $attr->attributeValue->attribute->ten ?? '' => $attr->attributeValue->gia_tri ?? ''
                             ];
-                        })->filter()->values();
+                        })->toArray()
+                    ];
 
                         OrderDetail::create([
                             'don_hang_id' => $order->id,
@@ -318,7 +323,7 @@ class ClientOrderController extends Controller
                             'so_luong' => $soLuong,
                             'don_gia' => $donGia,
                             'tong_tien' => $tongTien,
-                            'thuoc_tinh_bien_the' => $thuocTinhBienThe->isEmpty() ? null : json_encode($thuocTinhBienThe),
+                            'thuoc_tinh_bien_the' => json_encode([$thuocTinhBienThe]),
                         ]);
                         if (in_array($validated['phuong_thuc_thanh_toan_id'], [1, 4])) {
                         if ($bienTheId) {
@@ -520,15 +525,18 @@ class ClientOrderController extends Controller
                 ->where('don_hang_id', $order->id)
                 ->whereNotNull('thuoc_tinh_bien_the')
                 ->pluck('thuoc_tinh_bien_the')
-                ->flatMap(function ($json) {
-                    $decoded = json_decode($json, true);
-                    if (is_array($decoded)) {
-                        return collect($decoded)->pluck('gia_tri')->filter();
-                    }
-                    return [];
+                ->map(function ($json) {
+                    return json_decode($json, true);
                 })
-                ->unique()
-                ->implode(', ');
+                ->filter()
+                ->values()
+                ->toArray();
+
+            $bienTheIds = collect($thuocTinhBienTheTongHop)
+                ->pluck('bien_the_id')
+                ->filter()
+                ->values()
+                ->toArray();
 
             $order->update([
                 'so_tien_thanh_toan' => $soTienPhaiTra,
@@ -536,7 +544,7 @@ class ClientOrderController extends Controller
                 'ma_giam_gia' => $validated['ma_giam_gia'] ?? null,
                 'so_tien_duoc_giam' => $giamGia,
                 'ten_san_pham' => $tenSanPhamTongHop,
-                'gia_tri_bien_the' => $thuocTinhBienTheTongHop,
+                'gia_tri_bien_the' => $thuocTinhBienTheTongHop, // 👈 lưu JSON array vào DB
                 'dia_chi_day_du' => $diaChiDayDu,
             ]);
 
@@ -575,7 +583,6 @@ class ClientOrderController extends Controller
         }
     }
 
-
 public function show($id)
 {
     try {
@@ -592,62 +599,47 @@ public function show($id)
             return response()->json(['error' => 'Bạn không có quyền xem đơn hàng này.'], 403);
         }
 
+        // Lấy order details kèm sản phẩm, biến thể
         $orderDetails = $order->orderDetail->map(function ($detail) {
-            $variantAttributes = $detail->variant && $detail->variant->variantAttributes
-                ? $detail->variant->variantAttributes->map(function ($attr) {
-                    return [
-                        ...$attr->getAttributes(),
-                        'attribute_value' => $attr->attributeValue ? array_merge(
-                            $attr->attributeValue->getAttributes(),
-                            [
-                                'attribute' => $attr->attributeValue->attribute
-                                    ? $attr->attributeValue->attribute->toArray()
-                                    : null
-                            ]
-                        ) : null
-                    ];
-                })->toArray()
-                : [];
+            $thuocTinhBienThe = [];
 
-            return array_merge(
-                $detail->getAttributes(),
-                [
-                    'product' => $detail->product ? $detail->product->toArray() : null,
-                    'variant' => $detail->variant ? array_merge(
-                        $detail->variant->getAttributes(),
-                        ['thuoc_tinh_bien_the' => $variantAttributes]
-                    ) : null
-                ]
-            );
-        });
-
-        // 👉 Tách giá trị biến thể theo từng sản phẩm, để ngoài order
-        $giaTriBienThe = $order->orderDetail->map(function ($detail) {
-            $values = null;
             if ($detail->variant && $detail->variant->variantAttributes) {
-                $values = $detail->variant->variantAttributes
-                    ->pluck('attributeValue.gia_tri')
-                    ->filter()
-                    ->values();
+                $thuocTinhBienThe = [
+                    'bien_the_id' => $detail->variant->id,
+                    'thuoc_tinh'  => $detail->variant->variantAttributes->mapWithKeys(function ($attr) {
+                        return [
+                            $attr->attributeValue->attribute->ten ?? '' => $attr->attributeValue->gia_tri ?? ''
+                        ];
+                    })->toArray()
+                ];
             }
 
             return [
+                'id' => $detail->id,
                 'san_pham_id' => $detail->san_pham_id,
-                'ten_san_pham' => $detail->product ? $detail->product->ten : null,
-                'gia_tri_bien_the' => $values,
+                'bien_the_id' => $detail->bien_the_id,
+                'so_luong' => $detail->so_luong,
+                'don_gia' => $detail->don_gia,
+                'tong_tien' => $detail->tong_tien,
+                'product' => $detail->product ? $detail->product->toArray() : null,
+                'variant' => $detail->variant ? array_merge(
+                    $detail->variant->getAttributes(),
+                    ['gia_tri_bien_the' => $thuocTinhBienThe ?: null]
+                ) : null
             ];
         });
 
         return response()->json([
-            'order' => array_merge(
-                $order->getAttributes(),
-                [
-                    'user' => $order->user ? $order->user->toArray() : null,
-                    'phuong_thuc_thanh_toan' => $order->paymentMethod ? $order->paymentMethod->toArray() : null,
-                    'items' => $orderDetails,
-                    'gia_tri_bien_the' => $giaTriBienThe
-                ]
-            )
+            'order' => [
+                'id' => $order->id,
+                'ma_don_hang' => $order->ma_don_hang,
+                'trang_thai' => $order->trang_thai,
+                'tong_tien' => $order->tong_tien,
+                'gia_tri_bien_the' => $order->gia_tri_bien_the ,
+                'user' => $order->user ? $order->user->toArray() : null,
+                'phuong_thuc_thanh_toan' => $order->paymentMethod ? $order->paymentMethod->toArray() : null,
+                'items' => $orderDetails,
+            ]
         ]);
     } catch (\Exception $e) {
         Log::error('Lỗi lấy chi tiết đơn hàng', [
@@ -658,23 +650,25 @@ public function show($id)
         return response()->json(['error' => 'Lỗi: ' . $e->getMessage()], 500);
     }
 }
-    
 
 
 
 
-public function index()
-{
-    $user = request()->user();
 
-    $orders = Order::with([
-        'orderDetail.product',
-        'orderDetail.variant.variantAttributes.attributeValue.attribute',
-        'paymentMethod'
-    ])
-        ->where('user_id', $user->id)
-        ->orderBy('created_at', 'desc')
-        ->paginate(10);
+
+
+    public function index()
+    {
+        $user = request()->user();
+
+        $orders = Order::with([
+            'orderDetail.product',
+            'orderDetail.variant.variantAttributes.attributeValue.attribute',
+            'paymentMethod'
+        ])
+            ->where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
 
     $result = $orders->map(function ($order) {
         $items = $order->orderDetail->map(function ($detail) {
@@ -704,12 +698,22 @@ public function index()
                 'so_luong' => $detail->so_luong,
                 'don_gia' => $detail->don_gia,
                 'tong_tien' => $detail->tong_tien,
-                // 👉 Tách riêng giá trị biến thể tại đây
-                'gia_tri_bien_the' => $detail->variant
-                    ? $detail->variant->variantAttributes->pluck('attributeValue.gia_tri')->filter()->values()
-                    : null,
             ];
         });
+
+                $giaTriBienThe = null;
+        if (!empty($order->gia_tri_bien_the)) {
+            $decoded = $order->gia_tri_bien_the; // đã là array
+;
+            if (is_array($decoded)) {
+                $giaTriBienThe = collect($decoded)->map(function ($item) {
+                    return [
+                        'bien_the_id' => $item['bien_the_id'] ?? null,
+                        'thuoc_tinh'  => $item['thuoc_tinh'] ?? [],
+                    ];
+                })->toArray();
+            }
+        }
 
         return [
             'id' => $order->id,
@@ -720,20 +724,24 @@ public function index()
             'ngay_dat' => $order->created_at->toDateTimeString(),
             'phuong_thuc_thanh_toan' => optional($order->paymentMethod)->ten,
             'so_luong_mat_hang' => $order->orderDetail->sum('so_luong'),
+            'gia_tri_bien_the' => $giaTriBienThe,
+
             'items' => $items,
         ];
     });
 
-    return response()->json([
-        'orders' => $result,
-        'pagination' => [
-            'total' => $orders->total(),
-            'per_page' => $orders->perPage(),
-            'current_page' => $orders->currentPage(),
-            'last_page' => $orders->lastPage(),
-        ]
-    ]);
-}
+
+        return response()->json([
+            'orders' => $result,
+            'pagination' => [
+                'total' => $orders->total(),
+                'per_page' => $orders->perPage(),
+                'current_page' => $orders->currentPage(),
+                'last_page' => $orders->lastPage(),
+            ]
+        ]);
+    }
+
 
 
     public function huyDon(Request $request, $id, WalletService $walletService)

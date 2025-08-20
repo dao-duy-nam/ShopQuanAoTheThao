@@ -47,7 +47,7 @@ class UserSeeder extends Seeder
         ]);
         User::create([
             'name' => 'Duy Nam',
-            'email' => 'user@gmail.com',
+            'email' => 'namddph50247@gmail.com',
             'password' => bcrypt('123456'),
             'so_dien_thoai' => '0123456781',
             'vai_tro_id' => 2,
@@ -67,19 +67,27 @@ class UserSeeder extends Seeder
             'email_verified_at' => Carbon::now(),
         ]);
 
+        // Realistic normal users (reviewers)
+        $names = [
+            'Nguyễn Minh Anh', 'Trần Thu Trang', 'Lê Quốc Huy', 'Phạm Hải Yến', 'Đinh Công Tuấn',
+            'Vũ Hải Nam', 'Bùi Quang Khánh', 'Hoàng Thùy Linh', 'Phan Anh Khoa', 'Đỗ Ngọc Bích',
+            'Ngô Đức Long', 'Trịnh Thu Hà', 'Đào Thanh Tùng', 'Lương Thị Nhung', 'Tạ Công Minh',
+            'Nguyễn Hoài Phương', 'Trần Gia Huy', 'Phạm Thuỳ Dương', 'Lê Thế Anh', 'Vũ Mai Anh'
+        ];
 
-        for ($i = 1; $i <= 20; $i++) {
+        foreach ($names as $i => $name) {
             User::create([
-                'name' => 'User ' . $i,
-                'email' => 'user' . $i . '@example.com',
+                'name' => $name,
+                'email' => 'user' . ($i + 1) . '@example.com',
                 'password' => bcrypt('userpassword'),
-                'so_dien_thoai' => '09123456' . str_pad($i, 2, '0', STR_PAD_LEFT),
+                'so_dien_thoai' => '09123456' . str_pad((string)($i + 1), 2, '0', STR_PAD_LEFT),
                 'vai_tro_id' => 2,
                 'trang_thai' => 'active',
-                'ngay_sinh' => '2000-01-' . str_pad($i, 2, '0', STR_PAD_LEFT),
+                'ngay_sinh' => $faker->date('Y-m-d', '-25 years'),
                 'email_verified_at' => null,
             ]);
         }
+
         for ($i = 1; $i <= 5; $i++) {
             User::create([
                 'name' => 'Admin Fake ' . $i,

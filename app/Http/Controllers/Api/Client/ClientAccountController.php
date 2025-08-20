@@ -5,7 +5,11 @@ namespace App\Http\Controllers\Api\Client;
 use App\Models\Order;
 use App\Models\DanhGia;
 use App\Models\Wishlist;
+use Illuminate\Support\Str;
+use App\Models\DiscountCode;
 use Illuminate\Http\Request;
+use App\Mail\DiscountCodeMail;
+use App\Models\UserDiscountCode;
 use App\Mail\PasswordChangedMail;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
@@ -123,12 +127,32 @@ class ClientAccountController extends Controller
         } else {
             $rank = 'ĐỒNG';
         }
+        $code = DiscountCode::where('ma', strtoupper('RANK_' . Str::slug($rank, '_')))
+            ->where('trang_thai', true)
+            ->first();
+
+        if ($code) {
+            $existing = UserDiscountCode::where('ma_giam_gia_id', $code->id)
+                ->where('nguoi_dung_id', $user->id)
+                ->first();
+
+            if (!$existing) {
+                Mail::to($user->email)->queue(new DiscountCodeMail($user, $code));
+
+                UserDiscountCode::create([
+                    'ma_giam_gia_id' => $code->id,
+                    'nguoi_dung_id'  => $user->id,
+                    'so_lan_da_dung' => 0,
+                ]);
+            }
+        }
 
         return response()->json([
-            'orders' => $orderCount,
-            'reviews' => $reviewCount,
+            'orders'   => $orderCount,
+            'reviews'  => $reviewCount,
             'Wishlist' => $Wishlist,
-            'rank' => $rank,
+            'rank'     => $rank,
+            'discount' => $code ? $code->only(['ma', 'gia_tri', 'loai']) : null,
         ]);
     }
 }

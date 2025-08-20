@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class OrderDetail extends Model
 {
     protected $table = 'chi_tiet_don_hangs';
-
+protected $casts = [
+    'thuoc_tinh_bien_the' => 'array',
+];
     protected $fillable = [
         'don_hang_id',
         'san_pham_id',
