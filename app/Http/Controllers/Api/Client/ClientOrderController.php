@@ -632,6 +632,7 @@ public function show($id)
         });
 
         return response()->json([
+            'user' => $order->user ? $order->user->toArray() : null,
             'order' => [
                 'id' => $order->id,
                 'ma_don_hang' => $order->ma_don_hang,
@@ -650,6 +651,7 @@ public function show($id)
                 'hinh_anh_tra_hang' => $order->hinh_anh_tra_hang,
                 'ten_san_pham' => $order->ten_san_pham,
                 'gia_tri_bien_the' => $order->gia_tri_bien_the ,
+                'thoi_gian_nhan' => $order->thoi_gian_nhan ,
                 'user' => $order->user ? $order->user->toArray() : null,
                 'phuong_thuc_thanh_toan' => $order->paymentMethod ? $order->paymentMethod->toArray() : null,
                 'items' => $orderDetails,
