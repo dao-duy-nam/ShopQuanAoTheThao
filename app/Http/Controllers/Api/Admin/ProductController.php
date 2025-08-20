@@ -18,47 +18,53 @@ use App\Http\Requests\UpdateProductRequest;
 class ProductController extends Controller
 {
 
-    public function index(Request $request)
-    {
-        $query = Product::with('category');
+   public function index(Request $request)
+        {
+            $query = Product::with('category');
 
-        if ($request->filled('keyword')) {
-            $query->where('ten', 'like', '%' . $request->keyword . '%');
-        }
-
-
-        if ($request->filled('ten_danh_muc')) {
-            $query->whereHas('category', function ($q) use ($request) {
-                $q->where('ten', 'like', '%' . $request->ten_danh_muc . '%');
-            });
-        }
+            if ($request->filled('keyword')) {
+                $query->where('ten', 'like', '%' . $request->keyword . '%');
+            }
 
 
-        if ($request->filled('gia_tu')) {
-            $query->where('gia', '>=', $request->gia_tu);
-        }
-
-        if ($request->filled('gia_den')) {
-            $query->where('gia', '<=', $request->gia_den);
-        }
+            if ($request->filled('ten_danh_muc')) {
+                $query->whereHas('category', function ($q) use ($request) {
+                    $q->where('ten', 'like', '%' . $request->ten_danh_muc . '%');
+                });
+            }
 
 
-        $products = $query->latest()->paginate(10);
+            if ($request->filled('gia_tu')) {
+                $query->where('gia', '>=', $request->gia_tu);
+            }
 
-        if ($products->isEmpty()) {
+            if ($request->filled('gia_den')) {
+                $query->where('gia', '<=', $request->gia_den);
+            }
+
+
+            $products = $query->latest()->paginate(10);
+
+            if ($products->isEmpty()) {
+                return response()->json([
+                    'data' => [],
+                    'status' => 200,
+                    'message' => 'Không tìm thấy sản phẩm nào phù hợp.',
+                ]);
+            }
+
             return response()->json([
-                'data' => [],
+                'data' => ProductResource::collection($products),
+                'meta' => [
+                    'current_page' => $products->currentPage(),
+                    'last_page' => $products->lastPage(),
+                    'per_page' => $products->perPage(),
+                    'total' => $products->total(),
+                ],
                 'status' => 200,
-                'message' => 'Không tìm thấy sản phẩm nào phù hợp.',
+                'message' => 'Hiển thị danh sách sản phẩm thành công',
             ]);
         }
-
-        return response()->json([
-            'data' => ProductResource::collection($products),
-            'status' => 200,
-            'message' => 'Hiển thị danh sách sản phẩm thành công',
-        ]);
-    }
 
 
     public function store(StoreProductRequest $request)

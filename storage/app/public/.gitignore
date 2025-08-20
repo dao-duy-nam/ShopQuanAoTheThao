@@ -1,12 +1,12 @@
 *
 !.gitignore
-# !*.jpg
-# !*.jpeg
-# !*.png
+!*.jpg
+!*.jpeg
+!*.png
 # !*.gif
 # !anh_dai_dien/
-# !category/
-# !products/
+!category/
+!products/
 # !reviews/
 # !variants/
 # !banner/
