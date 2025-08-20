@@ -55,14 +55,14 @@ class ProductController extends Controller
 
         return response()->json([
             'data' => ProductResource::collection($products),
-            'status' => 200,
-            'message' => 'Hiển thị danh sách sản phẩm thành công',
-            'pagination' => [
-                'total' => $products->total(),
-                'per_page' => $products->perPage(),
+            'meta' => [
                 'current_page' => $products->currentPage(),
                 'last_page' => $products->lastPage(),
-            ]
+                'per_page' => $products->perPage(),
+                'total' => $products->total(),
+            ],
+            'status' => 200,
+            'message' => 'Hiển thị danh sách sản phẩm thành công',
         ]);
     }
 
