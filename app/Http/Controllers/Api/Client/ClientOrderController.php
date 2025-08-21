@@ -853,7 +853,7 @@ public function show($id)
     {
         $validated = $request->validate([
             'ly_do_tra_hang' => 'required|string|max:255',
-            'hinh_anh_tra_hang' => 'nullable|array',
+            'hinh_anh_tra_hang' => 'required|array|min:1',
             'hinh_anh_tra_hang.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
