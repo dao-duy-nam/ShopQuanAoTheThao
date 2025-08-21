@@ -62,7 +62,7 @@ Route::middleware(['auth:sanctum', 'user'])->group(function () {
     });
     
 
-    Route::get('/products/{id}/review', [ReviewController::class, 'index']);
+
 
 
 
@@ -140,3 +140,5 @@ Route::prefix('contact')->group(function () {
     Route::get('/types', [ClientContactController::class, 'contactTypes']);
 });
 Route::get('reviews/ds-moi-nhat', [ReviewController::class, 'topFiveStarReviews']);
+
+Route::get('/products/{id}/review', [ReviewController::class, 'index']);

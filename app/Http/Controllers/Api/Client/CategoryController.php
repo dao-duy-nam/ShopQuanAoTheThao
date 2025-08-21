@@ -19,7 +19,7 @@ class CategoryController extends Controller
             $query->where('ten', 'like', '%' . $keyword . '%');
         }
 
-        $categories = $query->orderBy('created_at', 'desc')->paginate(10);
+        $categories = $query->orderBy('created_at', 'desc')->get();
 
         return response()->json([
             'message' => 'Danh sách danh mục',
