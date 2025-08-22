@@ -126,6 +126,9 @@ public function update(Request $request, $id, WalletService $walletService)
         } else if ($nextStatus === 'tra_hang_thanh_cong') {
             $validated['trang_thai_thanh_toan'] = 'hoan_tien';
         }
+         else if ($nextStatus === 'tu_choi_tra_hang') {
+            $validated['trang_thai_thanh_toan'] = 'da_thanh_toan';
+        }
     }
 
     $order->update($validated);
