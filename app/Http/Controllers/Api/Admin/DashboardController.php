@@ -18,19 +18,21 @@ public function index()
     $startOfMonth = $now->copy()->startOfMonth();
     $endOfMonth = $now->copy()->endOfMonth();
 
-    $validOrderStatuses = ['da_giao', 'da_nhan'];
+    $validOrderStatuses = ['da_giao', 'da_nhan','yeu_cau_tra_hang','tu_choi_tra_hang'];
 
-    $revenue = Order::whereBetween('created_at', [$startOfMonth, $endOfMonth])
-        ->whereIn('trang_thai_don_hang', $validOrderStatuses)
-        ->sum('so_tien_thanh_toan');
-
+$revenue = Order::whereBetween('created_at', [$startOfMonth, $endOfMonth])
+    ->where(function ($q) {
+        $q->whereIn('trang_thai_don_hang', ['da_giao', 'da_nhan'])
+          ->orWhere('trang_thai_thanh_toan', 'da_thanh_toan');
+    })
+      ->where('so_tien_thanh_toan', '>', 0) 
+    ->sum('so_tien_thanh_toan');
     $lastMonthRevenue = Order::whereBetween('created_at', [
         $now->copy()->subMonth()->startOfMonth(),
         $now->copy()->subMonth()->endOfMonth()
     ])
         ->whereIn('trang_thai_don_hang', $validOrderStatuses)
         ->sum('so_tien_thanh_toan');
-
 
     $activeUsers = User::whereHas('orders', function ($query) use ($startOfMonth, $endOfMonth) {
         $query->whereBetween('created_at', [$startOfMonth, $endOfMonth]);
