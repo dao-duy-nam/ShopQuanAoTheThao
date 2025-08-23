@@ -621,7 +621,7 @@ public function show($id)
                 'san_pham_id' => $detail->san_pham_id,
                 'bien_the_id' => $detail->bien_the_id,
                 'so_luong' => $detail->so_luong,
-                'don_gia' => $detail->don_gia,
+                'don_gia' => (int) $detail->don_gia,
                 'tong_tien' => $detail->tong_tien,
                 'product' => $detail->product ? $detail->product->toArray() : null,
                 'variant' => $detail->variant ? array_merge(
@@ -740,9 +740,9 @@ public function show($id)
             'tong_tien_thanh_toan' => $order->so_tien_thanh_toan,
             'ngay_dat' => $order->created_at->toDateTimeString(),
             'phuong_thuc_thanh_toan' => optional($order->paymentMethod)->ten,
+            'ten_san_pham' => $order->ten_san_pham,
             'so_luong_mat_hang' => $order->orderDetail->sum('so_luong'),
             'gia_tri_bien_the' => $giaTriBienThe,
-
             'items' => $items,
         ];
     });
@@ -853,9 +853,25 @@ public function show($id)
     {
         $validated = $request->validate([
             'ly_do_tra_hang' => 'required|string|max:255',
-            'hinh_anh_tra_hang' => 'required|array|min:1',
+            'hinh_anh_tra_hang' => 'required|array|min:1|max:3',
             'hinh_anh_tra_hang.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
-        ]);
+        ],
+            [
+            'ly_do_tra_hang.required' => 'Vui lòng nhập lý do trả hàng.',
+            'ly_do_tra_hang.string'   => 'Lý do trả hàng không hợp lệ.',
+            'ly_do_tra_hang.max'      => 'Lý do trả hàng tối đa 255 ký tự.',
+
+            'hinh_anh_tra_hang.required' => 'Vui lòng tải lên ít nhất 1 hình ảnh trả hàng.',
+            'hinh_anh_tra_hang.array'    => 'Hình ảnh trả hàng phải ở dạng mảng.',
+            'hinh_anh_tra_hang.min'      => 'Phải có ít nhất 1 hình ảnh trả hàng.',
+            'hinh_anh_tra_hang.max'      => 'Chỉ được phép tải lên tối đa 3 hình ảnh.',
+
+            'hinh_anh_tra_hang.*.image' => 'Tệp tải lên phải là hình ảnh.',
+            'hinh_anh_tra_hang.*.mimes' => 'Chỉ chấp nhận định dạng jpeg, png, jpg, webp.',
+            'hinh_anh_tra_hang.*.max'   => 'Mỗi ảnh không được vượt quá 2MB.',
+        ]
+    );
+        
 
         $order = Order::with(['user', 'orderDetail.variant'])->findOrFail($id);
         $user = $request->user();
@@ -894,7 +910,7 @@ public function show($id)
 
         try {
             $order->trang_thai_don_hang = 'yeu_cau_tra_hang';
-            $order->trang_thai_thanh_toan = 'cho_hoan_tien';
+            $order->trang_thai_thanh_toan = 'da_thanh_toan';
             $order->ly_do_tra_hang = $validated['ly_do_tra_hang'];
 
             $imagePaths = [];

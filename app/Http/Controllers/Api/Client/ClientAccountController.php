@@ -109,20 +109,20 @@ class ClientAccountController extends Controller
     public function getUserOverview(Request $request)
     {
         $user = $request->user();
-        $orderCount = Order::where('user_id', $user->id)
+        $orderCount = Order::where('user_id', $user->id)->count();
+        $completedOrderCount = Order::where('user_id', $user->id)
             ->where('trang_thai_don_hang', 'da_nhan')
             ->count();
-
         $reviewCount = DanhGia::where('user_id', $user->id)->count();
         $Wishlist = Wishlist::where('nguoi_dung_id', $user->id)->count();
 
-        if ($orderCount >= 30) {
+        if ($completedOrderCount >= 30) {
             $rank = 'KIM CƯƠNG';
-        } elseif ($orderCount >= 20) {
+        } elseif ($completedOrderCount >= 20) {
             $rank = 'BẠCH KIM';
-        } elseif ($orderCount >= 10) {
+        } elseif ($completedOrderCount >= 10) {
             $rank = 'VÀNG';
-        } elseif ($orderCount >= 5) {
+        } elseif ($completedOrderCount >= 5) {
             $rank = 'BẠC';
         } else {
             $rank = 'ĐỒNG';

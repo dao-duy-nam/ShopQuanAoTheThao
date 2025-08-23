@@ -197,6 +197,7 @@ class UserController extends Controller
             'block_den_ngay' => null,
             'kieu_block' => $request->kieu_block ?: 'đã khoá!!', // nếu không truyền thì gán mặc định
         ]);
+         $user->tokens()->delete();
 
         Mail::to($user->email)->queue(new UserBlockedMail($user, $request->ly_do_block));
 
