@@ -12,7 +12,7 @@ class CategoryController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Category::query();
+        $query = Category::query()->where('ten', '!=', 'Không phân loại');
 
         if ($request->has('search') && $request->search != '') {
             $keyword = $request->search;
