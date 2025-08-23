@@ -621,7 +621,7 @@ public function show($id)
                 'san_pham_id' => $detail->san_pham_id,
                 'bien_the_id' => $detail->bien_the_id,
                 'so_luong' => $detail->so_luong,
-                'don_gia' => $detail->don_gia,
+                'don_gia' => (int) $detail->don_gia,
                 'tong_tien' => $detail->tong_tien,
                 'product' => $detail->product ? $detail->product->toArray() : null,
                 'variant' => $detail->variant ? array_merge(
@@ -740,9 +740,9 @@ public function show($id)
             'tong_tien_thanh_toan' => $order->so_tien_thanh_toan,
             'ngay_dat' => $order->created_at->toDateTimeString(),
             'phuong_thuc_thanh_toan' => optional($order->paymentMethod)->ten,
+            'ten_san_pham' => $order->ten_san_pham,
             'so_luong_mat_hang' => $order->orderDetail->sum('so_luong'),
             'gia_tri_bien_the' => $giaTriBienThe,
-
             'items' => $items,
         ];
     });

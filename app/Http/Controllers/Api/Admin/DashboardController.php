@@ -18,7 +18,7 @@ public function index()
     $startOfMonth = $now->copy()->startOfMonth();
     $endOfMonth = $now->copy()->endOfMonth();
 
-    $validOrderStatuses = ['da_giao', 'da_nhan','yeu_cau_tra_hang','tu_choi_tra_hang'];
+    $validOrderStatuses = ['da_giao', 'da_nhan','yeu_cau_tra_hang','tu_choi_tra_hang','xac_nhan_tra_hang'];
 
 $revenue = Order::whereBetween('created_at', [$startOfMonth, $endOfMonth])
     ->where(function ($q) {
