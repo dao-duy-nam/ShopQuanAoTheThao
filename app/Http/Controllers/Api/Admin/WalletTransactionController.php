@@ -42,10 +42,6 @@ class WalletTransactionController extends Controller
             $query->where('type', $request->type);
         }
 
-        if ($request->filled('type')) {
-            $query->where('type', $request->type);
-        }
-
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
