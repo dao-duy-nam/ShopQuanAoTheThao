@@ -2,11 +2,12 @@
 
 namespace Database\Factories;
 
-use App\Models\Attribute;
-use App\Models\AttributeValue;
-use App\Models\Category;
 use App\Models\Product;
 use App\Models\Variant;
+use App\Models\Category;
+use App\Models\Attribute;
+use App\Models\AttributeValue;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ProductFactory extends Factory
@@ -166,7 +167,10 @@ class ProductFactory extends Factory
 
     private function randomVariantImage(): ?string
     {
-        $files = $this->getAvailableProductImages();
-        return empty($files) ? null : 'products/' . $this->faker->randomElement($files);
+        $files = Storage::disk('public')->files('variants');
+        if (empty($files)) {
+            return null;
+        }
+        return 'variants/' . basename($this->faker->randomElement($files));
     }
 }

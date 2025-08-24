@@ -18,7 +18,7 @@ class CategorySeeder extends Seeder
             [
                 'ten' => 'Áo thun thể thao nữ',
                 'mo_ta' => 'Áo thun thể thao nữ mềm mịn, ôm vừa vặn, thấm hút mồ hôi; thoải mái cho yoga, pilates và cardio.',
-                'image' => 'category/aothunthethaonu.jfif',
+                'image' => 'category/aobongro.jpg',
             ],
             [
                 'ten' => 'Áo khoác thể thao',
@@ -38,12 +38,12 @@ class CategorySeeder extends Seeder
             [
                 'ten' => 'Quần short thể thao nam',
                 'mo_ta' => 'Quần short thể thao nam nhẹ, nhanh khô, có túi; thích hợp đá bóng, chạy bộ và các bài tập cường độ cao.',
-                'image' => 'category/quanshortthethaonam.jfif',
+                'image' => 'category/aobongda.jpg',
             ],
             [
                 'ten' => 'Quần jogger nam',
                 'mo_ta' => 'Quần jogger nam chất liệu co giãn, mềm mại; phù hợp tập luyện và mặc thường ngày.',
-                'image' => 'category/quanjoggernam.jfif',
+                'image' => 'category/aobongro.jpg',
             ],
             [
                 'ten' => 'Quần legging thể thao nữ',
