@@ -221,6 +221,7 @@ class ClientOrderController extends Controller
 
                         $thuocTinhBienThe = [
                             'bien_the_id' => $bienThe->id,
+                            'ten_san_pham'  => $bienThe->product->ten, // 👈 lấy từ bảng san_phams
                             'hinh_anh' => $bienThe->hinh_anh , // LẤY HÌNH ẢNH    
                             'thuoc_tinh'  => $bienThe->variantAttributes->mapWithKeys(function ($attr) {
                                 return [
@@ -310,6 +311,7 @@ class ClientOrderController extends Controller
 
                        $thuocTinhBienThe = [
                         'bien_the_id' => $bienThe->id,
+                        'ten_san_pham' => $bienThe->product->ten_san_pham,
                         'hinh_anh' => $bienThe->hinh_anh,
                         'thuoc_tinh'  => $bienThe->variantAttributes->mapWithKeys(function ($attr) {
                             return [

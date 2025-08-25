@@ -72,7 +72,13 @@ public function update(Request $request, $id, WalletService $walletService)
 
     if (isset($validated['trang_thai_don_hang'])) {
         $nextStatus = $validated['trang_thai_don_hang'];
-
+        if (in_array((int) $order->phuong_thuc_thanh_toan_id, [2, 3, 4], true)) {
+        if ($order->trang_thai_thanh_toan !== 'da_thanh_toan') {
+            return response()->json([
+                'message' => "Đơn hàng chưa được thanh toán thành công. Không thể cập nhật trạng thái."
+            ], 400);
+        }
+        }
         $userOnlyStatuses = ['yeu_cau_tra_hang', 'yeu_cau_huy_hang'];
         if (in_array($nextStatus, $userOnlyStatuses)) {
             return response()->json([
